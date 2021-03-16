@@ -15,3 +15,11 @@ QueryParser::QueryParser( std::string queryLine )
         auto query = std::string(queryLine, startPos + 1, endPos - startPos - 1);
         stream = TokenStream(query);
     }
+
+Token* QueryParser::FindNextToken()
+    {
+        auto tok = stream.TakeToken();
+        if (tok->getTokenType() != TokenType::TokenTypeEOF)
+            std::cout << tok->TokenString() << std::endl;
+        return tok;
+    }
