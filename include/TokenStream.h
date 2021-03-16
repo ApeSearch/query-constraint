@@ -14,12 +14,14 @@ class TokenStream {
         std::string GetInput(){ return input; };
         bool Match(TokenType t);
         TokenStream() : input(), currentTokenString(), currentToken(nullptr) {}
-        TokenStream(std::string _input): input(_input), currentTokenString(), currentToken(nullptr) {}
+        TokenStream(std::string _input): input(_input), currentTokenString(), currentToken(nullptr), currChar(&input.front()), endChar(input.c_str() + input.size()) {}
     
     private:
         std::string input;
         std::string currentTokenString;
         Token* currentToken;
+
+        char const *currChar, *endChar;
 };
 
 #endif
