@@ -7,11 +7,11 @@
 
 class TupleList : public Tuple {
     public:
-        Tuple *Top, *Bottom;
+        Tuple *Top, *Bottom; //List of tuples, linked list
         void Empty();
-        void Append(Tuple *t);
+        void Append(Tuple *t); //Add on a tuple
         TupleList();
-        ~TupleList();
+        ~TupleList(); //deallocate nodes from heap, call destructor for each tuple in list
 };
 
 class OrExpression : public TupleList {
@@ -22,8 +22,8 @@ class AndExpression : public TupleList {
 
 };
 
-class SimpleConstraint : public TupleList {
-
+class Phrase : public TupleList {
+    
 };
     
 

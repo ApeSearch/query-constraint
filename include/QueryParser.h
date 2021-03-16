@@ -16,14 +16,20 @@ class QueryParser
 {
     public:
         QueryParser( std::string queryLine );
-        Token* FindNextToken();
-        TupleList* FindOrConstraint();
+        
+        Token* FindNextToken(); //Gets next Token from stream
+        
         bool FindOrOp();
+        bool FindAndOp();
+
+        TupleList* FindOrConstraint();
         TupleList* FindAndConstraint();
-        Tuple* FindSimpleConstraint();
         TupleList* FindPhrase();
+
         Tuple* FindNestedConstraint();
         Tuple* FindSearchWord();
+        Tuple* FindSimpleConstraint();
+        Tuple* FindUnarySimpleConstraint();
 
     private:
         TokenStream stream;

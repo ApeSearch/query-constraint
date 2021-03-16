@@ -9,8 +9,8 @@
     
 class TokenStream {
     public:
-        Token* CurrentToken(){ return currentToken; };
-        Token* TakeToken();
+        Token* CurrentToken(){ return currentToken; }; //case if currentToken is null
+        Token* TakeToken(); //Deletes the first token in currentTokenStream
         std::string GetInput(){ return input; };
         bool Match(TokenType t);
         TokenStream() : input(), currentTokenString(), currentToken(nullptr) {}

@@ -192,8 +192,8 @@ class ISRPhrase : public ISR
 class ISRContainer : public ISR
     {
     public:
-        ISR **contained;
-        ISR *excluded;
+        ISR **contained; //List of ISRs to include
+        ISR *excluded; //ISR to exclude
         ISREndDoc *endDoc;
         unsigned countContained, countExcluded;
         // Location Next( );
