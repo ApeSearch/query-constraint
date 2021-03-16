@@ -12,15 +12,31 @@ Token* TokenStream::TakeToken()
             case '%':
                 {
                     if (startChar != currChar) {
-                        currentTokenString = std::string(startChar, currChar - startChar);
-                        delete currentToken;
-                        currentToken = new TokenWord(currentTokenString);
-                        return currentToken;
+                        setCurrentToken(startChar);
+                        return currentToken = new TokenWord(currentTokenString);
                     }
                     else
                         {
-                            std::string encodedVal = std::string(currChar, 3);
-                            TokenType type = Token::evaluateToken(encodedVal);
+                        std::string encodedVal = std::string(currChar, 3);
+                        TokenType type = Token::evaluateToken(encodedVal);
+                        // we'll need to do better error checking for weird queries but for now...
+                        switch (type)
+                        {
+                            case TokenType::TokenTypeAND:
+                                setCurrentToken(encodedVal);
+                                return currentToken = new TokenAND(currentTokenString);
+
+                            case TokenType::TokenTypePhrase:
+                                setCurrentToken(encodedVal);
+                                return currentToken = new TokenPhrase(currentTokenString);
+                            
+                            case TokenType::TokenTypeOR:
+                                setCurrentToken(encodedVal);
+                                return currentToken = new TokenPhrase(currentTokenString);
+                            
+                            default:
+                                return currentToken = new TokenInvalid();
+                            }
                         }
                 }
             case '.':
@@ -44,14 +60,28 @@ Token* TokenStream::TakeToken()
         }
         if (startChar != currChar)
             {
-                currentTokenString = std::string(startChar, currChar - startChar);
+            setCurrentToken(startChar);
+            return currentToken = new TokenWord(currentTokenString);
             }
         else
-            return nullptr;
+            return currentToken = new TokenEOF();
         
     }
 
 bool TokenStream::Match(TokenType t)
     {
     return t == currentToken->getTokenType();
+    }
+
+void TokenStream::setCurrentToken(char const *start)
+    {
+    currentTokenString = std::string(start, currChar - start);
+    delete currentToken;
+    }
+
+void TokenStream::setCurrentToken(std::string tokenString)
+    {
+    currChar += 3;
+    currentTokenString = tokenString;
+    delete currentToken;
     }

@@ -29,6 +29,6 @@ int main()
         for (auto queryLine : queries) 
             {
                 auto query = QueryParser(queryLine);
-                query.FindNextToken();
+                while (query.FindNextToken()->getTokenType() != TokenType::TokenTypeEOF);
             }
     }

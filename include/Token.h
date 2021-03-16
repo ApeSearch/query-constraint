@@ -35,7 +35,7 @@ class TokenInvalid : public Token {
 class TokenEOF : public Token {
     public:
         TokenType getTokenType() const override{
-            return TokenType::TokenTypeInvalid;
+            return TokenType::TokenTypeEOF;
         }
 };
 
@@ -56,6 +56,8 @@ class TokenWord : public Token {
 
 class TokenAND : public Token {
     public:
+        TokenAND(std::string _token) : token(_token) {}
+
         TokenType getTokenType() const override {
             return TokenType::TokenTypeAND;
         };
@@ -69,6 +71,8 @@ class TokenAND : public Token {
 
 class TokenOR : public Token {
     public:
+        TokenOR(std::string _token) : token(_token) {}
+
         TokenType getTokenType() const override {
             return TokenType::TokenTypeOR;
         };
@@ -82,6 +86,8 @@ class TokenOR : public Token {
 
 class TokenNOT : public Token {
     public:
+        TokenNOT(std::string _token) : token(_token) {}
+
         TokenType getTokenType() const override {
             return TokenType::TokenTypeNOT;
         };
@@ -95,6 +101,8 @@ class TokenNOT : public Token {
 
 class TokenPhrase : public Token {
     public:
+        TokenPhrase(std::string _token) : token(_token) {}
+
         TokenType getTokenType() const override {
             return TokenType::TokenTypePhrase;
         };
@@ -108,6 +116,8 @@ class TokenPhrase : public Token {
 
 class TokenNested : public Token {
     public:
+        TokenNested(std::string _token) : token(_token) {}
+
         TokenType getTokenType() const override {
             return TokenType::TokenTypeNested;
         };

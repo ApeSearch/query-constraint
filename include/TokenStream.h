@@ -17,6 +17,9 @@ class TokenStream {
         TokenStream(std::string _input): input(_input), currentTokenString(), currentToken(nullptr), currChar(&input.front()), endChar(input.c_str() + input.size()) {}
     
     private:
+        void setCurrentToken(char const *start);
+        void setCurrentToken(std::string tokenString);
+
         std::string input;
         std::string currentTokenString;
         Token* currentToken;

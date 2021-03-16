@@ -18,5 +18,8 @@ QueryParser::QueryParser( std::string queryLine )
 
 Token* QueryParser::FindNextToken()
     {
-        return stream.TakeToken();
+        auto tok = stream.TakeToken();
+        if (tok->getTokenType() != TokenType::TokenTypeEOF)
+            std::cout << tok->TokenString() << std::endl;
+        return tok;
     }
