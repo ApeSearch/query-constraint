@@ -15,16 +15,25 @@ class TupleList : public Tuple {
 };
 
 class OrExpression : public TupleList {
-
+    public:
+        OrExpression();
 };
 
 class AndExpression : public TupleList {
-
+    public:
+        AndExpression();
 };
 
 class Phrase : public TupleList {
-    
+    public:
+        Phrase();
 };
+
+class NestedConstraint : public OrExpression {
+    public:
+        NestedConstraint();
+};
+
     
 
 #endif

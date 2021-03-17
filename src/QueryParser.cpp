@@ -23,3 +23,19 @@ Token* QueryParser::FindNextToken()
             std::cout << tok->TokenString() << std::endl;
         return tok;
     }
+
+Tuple* QueryParser::FindOrConstraint()
+    {   
+        TupleList* orExp = new OrExpression();
+        Tuple* tuple = FindAndConstraint();
+
+        while(FindOrOp())
+            orExp->Append(FindAndConstraint()); //psuedocode passes a tokenType, why?????
+
+        if(orExp->Top == orExp->Bottom){ //If there was no OrOp found
+            return tuple;
+        } 
+        
+
+        return orExp; //the memory will be deallocated after compiling into an ISR.
+    }

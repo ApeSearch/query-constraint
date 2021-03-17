@@ -22,7 +22,7 @@ class QueryParser
         bool FindOrOp();
         bool FindAndOp();
 
-        TupleList* FindOrConstraint();
+        Tuple* FindOrConstraint();
         TupleList* FindAndConstraint();
         TupleList* FindPhrase();
 

@@ -32,7 +32,7 @@ Token* TokenStream::TakeToken()
                             
                             case TokenType::TokenTypeOR:
                                 setCurrentToken(encodedVal);
-                                return currentToken = new TokenPhrase(currentTokenString);
+                                return currentToken = new TokenOR(currentTokenString);
                             
                             default:
                                 return currentToken = new TokenInvalid();
