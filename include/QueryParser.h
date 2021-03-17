@@ -22,12 +22,12 @@ class QueryParser
         bool FindOrOp();
         bool FindAndOp();
 
-        Tuple* FindOrConstraint();
+        TupleList* FindOrConstraint();
         TupleList* FindAndConstraint();
         TupleList* FindPhrase();
 
         Tuple* FindNestedConstraint();
-        Tuple* FindSearchWord();
+        SearchWord* FindSearchWord();
         Tuple* FindSimpleConstraint();
         Tuple* FindUnarySimpleConstraint();
 

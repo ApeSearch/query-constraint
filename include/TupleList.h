@@ -17,23 +17,19 @@ class TupleList : public Tuple {
 class OrExpression : public TupleList {
     public:
         OrExpression();
+        ISR* Compile();
 };
 
 class AndExpression : public TupleList {
     public:
         AndExpression();
+        ISR* Compile();
 };
 
 class Phrase : public TupleList {
     public:
         Phrase();
+        ISR* Compile();
 };
-
-class NestedConstraint : public OrExpression {
-    public:
-        NestedConstraint();
-};
-
-    
 
 #endif

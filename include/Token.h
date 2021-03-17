@@ -23,6 +23,19 @@ class Token {
                 if (input == "%7C") return TokenTypeOR;
                 return TokenTypeInvalid;
             }
+
+        static std::string printTokenType(TokenType type)
+            {
+            switch(type)
+                {
+                case TokenType::TokenTypeAND: return "TokenTypeAND";
+                case TokenType::TokenTypeOR: return "TokenTypeOR";
+                case TokenType::TokenTypePhrase: return "TokenTypePhrase";
+                case TokenType::TokenTypeWord: return "TokenTypeWord";
+                case TokenType::TokenTypeNOT: return "TokenTypeNOT";
+                case TokenType::TokenTypeNested: return "TokenTypeNested";
+                }
+            }
 };
 
 class TokenInvalid : public Token {

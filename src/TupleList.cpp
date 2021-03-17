@@ -4,6 +4,8 @@
 
 TupleList::TupleList(): Top(nullptr), Bottom(nullptr) {}
 
+TupleList::~TupleList() {}
+
 void TupleList::Empty()
     {
         Bottom = Top = nullptr;
@@ -21,9 +23,18 @@ void TupleList::Append(Tuple* t)
         }
     }
 
-OrExpression::OrExpression() : TupleList() {}
+OrExpression::OrExpression() : TupleList() 
+    {
+        
+    }
+
+ISR* OrExpression::Compile() {}
 
 AndExpression::AndExpression() : TupleList() {}
 
+ISR* AndExpression::Compile() {}
+
 Phrase::Phrase() : TupleList() {}
+
+ISR* Phrase::Compile() {}
 
