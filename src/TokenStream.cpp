@@ -45,7 +45,7 @@ Token* TokenStream::TakeToken()
                                     encodedTokenLength += encodedTokenLength;
                                     encodedVal = std::string(currChar, encodedTokenLength);
                                     }
-                                if (std::string(currChar, 3) != "%20")
+                                if (std::string(currChar + encodedTokenLength, 3) != "%20" && (currChar + encodedTokenLength) != endChar )
                                     break;
 
                                 setCurrentToken(encodedVal);
