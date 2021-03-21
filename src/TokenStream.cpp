@@ -61,8 +61,14 @@ Token* TokenStream::TakeToken()
                     {
                     setCurrentToken(startChar);
                     // If there are more '.' after the one we split on, we want to ignore those
-                    while (*currChar == '.') ++currChar;
                     return currentToken = new TokenWord(currentTokenString);
+                    }
+                else 
+                    {
+                        setCurrentToken(std::string("."));
+                        // If there are more '.' after the one we split on, we want to ignore those
+                        while (*currChar == '.') ++currChar;
+                        return currentToken = new TokenAND(currentTokenString);
                     }
                 }
             case '&': 

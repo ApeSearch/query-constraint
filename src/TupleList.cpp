@@ -1,5 +1,6 @@
 #include "../include/TupleList.h"
 #include "assert.h"
+#include <iostream>
 
 
 TupleList::TupleList(): Top(nullptr), Bottom(nullptr) {}
@@ -28,13 +29,35 @@ OrExpression::OrExpression() : TupleList()
         
     }
 
-ISR* OrExpression::Compile() {}
+ISR* OrExpression::Compile() 
+    {
+    auto curr = Top;
+    while (curr != nullptr)
+        {
+            curr->Compile();
+            curr = curr->next;
+        }
+    }
 
 AndExpression::AndExpression() : TupleList() {}
 
-ISR* AndExpression::Compile() {}
+ISR* AndExpression::Compile() {
+    auto curr = Top;
+    while (curr != nullptr)
+        {
+            curr->Compile();
+            curr = curr->next;
+        }
+}
 
 Phrase::Phrase() : TupleList() {}
 
-ISR* Phrase::Compile() {}
+ISR* Phrase::Compile() {
+    auto curr = Top;
+    while (curr != nullptr)
+        {
+            curr->Compile();
+            curr = curr->next;
+        }
+}
 

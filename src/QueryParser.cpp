@@ -18,10 +18,7 @@ QueryParser::QueryParser( std::string queryLine )
 
 Token* QueryParser::FindNextToken()
     {
-        auto tok = stream.TakeToken();
-        if (tok->getTokenType() != TokenType::TokenTypeEOF)
-            std::cout << Token::printTokenType(tok->getTokenType()) << " " << tok->TokenString() << std::endl;
-        return tok;
+        return stream.TakeToken();
     }
 
 TupleList* QueryParser::FindOrConstraint()
@@ -122,7 +119,7 @@ SearchWord* QueryParser::FindSearchWord()
             token = stream.TakeToken();
         }
 
-        if(token->getTokenType() != TokenTypeWord)
+        if(!token || token->getTokenType() != TokenTypeWord)
             return nullptr;
         
         

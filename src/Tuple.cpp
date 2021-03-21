@@ -2,7 +2,6 @@
 #include "assert.h"
 #include <string>
 
-
 Tuple::Tuple() : next(nullptr) {}
 
 Tuple::~Tuple() {
@@ -15,7 +14,11 @@ SearchWord::SearchWord(std::string _word) : Tuple(), word(_word) {}
 
 SearchWord::~SearchWord() {}
 
-ISR* SearchWord::Compile() {}
+ISR* SearchWord::Compile() {
+    std::cout << word << std::endl;
+    // TODO: unique ptrs
+    return new ISRWord(word);
+}
 
 // End SearchWord
 

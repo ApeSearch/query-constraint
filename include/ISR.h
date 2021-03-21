@@ -66,24 +66,39 @@ class Index
 class ISR
     {
     public:
-        virtual Post *Next( );
-        virtual Post *NextDocument( );
-        virtual Post *Seek( Location target );
-        virtual Location GetStartLocation( );
-        virtual Location GetEndLocation( );
+        ISR();
+
+        virtual Post *Next( ) = 0;
+        virtual Post *NextDocument( ) = 0;
+        virtual Post *Seek( Location target ) = 0;
+        virtual Location GetStartLocation( ) = 0;
+        virtual Location GetEndLocation( ) = 0;
     };
 
 class ISRWord : public ISR
     {
     public:
+        ISRWord();
+        ISRWord(std::string _word);
         unsigned GetDocumentCount( );
         unsigned GetNumberOfOccurrences( );
         virtual Post *GetCurrentPost( );
+
+        // Needed 
+        Post *Next( ) override {}
+        Post *NextDocument( ) override {}
+        Post *Seek( Location target ) override {}
+        Location GetStartLocation( ) override {}
+        Location GetEndLocation( ) override {}
+
+        std::string word;
     };
 
 class ISREndDoc : public ISRWord
     {
     public:
+        ISREndDoc();
+
         unsigned GetDocumentLength( );
         unsigned GetTitleLength( );
         unsigned GetUrlLength( );
@@ -92,33 +107,35 @@ class ISREndDoc : public ISRWord
 class ISROr : public ISR
     {
         public:
+            ISROr();
+
             ISR **terms;
             unsigned numTerms;
 
-            Location GetStartLocation()
+            Location GetStartLocation() override
                 {
                     return nearestStartLocation;
                 }
 
-            Location GetEndLocation()
+            Location GetEndLocation() override
                 {
                     return nearestEndLocation;
                 }
 
-            Post *Seek( Location target )
+            Post *Seek( Location target ) override
                 {
                 // Seek all the ISRs to the first occurrence beginning at
                 // the target location. Return null if there is no match.
                 // The document is the document containing the nearest term.
                 }
 
-            Post *Next( )
+            Post *Next( ) override
                 {
                 // Do a next on the nearest term, then return
                 // the new nearest match.
                 }
 
-            Post *NextDocument( ) 
+            Post *NextDocument( ) override
                 {
                 // Seek all the ISRs to the first occurrence just past
                 // the end of this document.
@@ -132,10 +149,12 @@ class ISROr : public ISR
 
 class ISRAnd : public ISR 
     {
+        ISRAnd();
+
         ISR **terms;
         unsigned numterms;
 
-        Post *Seek( Location target )
+        Post *Seek( Location target ) override
             {
                 // 1. Seek all the ISRs to the first occurrence beginning at
                 //    the target location.
@@ -151,7 +170,7 @@ class ISRAnd : public ISR
                 // 5. If any ISR reaches the end, there is no match.
             }
 
-        Post * Next()
+        Post * Next() override
             {
             return Seek( nearestStartLocation + 1 );
             }
@@ -164,10 +183,12 @@ class ISRAnd : public ISR
 class ISRPhrase : public ISR
     {
     public:
+        ISRPhrase();
+
         ISR **terms;
         unsigned numterms;
 
-        Post *Seek( Location target )
+        Post *Seek( Location target ) override
             {
                 // 1. Seek all ISRs to the first occurrence beginning at
                 //    the target location.
@@ -183,7 +204,7 @@ class ISRPhrase : public ISR
                 // 4. If any ISR reaches the end, there is no match.
             }
 
-        Post * Next()
+        Post * Next() override
             {
             // return Seek( nearestStartLocation + 1 );
             }
@@ -192,13 +213,15 @@ class ISRPhrase : public ISR
 class ISRContainer : public ISR
     {
     public:
+        ISRContainer();
+
         ISR **contained; //List of ISRs to include
         ISR *excluded; //ISR to exclude
         ISREndDoc *endDoc;
         unsigned countContained, countExcluded;
         // Location Next( );
         
-        Post *Seek( Location target )
+        Post *Seek( Location target ) override
             {
             // 1. Seek all the included ISRs to the first occurrence beginning at
             //    the target location.
@@ -219,7 +242,7 @@ class ISRContainer : public ISR
             //    step 1.
             }
 
-        Post *Next( ) 
+        Post *Next( ) override
             {
             // Seek( contained[ nearestContained ]->GetStartlocation( ) + 1 );
             }
