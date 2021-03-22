@@ -4,6 +4,7 @@
 
 Token* TokenStream::TakeToken()
     {
+
     char const *startChar = currChar;
     while (currChar != endChar)
         {

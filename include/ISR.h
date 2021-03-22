@@ -149,31 +149,49 @@ class ISROr : public ISR
 
 class ISRAnd : public ISR 
     {
-        ISRAnd();
+        public:
+            ISRAnd();
 
-        ISR **terms;
-        unsigned numterms;
+            ISR **terms;
+            unsigned numTerms;
 
-        Post *Seek( Location target ) override
-            {
-                // 1. Seek all the ISRs to the first occurrence beginning at
-                //    the target location.
+            Post *Seek( Location target ) override
+                {
+                    // 1. Seek all the ISRs to the first occurrence beginning at
+                    //    the target location.
 
-                // 2. Move the document end ISR to just past the furthest
-                //    word, then calculate the document begin location.
+                    // 2. Move the document end ISR to just past the furthest
+                    //    word, then calculate the document begin location.
 
-                // 3. Seek all the other terms to past the document begin.
+                    // 3. Seek all the other terms to past the document begin.
 
-                // 4. If any term is past the document end, return to
-                //    step 2.
+                    // 4. If any term is past the document end, return to
+                    //    step 2.
 
-                // 5. If any ISR reaches the end, there is no match.
-            }
+                    // 5. If any ISR reaches the end, there is no match.
+                }
 
-        Post * Next() override
-            {
-            return Seek( nearestStartLocation + 1 );
-            }
+            Post * Next() override
+                {
+                return Seek( nearestStartLocation + 1 );
+                }
+
+            Post *NextDocument( ) override
+                {
+                // Seek all the ISRs to the first occurrence just past
+                // the end of this document.
+                // return Seek( DocumentEnd->GetEndLocation( ) + 1 );
+                }
+
+            Location GetStartLocation() override
+                {
+                return nearestStartLocation;
+                }
+
+            Location GetEndLocation() override
+                {
+                return nearestEndLocation;
+                }
 
         private: 
             unsigned nearestTerm, farthestTerm;
@@ -186,7 +204,7 @@ class ISRPhrase : public ISR
         ISRPhrase();
 
         ISR **terms;
-        unsigned numterms;
+        unsigned numTerms;
 
         Post *Seek( Location target ) override
             {
@@ -231,7 +249,7 @@ class ISRContainer : public ISR
 
             // 3. Seek all the other contained terms to past the document begin.
 
-            // 4. If any contained ermis past the document end, return to
+            // 4. If any contained term is past the document end, return to
             //    step 2.
 
             // 5. If any ISR reaches the end, there is no match.
