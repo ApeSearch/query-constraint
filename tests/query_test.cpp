@@ -3,10 +3,14 @@
 
 int main() 
     {
-    auto queryLine = queries[0];
+    auto queryLine = queries[2];
     std::cout << queryLine << "\n========\n";
     auto query = QueryParser(queryLine);
 
-    TupleList* orConstraint = query.FindOrConstraint();
+    Tuple* orConstraint = query.FindOrConstraint();
+    
+    if(!orConstraint)
+        return 0;
+    
     orConstraint->Compile();
     }

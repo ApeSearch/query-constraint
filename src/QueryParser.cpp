@@ -21,14 +21,20 @@ Token* QueryParser::FindNextToken()
         return stream.TakeToken();
     }
 
-TupleList* QueryParser::FindOrConstraint()
+Tuple* QueryParser::FindOrConstraint()
     {   
         TupleList* orExp = new OrExpression();
         orExp->Append(FindAndConstraint());
 
         while(FindOrOp())
             orExp->Append(FindAndConstraint()); //psuedocode passes a tokenType, why?????
+
+
+        if(!orExp->Top)
+            return nullptr;
         
+        else if(orExp->Top == orExp->Bottom)
+            return orExp->Top;
 
         return orExp; //the memory will be deallocated after compiling into an ISR.
     }
@@ -42,7 +48,7 @@ bool QueryParser::FindAndOp()
             
             stream.TakeToken();
         }
-
+    
         if(found)
             return true;
         return false;
@@ -57,26 +63,31 @@ bool QueryParser::FindOrOp()
         return false;
     }
 
-TupleList* QueryParser::FindAndConstraint()
+Tuple* QueryParser::FindAndConstraint()
     {
         TupleList* andExp = new AndExpression();
         andExp->Append(FindSimpleConstraint());
 
         while(FindAndOp())
             andExp->Append(FindSimpleConstraint());
-        
 
+        if(!andExp->Top)
+            return nullptr;
+        
+        else if(andExp->Top == andExp->Bottom)
+            return andExp->Top;
+        
         return andExp; //the memory will be deallocated after compiling into an ISR.
 
     }
 
 // "the | quick.brown"
 
-TupleList* QueryParser::FindPhrase()
+Tuple* QueryParser::FindPhrase()
     {
         TupleList* tupleList = new Phrase();
         Token* token = FindNextToken();
-
+        
         if(token->getTokenType() != TokenTypePhrase)
             return nullptr;
         
@@ -111,7 +122,7 @@ Tuple* QueryParser::FindNestedConstraint()
         return tuple;
         
     }
-SearchWord* QueryParser::FindSearchWord()
+Tuple* QueryParser::FindSearchWord()
     {
         Token* token = stream.CurrentToken();
 

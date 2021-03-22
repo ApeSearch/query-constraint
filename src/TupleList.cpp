@@ -31,7 +31,7 @@ OrExpression::OrExpression() : TupleList()
 
 ISR* OrExpression::Compile() 
     {
-    auto curr = Top;
+    Tuple* curr = Top;
     while (curr != nullptr)
         {
             curr->Compile();
@@ -42,7 +42,7 @@ ISR* OrExpression::Compile()
 AndExpression::AndExpression() : TupleList() {}
 
 ISR* AndExpression::Compile() {
-    auto curr = Top;
+    Tuple* curr = Top;
     while (curr != nullptr)
         {
             curr->Compile();
@@ -53,7 +53,7 @@ ISR* AndExpression::Compile() {
 Phrase::Phrase() : TupleList() {}
 
 ISR* Phrase::Compile() {
-    auto curr = Top;
+    Tuple* curr = Top;
     while (curr != nullptr)
         {
             curr->Compile();
