@@ -34,9 +34,8 @@ Token* TokenStream::TakeToken()
                     {
                     // Ensures that '&' or '|' immediately followed by a character isn't tokenized as an operator
                     // However, if the current character is the end character, we do want to tokenize it as an operator
-                    if (*(currChar) != ' ')
-                        if (currChar != endChar)
-                            break;
+                    if (*(currChar) != ' ' && currChar != endChar)
+                        break;
                         
                     return setCurrentToken(startChar - 1, (op == '&') ? TokenType::TokenTypeAND : TokenType::TokenTypeOR);
                     }
@@ -63,8 +62,16 @@ Token* TokenStream::TakeToken()
 
                 // Handle '-' at the beginning of a token
                 if (startChar == currChar) 
+                    {
+                    // Don't consider '-' by themselves, in order to count as a not token they must immediately be followed by
+                    // another token; i.e. a NOT query must be "the -quick", rather than "the - quick"
+                    if (*currChar == ' ')
+                        {
+                        ++currChar; ++startChar;
+                        break;
+                        }
                     return setCurrentToken(startChar - 1, TokenType::TokenTypeNOT);
-
+                    }
                 // Ignore all '-' found at the end of a word
                 return setCurrentToken(std::string(startChar, (currChar - count) - startChar), TokenType::TokenTypeWord);
                 } // end case '-'

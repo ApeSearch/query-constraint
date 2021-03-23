@@ -14,6 +14,7 @@ std::vector<std::string> queries = {
     // NOT queries
     "GET /q=the%20-quick%20brown%20fox HTTP/1.1", // the -quick brown fox
     "GET /q=the%20-quick%20-brown%20fox HTTP/1.1", // the -quick -brown fox
+    "GET /q=the%20-quick%20-%22brown%20fox%22 HTTP/1.1", // the -quick -brown fox
     "GET /q=the%20-quick%20--brown%20fox HTTP/1.1", // the -quick --brown fox
     "GET /q=tree%20-%20house HTTP/1.1", // tree - house
     "GET /q=tree%20---%20house HTTP/1.1", // tree --- house
