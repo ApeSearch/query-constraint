@@ -7,19 +7,23 @@ std::vector<std::string> queries = {
     "GET /q=the HTTP/1.1", // the
     "GET /q=the%20quick%20brown%20fox HTTP/1.1", // the quick brown fox
     "GET /q=the%20&%20quick HTTP/1.1", // the & quick
+    "GET /q=the%20&&%20quick HTTP/1.1", // the && quick
     "GET /q=the%20%7C%20quick HTTP/1.1", // the | quick
     "GET /q=the%20%7C%7C%20quick HTTP/1.1", // the || quick
 
-    // 6 NOT queries
+    // 7 NOT queries
     "GET /q=the%20-quick%20brown%20fox HTTP/1.1", // the -quick brown fox
+    "GET /q=tree%20-%20house HTTP/1.1", // tree - house
+    "GET /q=tree-house HTTP/1.1", // tree-house
+    "GET /q=tree%20-house HTTP/1.1", // tree -house
 
-    // 7 Nested/Phrase queries    
+    // 9 Nested/Phrase queries    
     "GET /q=%22the%20quick%20brown%20fox%22 HTTP/1.1", // "the quick brown fox"
     "GET /q=(the%20quick)%20brown%20fox HTTP/1.1", // (the quick) brown fox
 
-    // 9 Edge Cases
-    "GET /q=the%7C%7C HTTP/1.1", // the||
+    // 11 Edge Cases
     "GET /q=the%20%7C%7C HTTP/1.1", // the ||
+    "GET /q=the%20&& HTTP/1.1", // the &&
 
     "GET /q=the.quick....brown..fox HTTP/1.1", // the.quick....brown..fox
     "GET /q=the.quick%20....brown..fox HTTP/1.1", // the.quick ....brown..fox
@@ -28,8 +32,10 @@ std::vector<std::string> queries = {
     "GET /q=the%20quick%20%7C%7C%7C%20brown%20fox HTTP/1.1", // the quick ||| brown fox
 
     "GET /q=the%20&quick HTTP/1.1", // the &quick
+    "GET /q=the%20&&quick HTTP/1.1", // the &&quick
     "GET /q=the&quick HTTP/1.1", // the&quick
     "GET /q=the&%20quick HTTP/1.1", // the& quick
+    "GET /q=the&&%20quick HTTP/1.1", // the& quick
 
     "GET /q=the%20%7C%7Cquick HTTP/1.1", // the |quick
     "GET /q=the%20%7Cquick HTTP/1.1", // the ||quick

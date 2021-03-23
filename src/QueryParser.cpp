@@ -13,7 +13,7 @@ QueryParser::QueryParser( std::string queryLine )
         size_t endPos = queryLine.find(' ', startPos);
 
         auto query = std::string(queryLine, startPos + 1, endPos - startPos - 1);
-        stream = TokenStream(query);
+        stream = TokenStream(QueryParser::urlDecode(query.c_str()));
     }
 
 Token* QueryParser::FindNextToken()
@@ -42,7 +42,7 @@ Tuple* QueryParser::FindOrConstraint()
 bool QueryParser::FindAndOp()
     {   
         bool found = false;
-        while(stream.CurrentToken()->getTokenType() == TokenTypeAND && !stream.Empty()){
+        while(stream.getCurrentToken()->getTokenType() == TokenTypeAND && !stream.Empty()){
             if(!found)
                 found = true;
             
@@ -56,7 +56,7 @@ bool QueryParser::FindAndOp()
 
 bool QueryParser::FindOrOp()
     {
-        if(stream.CurrentToken()->getTokenType() == TokenTypeOR){
+        if(stream.getCurrentToken()->getTokenType() == TokenTypeOR){
             stream.TakeToken();
             return true;
         }
@@ -124,7 +124,7 @@ Tuple* QueryParser::FindNestedConstraint()
     }
 Tuple* QueryParser::FindSearchWord()
     {
-        Token* token = stream.CurrentToken();
+        Token* token = stream.getCurrentToken();
 
         if(!token && !stream.Empty()){
             token = stream.TakeToken();

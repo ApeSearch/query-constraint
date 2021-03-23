@@ -28,12 +28,12 @@ class Token {
             {
             switch(type)
                 {
-                case TokenType::TokenTypeAND: return "TokenTypeAND";
-                case TokenType::TokenTypeOR: return "TokenTypeOR";
-                case TokenType::TokenTypePhrase: return "TokenTypePhrase";
-                case TokenType::TokenTypeWord: return "TokenTypeWord";
-                case TokenType::TokenTypeNOT: return "TokenTypeNOT";
-                case TokenType::TokenTypeNested: return "TokenTypeNested";
+                case TokenType::TokenTypeAND: return "TokenAND";
+                case TokenType::TokenTypeOR: return "TokenOR";
+                case TokenType::TokenTypePhrase: return "TokenPhrase";
+                case TokenType::TokenTypeWord: return "TokenWord";
+                case TokenType::TokenTypeNOT: return "TokenNOT";
+                case TokenType::TokenTypeNested: return "TokenNested";
                 }
             }
 };
