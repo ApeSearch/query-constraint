@@ -13,5 +13,5 @@ int main()
         return 0;
     
     ISR* testTree = orConstraint->Compile();
-    // delete orConstraint;
+    delete orConstraint;
     }

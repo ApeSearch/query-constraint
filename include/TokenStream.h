@@ -45,9 +45,6 @@ class TokenStream {
         }
     
     private:
-        Token* setCurrentToken(char const *start, TokenType type);
-        Token* setCurrentToken(std::string tokenString, TokenType type);
-
         std::string input;
         std::string currentTokenString;
 
@@ -55,6 +52,11 @@ class TokenStream {
 
         char *stream;
         char const *currChar, *endChar;
+
+        Token* setCurrentToken(char const *start, TokenType type);
+        Token* setCurrentToken(std::string tokenString, TokenType type);
+
+        int concatenateOp(char op, char const * &start);
 
         unique_ptr<Token> tokenFactory(std::string token, TokenType type) 
             {

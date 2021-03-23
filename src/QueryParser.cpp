@@ -12,8 +12,13 @@ QueryParser::QueryParser( std::string queryLine )
         size_t startPos = queryLine.find('=');
         size_t endPos = queryLine.find(' ', startPos);
 
-        auto query = std::string(queryLine, startPos + 1, endPos - startPos - 1);
-        stream = TokenStream(QueryParser::urlDecode(query.c_str()));
+        // Get the query starting after the equal sign up until the space before the protocol
+        query = std::string(queryLine, startPos + 1, endPos - startPos - 1);
+        // Decode the encoded ASCII values from the query
+        query = QueryParser::urlDecode(query.c_str());
+
+        // Create the TokenStream
+        stream = TokenStream(query);
     }
 
 Token* QueryParser::FindNextToken()

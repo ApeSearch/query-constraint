@@ -72,6 +72,8 @@ class QueryParser
                 return dest;
             }
 
+        std::string query;
+
     private:
         TokenStream stream;
 };

@@ -34,6 +34,7 @@ class Token {
                 case TokenType::TokenTypeWord: return "TokenWord";
                 case TokenType::TokenTypeNOT: return "TokenNOT";
                 case TokenType::TokenTypeNested: return "TokenNested";
+                case TokenType::TokenTypeEOF: return "TokenEOF";
                 }
             }
 };
