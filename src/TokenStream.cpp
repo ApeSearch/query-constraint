@@ -14,7 +14,7 @@ Token* TokenStream::TakeToken()
         // Check the current character's value and whether we need to return a token
         switch(*currChar)
             {
-            case ' ': case '.': case '\n': case '\t':
+            case ' ': case '.': case '\n': case '\t': case ';': case ',':
                 {
                 if (startChar != currChar)
                     // If we hit a space, '.', newline, or tab after we've already seen some other characters, we
@@ -35,7 +35,15 @@ Token* TokenStream::TakeToken()
                     // Ensures that '&' or '|' immediately followed by a character isn't tokenized as an operator
                     // However, if the current character is the end character, we do want to tokenize it as an operator
                     if (*(currChar) != ' ' && currChar != endChar)
+                        {
+                            if (isSkippedChar(*startChar)) 
+                                {
+                                startChar++;
+                                }
+                            else if (isToken(*startChar) || isToken(*currChar))
+                                continue;
                         break;
+                        }
                         
                     return setCurrentToken(startChar - 1, (op == '&') ? TokenType::TokenTypeAND : TokenType::TokenTypeOR);
                     }

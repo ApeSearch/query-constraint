@@ -5,7 +5,8 @@
 
 int main() 
     {
-        for (auto queryLine : queries) 
+        // for (auto queryLine : queries) 
+        for (auto queryLine : weirdQueries) 
             {
                 auto Query = QueryParser(queryLine);
                 Token* curr;

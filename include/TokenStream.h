@@ -72,6 +72,35 @@ class TokenStream {
                 case TokenType::TokenTypeEOF: return unique_ptr<Token>(new TokenEOF());
                 }
             }
+
+        bool isSkippedChar (char a) {
+            switch(a) {
+            case ' ':
+            case '.':
+            case ';':
+            case ',':
+            case '\t':
+            case '\n':
+            case '\r':
+               return true;
+            default:
+               return false;
+            }
+        }
+
+        bool isToken (char a) {
+            switch(a) {
+            case '\"':
+            case '-':
+            case '(':
+            case ')':
+            case '&':
+            case '|':
+               return true;
+            default:
+               return false;
+            }
+        } 
 };
 
 #endif

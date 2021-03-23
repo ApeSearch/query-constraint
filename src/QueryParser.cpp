@@ -47,11 +47,11 @@ Tuple* QueryParser::FindOrConstraint()
 bool QueryParser::FindAndOp()
     {   
         bool found = false;
-        while(stream.getCurrentToken()->getTokenType() == TokenTypeAND && !stream.Empty()){
+        if (stream.TakeToken()->getTokenType() == TokenTypeAND && !stream.Empty()){
             if(!found)
                 found = true;
             
-            stream.TakeToken();
+            // stream.TakeToken();
         }
     
         if(found)
@@ -81,7 +81,7 @@ Tuple* QueryParser::FindAndConstraint()
         
         else if(andExp->Top == andExp->Bottom)
             return andExp->Top;
-        
+
         return andExp; //the memory will be deallocated after compiling into an ISR.
 
     }
