@@ -47,11 +47,11 @@ Tuple* QueryParser::FindOrConstraint()
 bool QueryParser::FindAndOp()
     {   
         bool found = false;
-        if (stream.TakeToken()->getTokenType() == TokenTypeAND && !stream.Empty()){
+        while(stream.getCurrentToken()->getTokenType() == TokenTypeAND && !stream.Empty()){
             if(!found)
                 found = true;
             
-            // stream.TakeToken();
+            stream.TakeToken();
         }
     
         if(found)
