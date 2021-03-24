@@ -14,7 +14,7 @@ Token* TokenStream::TakeToken()
         // Check the current character's value and whether we need to return a token
         switch(*currChar)
             {
-            case ' ': case '.': case '\n': case '\t': case ';': case ',':
+            case ' ': case '.': case '\n': case '\t': case ';': case ',': case '+':
                 {
                 if (startChar != currChar)
                     // If we hit a space, '.', newline, or tab after we've already seen some other characters, we
@@ -34,18 +34,28 @@ Token* TokenStream::TakeToken()
                     {
                     // Ensures that '&' or '|' immediately followed by a character isn't tokenized as an operator
                     // However, if the current character is the end character, we do want to tokenize it as an operator
-                    if (*(currChar) != ' ' && currChar != endChar)
+                    if (!isSkippedChar(*currChar) && currChar != endChar)
                         {
-                            if (isSkippedChar(*startChar)) 
-                                {
+                            // This statement ensures that we don't accidentally tokenize characters we should be skipping
+                            // The conditional after the || ensures that if we type a query like "the &| fox", the operators
+                            // in the middle are simply ignored
+                            if (isSkippedChar(*startChar) || (*startChar != op && (*startChar == '&' || *startChar == '|')) )  
                                 startChar++;
-                                }
+                            // This statement ensures we don't accidentally skip characters we should be tokenizing
+                            // e.g. query: "quick &-fox" we probably want to ignore the '&' but not the '-'
                             else if (isToken(*startChar) || isToken(*currChar))
                                 continue;
                         break;
                         }
                         
                     return setCurrentToken(startChar - 1, (op == '&') ? TokenType::TokenTypeAND : TokenType::TokenTypeOR);
+                    }
+                // Skip most tokens at the end of a word. However, the user probably wants
+                // ()" to still count as tokens, so don't skip those
+                while (*currChar == '&' || *currChar == '|' || *currChar == '-')
+                    {
+                        ++currChar; 
+                        ++count;
                     }
                 // If we hit a '&' or '|' after we've already seen some other characters, we want to tokenize those as a word
                 return setCurrentToken(std::string(startChar, (currChar - count) - startChar), TokenType::TokenTypeWord);
@@ -72,11 +82,11 @@ Token* TokenStream::TakeToken()
                 if (startChar == currChar) 
                     {
                     // Don't consider '-' by themselves, in order to count as a not token they must immediately be followed by
-                    // another token; i.e. a NOT query must be "the -quick", rather than "the - quick"
-                    if (*currChar == ' ')
+                    // either a phrase or paranthesis; i.e. a NOT query must be "the -quick", rather than "the - quick" or
+                    if (*currChar == '&' || *currChar == '|' || isSkippedChar(*currChar) )
                         {
                         ++currChar; ++startChar;
-                        break;
+                        continue;
                         }
                     return setCurrentToken(startChar - 1, TokenType::TokenTypeNOT);
                     }
@@ -108,6 +118,7 @@ bool TokenStream::Match(TokenType t)
 Token* TokenStream::setCurrentToken(char const *start, TokenType type)
     {
     currentTokenString = std::string(start, currChar - start);
+    checkOperatorKeyword(type);
     return (currentToken = tokenFactory(currentTokenString, type)).get();
     }
 
@@ -117,6 +128,7 @@ Token* TokenStream::setCurrentToken(char const *start, TokenType type)
 Token* TokenStream::setCurrentToken(std::string tokenString, TokenType type)
     {
     currentTokenString = tokenString;
+    checkOperatorKeyword(type);
     return (currentToken = tokenFactory(currentTokenString, type)).get();
     }
 
@@ -136,3 +148,15 @@ int TokenStream::concatenateOp(char op, char const * &start)
         }
     return count;
     }
+
+// Checks the current token string for operator keywords, and if
+// is matches AND, OR, or NOT, set type to the relevant token type
+// relative to the operator keyword
+void TokenStream::checkOperatorKeyword(TokenType &type) {
+    if (currentTokenString == "AND")
+        type = TokenType::TokenTypeAND;
+    else if (currentTokenString == "OR")
+        type = TokenType::TokenTypeOR;
+    else if (currentTokenString == "NOT")
+        type = TokenType::TokenTypeNOT;
+}

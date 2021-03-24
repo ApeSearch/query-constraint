@@ -58,6 +58,8 @@ class TokenStream {
 
         int concatenateOp(char op, char const * &start);
 
+        void checkOperatorKeyword(TokenType &type); 
+
         unique_ptr<Token> tokenFactory(std::string token, TokenType type) 
             {
              switch(type)
@@ -82,6 +84,7 @@ class TokenStream {
             case '\t':
             case '\n':
             case '\r':
+            case '+':
                return true;
             default:
                return false;

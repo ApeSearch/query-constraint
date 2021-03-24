@@ -61,13 +61,17 @@ std::vector<std::string> queries = {
     "GET /q=the%20\tquick HTTP/1.1", // the \tquick
     "GET /q=the\n%20quick HTTP/1.1", // the\n quick
     "GET /q=the\t%20quick HTTP/1.1", // the\t quick
-};
+// };
 
-    // Null character
+//     // Null character
     // "GET /q=the\0quick HTTP/1.1", // the\0quick
-std::vector<std::string> weirdQueries {
+// std::vector<std::string> weirdQueries {
+
     // Just awful
-    // "GET /q=the%7C&.%7Cquick..&.&%22.brown.%7C&%22.&fox HTTP/1.1", // the.quick....brown..fox
+    "GET /q=the%7C&.%7Cquick..&.&%22.brown.%7C&%22.&fox HTTP/1.1", // idek
+    "GET /q=the-%7C&-.%7Cquick..&.&%22.brown.%7C&%22.&fox HTTP/1.1", // idek
+    "GET /q=th-e%20qu%22ick&%20brown&%7C&fox HTTP/1.1", // idek
+
     "GET /q=the%7C&%20quick HTTP/1.1", // the|& quick
     "GET /q=the&%7C%20quick HTTP/1.1", // the&| quick
     "GET /q=the%20&%7Cquick HTTP/1.1", // the |&quick
