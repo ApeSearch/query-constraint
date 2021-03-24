@@ -58,6 +58,8 @@ class TokenStream {
 
         int concatenateOp(char op, char const * &start);
 
+        void checkOperatorKeyword(TokenType &type); 
+
         unique_ptr<Token> tokenFactory(std::string token, TokenType type) 
             {
              switch(type)
@@ -72,6 +74,36 @@ class TokenStream {
                 case TokenType::TokenTypeEOF: return unique_ptr<Token>(new TokenEOF());
                 }
             }
+
+        bool isSkippedChar (char a) {
+            switch(a) {
+            case ' ':
+            case '.':
+            case ';':
+            case ',':
+            case '\t':
+            case '\n':
+            case '\r':
+            case '+':
+               return true;
+            default:
+               return false;
+            }
+        }
+
+        bool isToken (char a) {
+            switch(a) {
+            case '\"':
+            case '-':
+            case '(':
+            case ')':
+            case '&':
+            case '|':
+               return true;
+            default:
+               return false;
+            }
+        } 
 };
 
 #endif

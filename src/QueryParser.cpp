@@ -81,7 +81,7 @@ Tuple* QueryParser::FindAndConstraint()
         
         else if(andExp->Top == andExp->Bottom)
             return andExp->Top;
-        
+
         return andExp; //the memory will be deallocated after compiling into an ISR.
 
     }
