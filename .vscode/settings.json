@@ -74,6 +74,10 @@
         "future": "cpp",
         "iomanip": "cpp",
         "thread": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "__tree": "cpp",
+        "queue": "cpp",
+        "stack": "cpp",
+        "filesystem": "cpp"
     }
 }

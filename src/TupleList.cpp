@@ -25,23 +25,27 @@ void TupleList::Append(Tuple* t)
         }
     }
 
-OrExpression::OrExpression() : TupleList() 
-    {
-        
-    }
+OrExpression::OrExpression() : TupleList() {}
 
 ISR* OrExpression::Compile() 
     {
+    std::cout << "ORISR" << std::endl;
+
     ISROr* orISR = new ISROr();
 
     Tuple* curr = Top;
     while (curr != nullptr)
-        {   
-            orISR->terms[orISR->numTerms++] = curr->Compile();
+        {
+            orISR->numTerms++;
             curr = curr->next;
         }
+    
+    curr = Top;
+    orISR->terms = new ISR*[orISR->numTerms];
 
-    return orISR;
+    for(auto i = orISR->terms; i < orISR->terms + orISR->numTerms; ++i, curr = curr->next)
+        *i = curr->Compile();
+
     }
 
 AndExpression::AndExpression() : TupleList() {}
@@ -49,7 +53,7 @@ AndExpression::AndExpression() : TupleList() {}
 ISR* AndExpression::Compile() {
 
     ISRAnd* andISR = new ISRAnd();
-
+    std::cout << "ANDISR" << std::endl;
     Tuple* curr = Top;
     while (curr != nullptr)
         {
@@ -59,7 +63,7 @@ ISR* AndExpression::Compile() {
     
     curr = Top;
     andISR->terms = new ISR*[andISR->numTerms];
-        
+
     for(auto i = andISR->terms; i < andISR->terms + andISR->numTerms; ++i, curr = curr->next)
         *i = curr->Compile();
 
@@ -69,14 +73,24 @@ ISR* AndExpression::Compile() {
 Phrase::Phrase() : TupleList() {}
 
 ISR* Phrase::Compile() {
+    std::cout << "PhraseISR" << std::endl;
 
-    //ISRPhrase* phraseISR = new ISRPhrase();
+    ISRAnd* phraseISR = new ISRAnd();
 
     Tuple* curr = Top;
+
     while (curr != nullptr)
         {
-            curr->Compile();
+            phraseISR->numTerms++;
             curr = curr->next;
         }
+    
+    curr = Top;
+    phraseISR->terms = new ISR*[phraseISR->numTerms];
+
+    for(auto i = phraseISR->terms; i < phraseISR->terms + phraseISR->numTerms; ++i, curr = curr->next)
+        *i = curr->Compile();
+
+    return phraseISR;
 }
 

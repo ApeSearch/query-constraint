@@ -63,7 +63,7 @@ class Index
         ISRWord *OpenISREndDoc( );
     };
 
-class ISR
+class ISR //fix inheritance to be logical, remove duplicate code and member variables
     {
     public:
         ISR();

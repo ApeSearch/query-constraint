@@ -25,18 +25,9 @@ class SearchWord : public Tuple {
         std::string word;
 };
 
-class SimpleConstraint : public Tuple {
-    public:
-        SimpleConstraint();
-        ~SimpleConstraint();
-        ISR* Compile() override;
-
-        Tuple* actualConstraint;
-};
-
 class UnarySimpleConstraint : public Tuple {
     public:
-        UnarySimpleConstraint();
+        UnarySimpleConstraint(Tuple* tup);
         ~UnarySimpleConstraint();
         ISR* Compile() override;
 
@@ -44,14 +35,14 @@ class UnarySimpleConstraint : public Tuple {
         Tuple* actualConstraint;
 };
 
-/*class NestedConstraint : public Tuple {
+class NestedConstraint : public Tuple {
     public:
         NestedConstraint(Tuple* tup);
-        ~NestedConstraint() {}
+        ~NestedConstraint();
         ISR* Compile() override;
 
         Tuple* constraint;
-};*/
+};
 
 
 #endif

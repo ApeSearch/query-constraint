@@ -3,7 +3,7 @@
 
 int main() 
     {
-    auto queryLine = queries[2];
+    auto queryLine = queries[19];
     std::cout << queryLine << "\n========\n";
     auto query = QueryParser(queryLine);
 
