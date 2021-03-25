@@ -75,7 +75,7 @@ Phrase::Phrase() : TupleList() {}
 ISR* Phrase::Compile() {
     std::cout << "PhraseISR" << std::endl;
 
-    ISRAnd* phraseISR = new ISRAnd();
+    ISRPhrase* phraseISR = new ISRPhrase();
 
     Tuple* curr = Top;
 

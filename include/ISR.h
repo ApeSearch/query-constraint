@@ -206,6 +206,22 @@ class ISRPhrase : public ISR
         ISR **terms;
         unsigned numTerms;
 
+        Location GetStartLocation() override
+            {
+                return nearestStartLocation;
+            }
+
+        Location GetEndLocation() override
+            {
+                return nearestEndLocation;
+            }
+        Post *NextDocument( ) override
+            {
+            // Seek all the ISRs to the first occurrence just past
+            // the end of this document.
+            // return Seek( DocumentEnd->GetEndLocation( ) + 1 );
+            }
+
         Post *Seek( Location target ) override
             {
                 // 1. Seek all ISRs to the first occurrence beginning at
@@ -226,6 +242,9 @@ class ISRPhrase : public ISR
             {
             // return Seek( nearestStartLocation + 1 );
             }
+    private: 
+        unsigned nearestTerm, farthestTerm;
+        Location nearestStartLocation, nearestEndLocation;
     };
 
 class ISRContainer : public ISR
