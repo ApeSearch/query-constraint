@@ -8,6 +8,7 @@
 #define _ISR_H
 
 class ISRWord;
+class ISREndDoc;
 
 typedef size_t Location;
 typedef size_t FileOffset;
@@ -34,12 +35,15 @@ class Post
         virtual Location GetStartLocation( );
         virtual Location GetEndLocation( );
         virtual Attributes GetAttributes( );
+    
+    private:
+        FileOffset delta;
     };
 
 class PostingList
     {
     public:
-        virtual Post *Seek( Location );
+        virtual Post *Seek( Location l );
 
     private:
         struct PostingListIndex
@@ -47,20 +51,26 @@ class PostingList
             FileOffset Offset;
             Location PostLocation;
             };
+
         PostingListIndex *index;
+
+
         virtual char *GetPostingList( );
     };
 
 class Index
     {
     public:
-        Location WordsInIndex,
+        size_t   WordsInIndex,
                  DocumentsInIndex,
                  LocationsInIndex,
                  MaximumLocation;
+        
+        //HashTable<std::string, PostingList *> chunk;
 
-        ISRWord *OpenISRWord( char *word );
-        ISRWord *OpenISREndDoc( );
+
+        ISRWord *OpenISRWord( std::string word );
+        ISREndDoc *OpenISREndDoc( );
     };
 
 class ISR //fix inheritance to be logical, remove duplicate code and member variables
