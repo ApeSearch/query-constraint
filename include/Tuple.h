@@ -6,43 +6,47 @@
 #ifndef _TUPLE_H
 #define _TUPLE_H
 
-class Tuple {
-    public:
-        Tuple* next; //next pointer in linked list
-        virtual ISR* Compile() = 0;
-        Tuple();
-        virtual ~Tuple(); //deallocate node from heap
 
-        
-};
+namespace query{
+    
+    class Tuple {
+        public:
+            Tuple* next; //next pointer in linked list
+            virtual ISR* Compile() = 0;
+            Tuple();
+            virtual ~Tuple(); //deallocate node from heap
 
-class SearchWord : public Tuple {
-    public:
-        SearchWord(std::string _word);
-        ~SearchWord();
-        ISR* Compile() override;
+            
+    };
 
-        std::string word;
-};
+    class SearchWord : public Tuple {
+        public:
+            SearchWord(std::string _word);
+            ~SearchWord();
+            ISR* Compile() override;
 
-class UnarySimpleConstraint : public Tuple {
-    public:
-        UnarySimpleConstraint(Tuple* tup);
-        ~UnarySimpleConstraint();
-        ISR* Compile() override;
+            std::string word;
+    };
 
-        TokenType op;
-        Tuple* actualConstraint;
-};
+    class UnarySimpleConstraint : public Tuple {
+        public:
+            UnarySimpleConstraint(Tuple* tup);
+            ~UnarySimpleConstraint();
+            ISR* Compile() override;
 
-class NestedConstraint : public Tuple {
-    public:
-        NestedConstraint(Tuple* tup);
-        ~NestedConstraint();
-        ISR* Compile() override;
+            TokenType op;
+            Tuple* actualConstraint;
+    };
 
-        Tuple* constraint;
-};
+    class NestedConstraint : public Tuple {
+        public:
+            NestedConstraint(Tuple* tup);
+            ~NestedConstraint();
+            ISR* Compile() override;
+
+            Tuple* constraint;
+    };
+}
 
 
 #endif

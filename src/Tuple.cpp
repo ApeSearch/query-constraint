@@ -3,6 +3,8 @@
 #include <string>
 #include <iostream>
 
+using namespace query;
+
 Tuple::Tuple() : next(nullptr) {}
 
 Tuple::~Tuple() {

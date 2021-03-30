@@ -5,31 +5,36 @@
 #ifndef _TUPLELIST_H
 #define _TUPLELIST_H
 
-class TupleList : public Tuple {
-    public:
-        Tuple *Top, *Bottom; //List of tuples, linked list
-        void Empty();
-        void Append(Tuple *t); //Add on a tuple
-        TupleList();
-        ~TupleList(); //deallocate nodes from heap, call destructor for each tuple in list
-};
 
-class OrExpression : public TupleList {
-    public:
-        OrExpression();
-        ISR* Compile();
-};
+namespace query {
 
-class AndExpression : public TupleList {
-    public:
-        AndExpression();
-        ISR* Compile();
-};
+    class TupleList : public Tuple {
+        public:
+            Tuple *Top, *Bottom; //List of tuples, linked list
+            void Empty();
+            void Append(Tuple *t); //Add on a tuple
+            TupleList();
+            ~TupleList(); //deallocate nodes from heap, call destructor for each tuple in list
+    };
 
-class Phrase : public TupleList {
-    public:
-        Phrase();
-        ISR* Compile();
-};
+    class OrExpression : public TupleList {
+        public:
+            OrExpression();
+            ISR* Compile();
+    };
+
+    class AndExpression : public TupleList {
+        public:
+            AndExpression();
+            ISR* Compile();
+    };
+
+    class Phrase : public TupleList {
+        public:
+            Phrase();
+            ISR* Compile();
+    };
+
+}
 
 #endif

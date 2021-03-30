@@ -2,6 +2,7 @@
 #include "assert.h"
 #include <iostream>
 
+using namespace query;
 
 TupleList::TupleList(): Top(nullptr), Bottom(nullptr) {}
 

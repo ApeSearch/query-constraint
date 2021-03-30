@@ -1,4 +1,5 @@
 #include "assert.h"
+#include "HashTable.h"
 #include <unistd.h>
 #include <utility>
 #include <iostream>
@@ -58,16 +59,26 @@ class PostingList
         virtual char *GetPostingList( );
     };
 
+class Dictionary
+    {
+        public:
+            ISR *OpenISR(char token);
+            Location GetNumberOfWords();
+            Location GetNumberOfUniqueWords();
+            Location GetNumberOfDocuments();
+    };
+
 class Index
     {
     public:
+        hash::HashTable<const char *, Location> chunk;
+        std::vector<std::string> urls;
         size_t   WordsInIndex,
                  DocumentsInIndex,
                  LocationsInIndex,
                  MaximumLocation;
-        
-        //HashTable<std::string, PostingList *> chunk;
 
+        Index() :  chunk(), WordsInIndex(0), DocumentsInIndex(0), LocationsInIndex(0), MaximumLocation(0) {}
 
         ISRWord *OpenISRWord( std::string word );
         ISREndDoc *OpenISREndDoc( );

@@ -18,6 +18,8 @@
 #ifndef _QUERY_PARSER_H
 #define _QUERY_PARSER_H
 
+using namespace query;
+
 class QueryParser
 {
     public:

@@ -23,10 +23,12 @@ QueryParser::QueryParser( std::string queryLine )
 
     }
 
+
 Token* QueryParser::FindNextToken()
     {
         return stream.TakeToken();
     }
+
 
 Tuple* QueryParser::FindOrConstraint()
     {   
