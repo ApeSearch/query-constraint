@@ -1,0 +1,4 @@
+https://en.wikipedia.org/wiki/Main_Page
+https://stackoverflow.com/questions/1521462/looping-through-the-content-of-a-file-in-bash
+https://stackoverflow.com/questions/18310744/unix-cat-no-such-file-or-directory-error
+https://www.reddit.com
