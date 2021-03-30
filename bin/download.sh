@@ -1,25 +1,28 @@
 #!/bin/bash
 
-repoDir="/home/cluc/eecs440/ApeSearch/query-constraint"
-pages="${repoDir}/bin/pages.txt"
-index="${repoDir}/bin/index.txt"
-parser="${repoDir}/bin/parser"
+repoDir="/home/cluc/eecs440/ApeSearch/query-constraint/bin"
+
+pages="${repoDir}/pages.txt"
+index="${repoDir}/index.txt"
+parser="${repoDir}/parser"
 
 >$index
 
 cat $pages | while read url 
 do
-    output="${repoDir}/bin/tmp.html"
+    output="${repoDir}/tmp.html"
     curl -o $output $url
 
-    echo "${url}">>"${index}"
-    echo "">>${index}
-    $parser "t" $output
-    $parser "w" $output
-    $parser "a" $output
-    $parser "b" $output
-    echo "">>${index}
-    echo "">>${index}
+    echo "${url}">>${index}
+    echo -e "\r\n">>${index}
+    $parser "t" $output >> ${index}
+    echo -e "\r\n">>${index}
+    $parser "w" $output >> ${index}
+    echo -e "\r\n">>${index}
+    $parser "a" $output >> ${index}
+    echo -e "\r\n">>${index}
+    $parser "b" $output >> ${index}
+    echo -e "\r\n\r\n">>${index}
 
     rm $output
 done
