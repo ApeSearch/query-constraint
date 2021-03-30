@@ -41,20 +41,22 @@ class Post
         FileOffset delta;
     };
 
+
 class PostingList
     {
     public:
         virtual Post *Seek( Location l );
 
     private:
-        struct PostingListIndex
+        struct PostingListIndex //sync table
             {
             FileOffset Offset;
             Location PostLocation;
             };
-
+        
         PostingListIndex *index;
-
+        size_t numOfPosts;
+        Post* post;
 
         virtual char *GetPostingList( );
     };
@@ -71,7 +73,7 @@ class Dictionary
 class Index
     {
     public:
-        hash::HashTable<const char *, Location> chunk;
+        hash::HashTable<const char *, PostingList *> chunk;
         std::vector<std::string> urls;
         size_t   WordsInIndex,
                  DocumentsInIndex,
@@ -81,6 +83,7 @@ class Index
         Index() :  chunk(), WordsInIndex(0), DocumentsInIndex(0), LocationsInIndex(0), MaximumLocation(0) {}
 
         ISRWord *OpenISRWord( std::string word );
+
         ISREndDoc *OpenISREndDoc( );
     };
 
