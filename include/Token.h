@@ -10,6 +10,7 @@ enum TokenType {
 };
 
 class Token {
+    std::string token;
     public:
         virtual TokenType getTokenType() const = 0;
         virtual std::string TokenString() const {
@@ -65,8 +66,6 @@ class TokenWord : public Token {
             return token;
         };
 
-    private:
-        std::string token;
 };
 
 class TokenAND : public Token {
@@ -79,9 +78,6 @@ class TokenAND : public Token {
         std::string TokenString() const override {
             return token;
         };
-
-    private:
-        std::string token;
 };
 
 class TokenOR : public Token {
@@ -95,8 +91,6 @@ class TokenOR : public Token {
             return token;
         };
 
-    private:
-        std::string token;
 };
 
 class TokenNOT : public Token {
@@ -110,8 +104,6 @@ class TokenNOT : public Token {
             return token;
         };
 
-    private:
-        std::string token;
 };
 
 class TokenPhrase : public Token {
@@ -125,8 +117,6 @@ class TokenPhrase : public Token {
             return token;
         };
 
-    private:
-        std::string token;
 };
 
 class TokenNested : public Token {
@@ -140,8 +130,6 @@ class TokenNested : public Token {
             return token;
         };
 
-    private:
-        std::string token;
 };
 
 
