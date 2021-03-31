@@ -8,6 +8,7 @@
 #ifndef _ISR_H
 #define _ISR_H
 
+class ISR;
 class ISRWord;
 class ISREndDoc;
 
@@ -33,19 +34,28 @@ typedef union Attributes
 class Post
     {
     public:
-        virtual Location GetStartLocation( );
-        virtual Location GetEndLocation( );
-        virtual Attributes GetAttributes( );
-    
-    private:
-        FileOffset delta;
+        FileOffset deltaPrev;
     };
 
+class WordPost: Post
+    {
+
+    };
+
+class EODPost: Post
+    {
+
+    };
+
+class Sentinel: Post
+    {
+        
+    };
 
 class PostingList
     {
     public:
-        virtual Post *Seek( Location l );
+        virtual Post *Seek( Location l ); //add up deltas until location reached
 
     private:
         struct PostingListIndex //sync table
@@ -53,12 +63,18 @@ class PostingList
             FileOffset Offset;
             Location PostLocation;
             };
-        
-        PostingListIndex *index;
-        size_t numOfPosts;
-        Post* post;
 
         virtual char *GetPostingList( );
+    };
+
+class WordPostingList : public PostingList
+    {
+
+    public:
+        Post *Seek ( Location l ) override;
+
+    private:
+        Post* post;
     };
 
 class Dictionary
@@ -86,6 +102,7 @@ class Index
 
         ISREndDoc *OpenISREndDoc( );
     };
+
 
 class ISR //fix inheritance to be logical, remove duplicate code and member variables
     {
