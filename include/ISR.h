@@ -24,6 +24,7 @@ class ISR //fix inheritance to be logical, remove duplicate code and member vari
     PostingList *tokenList;
     public:
         ISR();
+        virtual ~ISR() {}
 
         // Store information the index provides i.e. the posting list, the location 
         // ( so as to provide information about how to search for the next location or a post assoicated with a location)
