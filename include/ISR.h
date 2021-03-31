@@ -1,114 +1,32 @@
+
+#pragma once
+
+#ifndef _ISR_H
+#define _ISR_H
+
 #include "assert.h"
 #include "HashTable.h"
 #include <unistd.h>
 #include <utility>
 #include <iostream>
 #include <string>
+#include "Index.h"
 
-#ifndef _ISR_H
-#define _ISR_H
 
 class ISR;
 class ISRWord;
 class ISREndDoc;
 
-typedef size_t Location;
-typedef size_t FileOffset;
-
-enum WordAttributes 
-    {
-        WordAttributeBold, WordAttributeHeading, WordAttributeLarge
-    };
-
-enum DocumentAttributes 
-    {
-        DocAttributeURL, DocAttributeNumWords, DocAttributeTitle, DocAttributeBody, DocAttributeAnchor
-    };
-
-typedef union Attributes
-    {
-    WordAttributes Word;
-    DocumentAttributes Document;
-    };
-
-class Post
-    {
-    public:
-        FileOffset deltaPrev;
-    };
-
-class WordPost: Post
-    {
-
-    };
-
-class EODPost: Post
-    {
-
-    };
-
-class Sentinel: Post
-    {
-        
-    };
-
-class PostingList
-    {
-    public:
-        virtual Post *Seek( Location l ); //add up deltas until location reached
-
-    private:
-        struct PostingListIndex //sync table
-            {
-            FileOffset Offset;
-            Location PostLocation;
-            };
-
-        virtual char *GetPostingList( );
-    };
-
-class WordPostingList : public PostingList
-    {
-
-    public:
-        Post *Seek ( Location l ) override;
-
-    private:
-        Post* post;
-    };
-
-class Dictionary
-    {
-        public:
-            ISR *OpenISR(char token);
-            Location GetNumberOfWords();
-            Location GetNumberOfUniqueWords();
-            Location GetNumberOfDocuments();
-    };
-
-class Index
-    {
-    public:
-        hash::HashTable<const char *, PostingList *> chunk;
-        std::vector<std::string> urls;
-        size_t   WordsInIndex,
-                 DocumentsInIndex,
-                 LocationsInIndex,
-                 MaximumLocation;
-
-        Index() :  chunk(), WordsInIndex(0), DocumentsInIndex(0), LocationsInIndex(0), MaximumLocation(0) {}
-
-        ISRWord *OpenISRWord( std::string word );
-
-        ISREndDoc *OpenISREndDoc( );
-    };
-
-
 class ISR //fix inheritance to be logical, remove duplicate code and member variables
     {
+    Index *index;
+    PostingList *eofDocList;
+    PostingList *tokenList;
     public:
         ISR();
 
+        // Store information the index provides i.e. the posting list, the location 
+        // ( so as to provide information about how to search for the next location or a post assoicated with a location)
         virtual Post *Next( ) = 0;
         virtual Post *NextDocument( ) = 0;
         virtual Post *Seek( Location target ) = 0;

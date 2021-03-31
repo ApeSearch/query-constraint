@@ -15,6 +15,8 @@ class Token {
         virtual std::string TokenString() const {
             return nullptr;
         }
+        // Destructors need to be virtual esp if there are derived classes that have member variables.
+        virtual ~Token() {}
 
         static TokenType evaluateToken(std::string input)
             {
