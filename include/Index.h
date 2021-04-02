@@ -1,9 +1,11 @@
 
-#pragma onece
+#pragma once
 
 #ifndef INDEX_H_AS
 #define INDEX_H_AS
 #include "Token.h"
+#include "../libraries/AS/include/AS/vector.h"
+#include "HashTable.h"
 
 /*
  * 
@@ -21,25 +23,71 @@
 typedef size_t Location; // The numbering of a token
 typedef size_t FileOffset;
 
+enum WordAttributes 
+    {
+        WordAttributeNormal, WordAttributeBold, WordAttributeHeading, WordAttributeLarge
+    };
+
+enum DocumentAttributes 
+    {
+        DocAttributeURL, DocAttributeNumWords, DocAttributeTitle, DocAttributeBody, DocAttributeAnchor
+    };
+
+typedef union Attributes
+{
+    WordAttributes Word;
+    DocumentAttributes Document;
+};
+
+
 class SynchronizationEntry
    {
-    size_t hightBitOfSeekLoc; // Relative to a posting list ( ordered )
+    size_t highBitOfSeekLoc; // Relative to a posting list ( ordered )
     size_t seekOffset;  // Relative to the start of the posting list.
     size_t absoluteLoc; // Relative to every posting list.
    };
 
-class Post;
+class Post
+    {
+    public:
+        Post(FileOffset _deltaPrev, Attributes _attribute) : deltaPrev(_deltaPrev), attribute(_attribute) {}
+
+        FileOffset deltaPrev;
+        Attributes attribute;
+    };
+
+class WordPost: public Post
+    {
+    public:
+        WordPost(FileOffset deltaPrev, Attributes attribute) : Post(deltaPrev, attribute) {}
+    };
+
+class EODPost: public Post
+    {
+    public:
+        EODPost(FileOffset deltaPrev, Attributes attribute) : Post(deltaPrev, attribute) {}
+    };
+
+class Sentinel: public Post
+    {
+    public:
+        Sentinel();
+    };
+
+
 
 class PostingList
     {
-    // Represent the syncrhonoziation table
-    size_t numberOfBytes; // size of posting list
-    std::vector<SynchronizationEntry> synchTable;
-    size_t numberOfPosts;   // Basically the number of occurnces of a particular token.
-    size_t numOfDocs; // number of documents that contain this info.
-    TokenType type; // Type of token ( be it eod, anchor text, url, tile, or body)
     public:
-        virtual Post *Seek( Location l ); //add up deltas until location reached
+        // Represent the sync table
+        APESEARCH::vector<Post> posts;
+        size_t numberOfBytes; // size of posting list
+        std::vector<SynchronizationEntry> synchTable;
+        size_t numberOfPosts;   // Basically the number of occurnces of a particular token.
+        size_t numOfDocs; // number of documents that contain this info.
+        TokenType type; // Type of token ( be it eod, anchor text, url, tile, or body)
+
+        virtual Post *Seek( Location l );
 
     private:
         struct PostingListIndex //sync table
@@ -51,81 +99,35 @@ class PostingList
         virtual char *GetPostingList( );
     };
 
-enum WordAttributes 
+class WordPostingList : public PostingList
     {
-        WordAttributeBold, WordAttributeHeading, WordAttributeLarge
-    };
 
-enum DocumentAttributes 
-    {
-        DocAttributeURL, DocAttributeNumWords, DocAttributeTitle, DocAttributeBody, DocAttributeAnchor
-    };
-
-typedef union Attributes
-    {
-    WordAttributes Word;
-    DocumentAttributes Document;
-    };
-
-class Post
-    {
-    PostingList *list; // Pointer to posting list in which it comes from...
     public:
-        FileOffset deltaPrev;
-    };
+        Post *Seek ( Location l ) override;
 
-class WordPost: Post
-    {
-
-    };
-
-class EODPost: Post
-    {
-
-    };
-
-class Sentinel: Post
-    {
-        
+    private:
+        Post* post;
     };
 
 class Index 
     {
     
 
-    public:
-
     };
 
 class IndexHT
     {
 
-    class WordPostingList : public PostingList
-        {
-
-        public:
-            Post *Seek ( Location l ) override;
-
-        private:
-            Post* post;
-        };
-
-    class Dictionary
-        {
-            public:
-                Location GetNumberOfWords();
-                Location GetNumberOfUniqueWords();
-                Location GetNumberOfDocuments();
-        };
-    hash::HashTable<const char *, PostingList *> chunk;
-    std::vector<std::string> urls;
     public:
-        size_t   WordsInIndex,
-                 DocumentsInIndex,
-                 LocationsInIndex,
-                 MaximumLocation;
-
-        IndexHT() :  WordsInIndex(0), DocumentsInIndex(0), LocationsInIndex(0), MaximumLocation(0) {}
+        class Dictionary
+            {
+                public:
+                    Location GetNumberOfWords();
+                    Location GetNumberOfUniqueWords();
+                    Location GetNumberOfDocuments();
+            };
+        IndexHT();
+        ~IndexHT();
 
         std::pair<Location, Post *> findPost(  );
         Post *goToNext( Location location ); // May need to inherit here...
@@ -135,6 +137,15 @@ class IndexHT
         //ISRWord *OpenISRWord( std::string word );
 
         //ISREndDoc *OpenISREndDoc( );
+
+    private:
+        hash::HashTable<const char *, PostingList *> chunk;
+        std::vector<std::string> urls;
+        size_t   WordsInIndex,
+                    DocumentsInIndex,
+                    LocationsInIndex,
+                    MaximumLocation;
+
     };
 
 #endif INDEX_H_AS
