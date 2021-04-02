@@ -5,43 +5,23 @@
 #include <cassert>
 #include <cstdint>
 #include <iostream>
-#include <iomanip>
 #include <cstring> // for strlen
 #include <assert.h>
 #include <algorithm> // for std::sort
 #include <vector>
 using std::sort;
-#ifdef LOCAL
-   #include "../../../AS/include/AS/algorithms.h" // for APESEARCH::swap
-#else
-   #include <utility> // testing std::swap
-#endif
-
-#include <stdlib.h>
-#include <time.h>
-
+#include "../libraries/AS/include/AS/algorithms.h" // for APESEARCH::swap
+#include "../libraries/AS/include/AS/utility.h" // for APESEARCH::pair
 
 #define DEFAULTSIZE 4096
-#define MAX 16430 // Golden Random number credited by MC
-#define LOWEREPSILON -0.175
+
 
 namespace hash {
-
-   static inline size_t computeTwosPowCeiling( ssize_t num ) 
-      {
-      num--; // Account for num already being a two's power
-      size_t powerNum = 1;
-      for (; num > 0; num >>=1 )
-         powerNum <<= 1;
-      return powerNum;
-      }
-
-   static inline size_t computeTwosPow( ssize_t num, bool computeCeiling = true ) 
+   static inline size_t computeTwosPowCeiling( ssize_t num, bool computeCeiling = true ) 
       {
       num-= computeCeiling; // Account for num already being a two's power
       size_t powerNum = 1;
-      ssize_t bound = ( ssize_t )!computeCeiling;
-      for (; num > bound; num >>=1 )
+      for (; num > ( ssize_t )!computeCeiling; num >>=1 )
          powerNum <<= 1;
       return powerNum;
       }
@@ -50,8 +30,7 @@ namespace hash {
    {
    public:
       FNV() = default;
-      virtual ~FNV() {}
-      virtual size_t operator()( const char *data ) const
+      size_t operator()( const char *data ) const
          {
          //TODO optimize 
          size_t length = strlen(data);
@@ -66,56 +45,6 @@ namespace hash {
             } // end for
          return hash;
          } //end operator()
-   };
-
-   class Murmur
-   {
-   public:
-      Murmur() = default;
-      virtual ~Murmur(){}
-      static inline uint32_t murmur_32_scramble(uint32_t k) 
-      {
-      k *= 0xcc9e2d51;
-      k = (k << 15) | (k >> 17);
-      k *= 0x1b873593;
-      return k;
-      }
-
-      virtual size_t operator()( const char *key ) const
-      {
-      size_t len = strlen( key );
-      uint32_t k;
-      uint32_t h = 420;
-      
-      /* Read in groups of 4. */
-      for (size_t i = len >> 2; i; i--) {
-         // Here is a source of differing results across endiannesses.
-         // A swap here has no effects on hash properties though.
-         memcpy(&k, key, sizeof(uint32_t));
-         key += sizeof(uint32_t);
-         h ^= murmur_32_scramble(k);
-         h = (h << 13) | (h >> 19);
-         h = h * 5 + 0xe6546b64;
-      }
-      /* Read the rest. */
-      k = 0;
-      for (size_t i = len & 3; i; i--) {
-         k <<= 8;
-         k |= key[i - 1];
-      }
-      // A swap is *not* necessary here because the preceding loop already
-      // places the low bytes in the low places according to whatever endianness
-      // we use. Swaps only apply when the memory is copied in a chunk.
-      h ^= murmur_32_scramble(k);
-      /* Finalize. */
-      h ^= len;
-      h ^= h >> 16;
-      h *= 0x85ebca6b;
-      h ^= h >> 13;
-      h *= 0xc2b2ae35;
-      h ^= h >> 16;
-      return h;
-      }
    };
 
    // Compare C-strings, return true if they are the same.
@@ -163,169 +92,7 @@ namespace hash {
             } // end ~Bucket()
    };
 
-   template< typename Key, typename Value>
-   class PerfectHashing : public FNV
-   {
-
-      size_t tableSize; // where things can be put 
-      std::vector<ssize_t> arr; // equal to tableSize...
-
-   size_t operator()( const char *data, size_t num = 0 ) const 
-         {
-         size_t length = strlen(data);
-
-         static const size_t FnvOffsetBasis=146959810393466560;
-         static const size_t FnvPrime=1099511628211ul;
-         if ( !num ) { num = FnvPrime; }
-         size_t hash = FnvOffsetBasis;
-         for ( size_t i = 0; i < length; ++i )
-            {
-            hash *= num;
-            hash ^= (unsigned long)data[ i ];
-            } // end for
-         return hash;
-         } // end operator()()
-
-   public:
-      PerfectHashing( size_t _tableSize ) : tableSize( _tableSize ), arr( tableSize )
-         {
-         }
-
-      ~PerfectHashing() override
-         {
-         }
-
-      size_t operator()( const char *data ) const override
-         {
-         ssize_t val = arr[ operator()(data, 0) & ( tableSize - 1 ) ];
-
-         if ( val < 0 )
-            return size_t ( ( -val ) - 1 ); // Uses the negative to map to bucket
-         
-         return operator()( data, ( size_t )val );
-         } //end operator()
-      
-      void removePtrs( std::vector< Bucket< Key, Value> **> &bucketsPlaced )
-         {
-         for ( Bucket< Key, Value> **bucket : bucketsPlaced )
-            *bucket = nullptr;
-         }
-
-      Bucket< Key, Value > ** buildInterTable( std::vector< std::vector< Bucket< Key, Value> *> >& buckets, size_t tbSize, size_t numOfBuckets )
-         {
-         size_t bucketsCnt = 0; assert( tableSize == tbSize );
-         tableSize = tbSize;
-         arr.resize( tbSize );
-         Bucket< Key, Value > **tableArray = new Bucket< Key, Value > *[ tbSize ]();
-
-         std::sort( buckets.begin(), buckets.end(), []( std::vector< Bucket< Key, Value> *>& lhs, 
-            std::vector< Bucket< Key, Value> *>& rhs ) { return lhs.size() > rhs.size(); } );
-         
-         // First place all buckets with collisions into seperate buckets
-         typename std::vector< std::vector< Bucket< Key, Value> *> >::iterator bucketVec = mapCollisionsToUniqEntry( buckets, tableArray, bucketsCnt );
-
-         // At this point bucketVec should only point to vectors of size one...
-         // Now just map the single buckets into unique places
-         if ( bucketVec != buckets.end() )
-            mapSingleBuckets( buckets, bucketVec, tableArray, bucketsCnt );
-
-         assert( numOfBuckets == bucketsCnt );
-         return tableArray;
-         }
-         
-      typename std::vector< std::vector< Bucket< Key, Value> *> >::iterator mapCollisionsToUniqEntry( std::vector< std::vector< Bucket< Key, Value> *> >& buckets, 
-         Bucket< Key, Value > ** const tableArray, size_t& bucketsCnt )
-         {
-         typename std::vector< std::vector< Bucket< Key, Value> *> >::iterator bucketVec = buckets.begin();
-         std::vector< Bucket< Key, Value> **> bucketsPlaced; // To keep track of where buckets are part since might need to retry...
-         for ( ;bucketVec != buckets.end() && bucketVec->size() > 1; ++bucketVec, bucketsPlaced.clear() )
-            {
-            ssize_t arg = 1;
-            size_t tempOf = 0;
-
-            // Try hashing with arg until every bucket inside bucketVec maps to a unique top-level bucket
-            typename std::vector< Bucket< Key, Value> *>::iterator bucket = bucketVec->begin();
-            while ( bucket != bucketVec->end() )
-               {
-               //std::vector< Bucket< Key, Value> *>& vec = *bucketVec;
-               size_t ind = operator()( ( *bucket )->tuple.key, static_cast<size_t>( arg ) ) & ( tableSize - 1 );
-               Bucket< Key, Value > ** mainLevel = tableArray + ind;
-               assert( mainLevel < tableArray + tableSize );
-               if ( *mainLevel ) // Collision so need to retry
-                  {
-                  removePtrs( bucketsPlaced );
-                  bucketsPlaced.clear();
-                  ++arg;
-                  tempOf = 0;
-                  bucket = bucketVec->begin();
-                  } // end if
-               else // empty bucket
-                  {
-                  ( *bucket )->next = nullptr;
-                  *mainLevel = *bucket;
-                  bucketsPlaced.emplace_back( mainLevel );
-                  ++tempOf;
-                  ++bucket;
-                  }
-               } // end while 
-            assert( tempOf == bucketsPlaced.size() );
-            size_t bucketVecSize = bucketVec->size();
-            assert( tempOf == bucketVecSize );
-            bucketsCnt += tempOf;
-
-            // Update the intermediate array
-            size_t hash = operator()( bucketVec->front()->tuple.key, 0 );
-            size_t hashInd = hash & ( tableSize - 1 );
-            arr[ hashInd ] = arg;
-            } // end for
-
-            return bucketVec;
-         } // end mapCollisionsToUniqEntry()
-      
-      void mapSingleBuckets( std::vector< std::vector< Bucket< Key, Value> *> >& buckets, 
-         typename std::vector< std::vector< Bucket< Key, Value> *> >::iterator bucketVec, 
-            Bucket< Key, Value > ** const tableArray, size_t& bucketsCnt )
-         {
-         assertSingleVectInvariants( bucketVec, buckets.end() );
-         // Find all empty buckets now
-         size_t bucketsRemaining = static_cast<size_t>( buckets.end() - bucketVec );
-         std::vector< Bucket< Key, Value> **> freeBuckets;
-         freeBuckets.reserve( bucketsRemaining );
-         for ( Bucket< Key, Value > **mainLevel = tableArray, **end = tableArray + tableSize; tableArray != end && bucketsRemaining ; ++mainLevel )
-            {
-            if ( !( *mainLevel ) )
-               {
-               freeBuckets.emplace_back( mainLevel );
-               --bucketsRemaining;
-               }
-            } // end for
-         assert( !bucketsRemaining );
-         assert( freeBuckets.size() == size_t( buckets.end() - bucketVec ) );
-         // Place all single buckets now into these empty slots
-         for ( ;bucketVec != buckets.end(); ++bucketVec, freeBuckets.pop_back() )
-            {
-            bucketVec->front()->next = nullptr;
-            *freeBuckets.back() = bucketVec->front();
-            ssize_t arrayInd = freeBuckets.back() - tableArray;
-            arrayInd = ( -arrayInd ) - 1;
-            size_t hash = operator()( bucketVec->front()->tuple.key, 0 );
-            size_t hashInd = hash & ( tableSize - 1 );
-            arr[ hashInd ] = arrayInd;
-            ++bucketsCnt;
-            } // end for
-         } // end placeSingleBucketsInEmptyBuckets()
-
-      void assertSingleVectInvariants( typename std::vector< std::vector< Bucket< Key, Value> *> >::iterator currBucket, 
-         const typename std::vector< std::vector< Bucket< Key, Value> *> >::iterator end )
-         {
-         for ( ; currBucket != end; ++currBucket )
-            assert( currBucket->size() == 1 );
-         }
-
-   };
-
-
-   template< typename Key, typename Value, class Hash = Murmur, class Comparator = CStringComparator > class HashTable
+   template< typename Key, typename Value, class Hash = FNV, class Comparator = CStringComparator > class HashTable
       {
       private:
 
@@ -336,9 +103,8 @@ namespace hash {
          size_t numberOfBuckets; // Contains amount of seperate chained buckets
          size_t collisions = 0; // Tracks current collisions in hash_table
          Comparator compare;
-         Hash *hashFunc;
+         Hash hashFunc;
 
-         template< Key, Value>
          friend class Iterator;
          friend class HashBlob;
       
@@ -365,7 +131,8 @@ namespace hash {
       Bucket< Key, Value > **helperFind( const Key& k, uint32_t hashVal ) const
          {
          // Applying a bit-wise mask on the least-sig bits
-         size_t index = (size_t)hashVal & ( tableSize - 1 ); // modulo operation using bitwise AND (only works with power of two table size)
+         //std::cout << k << " " << hashVal << std::endl;
+         uint32_t index = hashVal & ( tableSize - 1 ); // modulo operation using bitwise AND (only works with power of two table size)
          Bucket< Key, Value > **bucket = buckets + index;
 
          for ( ; *bucket; bucket = &( *bucket )->next )
@@ -385,7 +152,8 @@ namespace hash {
             // in the hash, add it with the initial value.
 
             // Your code here
-            uint32_t hashVal = static_cast<uint32_t>( (*hashFunc)( k ) );
+            uint32_t hashVal = hashFunc( k );
+            
             Bucket< Key, Value > **bucket = helperFind( k, hashVal );
             
             // Checks for nullptr
@@ -408,7 +176,7 @@ namespace hash {
             // in the hash, return nullptr.
 
             // Your code here.
-            Bucket< Key, Value > *bucket = *helperFind( k, ( uint32_t )(*hashFunc)( k ) );
+            Bucket< Key, Value > *bucket = *helperFind( k, hashFunc( k ) );
 
             // If not nullptr, entry was found so returning reference to tuple...
             return bucket ? &bucket->tuple : nullptr;
@@ -419,7 +187,7 @@ namespace hash {
          // Modify or rebuild the hash table as you see fit
          // to improve its performance now that you know
          // nothing more is to be added.
-         void Optimize( double loadFactor = 0.5, bool computeCeiling = true ) // does this imply load factor reaching this point?
+         void Optimize( double loadFactor = 0.5 ) // does this imply load factor reaching this point?
             {
             // It might be the case that the bucket size is far lower than expected
             // So it might be necessary to shrink the table size
@@ -434,12 +202,8 @@ namespace hash {
                   { return lhs->tuple.value > rhs->tuple.value; } );
 
             // Doubles number of buckets and computes the two's power ceiling
-            // .e.g computeTwosPow( 100 * 2 ) = 256
-            size_t newTbSize = computeTwosPow( (ssize_t) (expectedTS - 1 ), computeCeiling );
-            // Check if load factor is too small
-            //if ( (static_cast<double>(numberOfBuckets) / static_cast<double>( newTbSize ) ) - loadFactor < LOWEREPSILON )
-            //   newTbSize >>= 1; // Instead strink table size by a power of two
-            //size_t newTbSize = computeTwosPow( (ssize_t) (expectedTS - 1), computeCeiling );
+            // .e.g computeTwosPowCeiling( 100 * 2 ) = 256
+            size_t newTbSize = computeTwosPowCeiling( (ssize_t) expectedTS );
 
             // Adjust member variables
             buckets = new Bucket< Key, Value> *[ newTbSize ];
@@ -451,7 +215,7 @@ namespace hash {
             for ( Bucket< Key, Value > *bucket : flattened )
                {
                bucket->next = nullptr; // Remove any pointer relationship
-               size_t index = (size_t)bucket->hashValue & ( tableSize - 1 );
+               uint32_t index = bucket->hashValue & ( tableSize - 1 );
                Bucket< Key, Value > **bucketPtr = buckets + index;
                if ( *bucketPtr )
                   ++collisions;
@@ -460,31 +224,11 @@ namespace hash {
                *bucketPtr = bucket;
                } // end for
             }
-         // Used for optimizing to minimal perfect hash function
-         void Optimize( double load_factor/* = 0.407 */)
-            {
-            Optimize( load_factor, false );
-            
-            if ( !collisions )
-               return;
-            // Now do perfect hashing
-            std::vector< std::vector< Bucket< Key, Value> *> > bucketsVec = vectorOfBuckets();
-            assert( bucketsVec.size() == numOfLinkedLists() );
-            delete hashFunc;
-            delete []buckets;
-            hashFunc = new PerfectHashing<Key, Value>( tableSize );
-            buckets = dynamic_cast<PerfectHashing<Key, Value>*>(hashFunc)->buildInterTable( bucketsVec, tableSize, numberOfBuckets );
-            size_t numOfLL = numOfLinkedLists();
-            collisions = numberOfBuckets - numOfLL;
-            assert( collisions == 0 );
-            }
-         
-
 
          // Your constructor may take as many default arguments
          // as you like.
 
-         HashTable( size_t tb = DEFAULTSIZE, Hash *hasher = new Murmur(), Comparator comp = CStringComparator() ) : tableSize( computeTwosPow( (ssize_t)tb ) ), 
+         HashTable( size_t tb = DEFAULTSIZE, Hash hasher = FNV(), Comparator comp = CStringComparator() ) : tableSize( computeTwosPowCeiling( (ssize_t)tb ) ), 
             buckets( new Bucket< Key, Value > *[ tableSize ] ), numberOfBuckets( 0 ), compare( comp ), hashFunc( hasher )
             {
             assert( tb );
@@ -499,7 +243,6 @@ namespace hash {
                   ** const end = buckets + tableSize; bucket != end; ++bucket )
                delete *bucket;
 
-            delete hashFunc;
             delete[] buckets;             
             } // end ~HashTable()
 
@@ -523,17 +266,12 @@ namespace hash {
          
          void swap( HashTable& other )
             {
-            #ifdef LOCAL
-               using APESEARCH::swap;
-            #else
-               using std::swap;
-            #endif
-            swap( buckets, other.buckets );
-            swap( tableSize, other.tableSize );
-            swap( numberOfBuckets, other.numberOfBuckets );
-            swap( collisions, other.collisions );
-            swap( hashFunc, other.hashFunc );
-            swap( compare, other.compare );
+            APESEARCH::swap( buckets, other.buckets );
+            APESEARCH::swap( tableSize, other.tableSize );
+            APESEARCH::swap( numberOfBuckets, other.numberOfBuckets );
+            APESEARCH::swap( collisions, other.collisions );
+            APESEARCH::swap( hashFunc, other.hashFunc );
+            APESEARCH::swap( compare, other.compare );
             } 
 
          inline size_t size() const { return numberOfBuckets; }
@@ -549,14 +287,14 @@ namespace hash {
                   ++numOfLL;
             return numOfLL;
             }
-         
-         bool advancePtr( Bucket< Key, Value > ***mainLevel, Bucket< Key, Value > **end, std::vector< std::vector< Bucket< Key, Value> *> >& bucketVec ) const
+
+         bool advancePtr( Bucket< Key, Value > ***mainLevel, Bucket< Key, Value > **end, std::vector< APESEARCH::pair< Bucket< Key, Value > **, size_t > >& bucketVec ) const
             {
             for ( ; *mainLevel != end; ++(*mainLevel) )
                {
                if ( **mainLevel )
                   {
-                  bucketVec.emplace_back( std::vector< Bucket< Key, Value> *>() );
+                  bucketVec.emplace_back( APESEARCH::pair< Bucket< Key, Value > **, size_t>( *mainLevel, 0 ) );
                   return true;
                   }
                } // end if
@@ -564,90 +302,60 @@ namespace hash {
             }
          
    private:
-
-         void assertLinkedList( std::vector< Bucket< Key, Value> *>& vec ) const
+         //! May be helpful when implementing Minimal perfect hash function
+         // Returns a sparse vector of valid buckets and a pointer to the linked list and the amount of buckets within it.
+         std::vector< APESEARCH::pair< Bucket< Key, Value > **, size_t> > linkedListOfBuckets() const
             {
-            for ( typename std::vector< Bucket< Key, Value> *>::iterator currBucket = vec.begin(); currBucket != vec.end(); ++currBucket )
-               {
-               if ( currBucket + 1 == vec.end() )
-                  assert( !( ( *currBucket )->next ) );
-               else 
-                  assert( ( *currBucket )->next == *( currBucket + 1 ) );
-               }
-            } // end assertLinkedList()
-         std::vector< std::vector< Bucket< Key, Value> *> > vectorOfBuckets() const
-            {
+            //Bucket< Key, Value > *currBucket = *buckets;
             Bucket< Key, Value > **mainLevel = buckets;
             Bucket< Key, Value > **const end = buckets + tableSize;
-            std::vector< std::vector< Bucket< Key, Value> *> > bucketVec;
+            std::vector< APESEARCH::pair< Bucket< Key, Value > **, size_t > > bucketVec;
             bucketVec.reserve( numOfLinkedLists() );
-            size_t bucketCnt = 0;
+
             for ( ;advancePtr( &mainLevel, end, bucketVec ); ++mainLevel )
                {
-               std::vector< Bucket< Key, Value> *>& bucketRef = bucketVec.back();
-               assert( !bucketRef.size() );
+               APESEARCH::pair< Bucket< Key, Value > **, size_t >& bucketRef = bucketVec.back();
                for ( Bucket< Key, Value > *currBucket = *mainLevel ; currBucket ; currBucket = currBucket->next )
-                  {
-                  bucketRef.emplace_back( currBucket );
-                  ++bucketCnt;
-                  }
-               assert( bucketRef.size() );
-               bucketRef.shrink_to_fit();
-               assertLinkedList( bucketRef );
+                  ++bucketRef.second();
                } // end for
-            assert( bucketCnt == numberOfBuckets );
             return bucketVec;
-            } // end vectorOfBuckets()
+            } 
    public:
          double averageCollisonsPerBucket() const
             {
             if ( !numberOfBuckets )
                return 0;
-            size_t numOfLL = numOfLinkedLists();
-            return static_cast<double> ( numberOfBuckets - numOfLL ) / static_cast<double> ( numOfLL );
-            }
-
-         double averageBucketsPerLL() const 
-            {
-            if ( !numberOfBuckets )
-               return 0;
-            size_t numOfLL = numOfLinkedLists();
-            return static_cast<double> ( numberOfBuckets ) / static_cast<double> ( numOfLL );
+            return numberOfBuckets / static_cast<double> ( numOfLinkedLists() );
             }
 
          void printStats() const 
             {
-            int width = 33;
-            std::cout << "------- Hash Table Stats Beg -------\n";
-            std::cout << std::setw( width ) << std::left << "Total Buckets Allocated: " << size() << '\n';
-            std::cout << std::setw( width ) << std::left << "Table Size: " << table_size() << '\n';
-            std::cout << std::setw( width ) << std::left << "load_factor: " << load_factor() << '\n';
-            std::cout << std::setw( width ) << std::left << "Percentage of Collisions: " << ratioOfColli() << '\n';
-            std::cout << std::setw( width ) << std::left << "Average Collisions per Bucket: "  << averageCollisonsPerBucket() << '\n';
-            std::cout << std::setw( width ) << std::left << "Average Buckets Per Linked List: " << averageBucketsPerLL() << '\n';
-            std::cout << "------- Hash Table Stats End -------\n";
+            std::cout << "Total Buckets Allocated: " << size() << '\n';
+            std::cout << "Table Size: " << table_size() << '\n';
+            std::cout << "load_factor: " << load_factor() << '\n';
+            std::cout << "Percentage of Collisions: " << ratioOfColli() << '\n';
+            std::cout << "Average Collisions per Bucket: " << averageCollisonsPerBucket() << '\n';
             }
 
-         template<typename KeyItr = Key, typename ValueItr = Value>
          class Iterator
             {
             private:
 
                friend class HashTable;
                // Your code here.
-               HashTable const *table; // for the tableSize
+               HashTable *table; // for the tableSize
                Bucket< Key, Value > **mainLevel;
                Bucket< Key, Value > **currentBucket;
 
-               Iterator( HashTable const *_table, size_t bucket ) :  table( _table ), mainLevel( table->buckets + bucket ) {
+               Iterator( HashTable *_table, size_t bucket ) :  table( _table ), mainLevel( table->buckets + bucket ) {
                   for (  Bucket< Key, Value > **end = table->buckets + table->tableSize
                      ; mainLevel != end && !(*mainLevel); ++mainLevel ); // Order of comparison is required: *mainLevel could be an invalid read if mainLevel == end
                   currentBucket = mainLevel;
                }
 
                // This constructor can be used for finds that want to return an iterator instead
-               Iterator( HashTable const *_table, Bucket<Key, Value> **b ) :  table( _table ), 
-                     mainLevel( table ? table->buckets + ( ( *b )->hashValue  & ( table->tableSize - 1 ) ) : nullptr ), currentBucket( b ) {}
+               Iterator( HashTable *_table, Bucket<Key, Value> **b ) :  table( _table ), currentBucket( b ), 
+                     mainLevel( table ? table->buckets + ( *b )->hashValue & ( table->tableSize - 1 ) : nullptr ) {}
 
                Iterator( HashTable *_table, size_t bucketInd, Bucket<Key, Value> *b ) :  table( _table ), mainLevel( table ? table->buckets + bucketInd : nullptr ), currentBucket( mainLevel )
                   {
@@ -733,60 +441,44 @@ namespace hash {
                   return copy;
                   }
             };
-         
-         typedef Iterator<Key, Value> iterator;
-         typedef Iterator<const Key, const Value> const_iterator;
 
-         iterator begin( ) const
+         Iterator begin( )
             {
-            return iterator( this, size_t ( 0 ) );
+            return Iterator( this, size_t ( 0 ) );
             }
 
-         iterator end( ) const
+         Iterator end( )
             {
-            return iterator( this, tableSize );
-            }
-
-         const_iterator cbegin( ) const
-            {
-            return const_iterator( this, size_t ( 0 ) );
+            return Iterator( this, tableSize );
             }
          
-         const_iterator cend( ) const
+         Iterator FindItr( const Key& k ) const
             {
-            return const_iterator( this, tableSize );
-            }
-         
-         iterator FindItr( const Key& k ) const
-            {
-            Bucket< Key, Value > **bucket = helperFind( k, ( uint32_t )( *hashFunc )( k ) );
+            Bucket< Key, Value > **bucket = helperFind( k, hashFunc( k ) );
 
-            return *bucket ? iterator( this, bucket ) : end();
+            return *bucket ? Iterator( this, bucket ) : end();
             }
          
          //! Warning while this is simple, it also isn't very efficient
          void OptimizeElegant( double loadFactor = 0.5 )
             {
             size_t expectedTS = size_t ( static_cast<double>(numberOfBuckets) / loadFactor );
-            size_t newTbSize = computeTwosPow( (ssize_t) expectedTS );
+            size_t newTbSize = computeTwosPowCeiling( (ssize_t) expectedTS );
 
             HashTable temp ( newTbSize );
 
-            for ( Iterator<Key, Value> itr = begin(); itr != end(); ++itr )
+            for ( Iterator itr = begin(); itr != end(); ++itr )
                {
                Tuple <Key, Value> *pair = &( *itr.currentBucket )->tuple;
                temp.Find( pair->key, pair->value );
                }
             swap( temp );
             }
-      
       };
-
 
       template<typename Key, typename Value >
       void swap( HashTable< Key, Value>& lhs, HashTable< Key, Value>& rhs )
          {
          lhs.swap( rhs );
          }
-
 }

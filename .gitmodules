@@ -1,3 +1,6 @@
 [submodule "libraries"]
 	path = libraries
 	url = git@github.com:ApeSearch/libraries.git
+[submodule "parser"]
+	path = parser
+	url = git@github.com:xiongrob/EECS440_Html_Parser.git

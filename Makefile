@@ -1,4 +1,4 @@
-CC=g++ -g3 -std=c++17 -Wall -pedantic -Wconversion -Wextra -Wreorder -fno-builtin
+ CC=g++ -g3 -std=c++17 -Wall -pedantic -Wconversion -Wextra -Wreorder -fno-builtin
 
 #LDFLAGS:=-I/usr/local/opt/openssl/include/ -L/usr/local/opt/openssl/lib -lssl -lcrypto
 

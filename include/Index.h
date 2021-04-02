@@ -1,10 +1,10 @@
-
+ 
 #pragma once
 
-#ifndef INDEX_H_AS
-#define INDEX_H_AS
 #include "Token.h"
+#include "../libraries/AS/include/AS/string.h"
 #include "../libraries/AS/include/AS/vector.h"
+#include "../libraries/AS/include/AS/unique_ptr.h"
 #include "HashTable.h"
 
 /*
@@ -21,23 +21,12 @@
  * 
  */
 typedef size_t Location; // The numbering of a token
-typedef size_t FileOffset;
+typedef size_t FileOffset; 
 
 enum WordAttributes 
     {
         WordAttributeNormal, WordAttributeBold, WordAttributeHeading, WordAttributeLarge
     };
-
-enum DocumentAttributes 
-    {
-        DocAttributeURL, DocAttributeNumWords, DocAttributeTitle, DocAttributeBody, DocAttributeAnchor
-    };
-
-typedef union Attributes
-{
-    WordAttributes Word;
-    DocumentAttributes Document;
-};
 
 
 class SynchronizationEntry
@@ -50,23 +39,30 @@ class SynchronizationEntry
 class Post
     {
     public:
-        Post(FileOffset _deltaPrev, Attributes _attribute) : deltaPrev(_deltaPrev), attribute(_attribute) {}
+        Post() : deltaPrev() {}
+        Post(FileOffset deltaPrev_) : deltaPrev(deltaPrev_) {}
 
         FileOffset deltaPrev;
-        Attributes attribute;
     };
 
 class WordPost: public Post
     {
     public:
-        WordPost(FileOffset deltaPrev, Attributes attribute) : Post(deltaPrev, attribute) {}
+        WordPost(): Post() {}
+        WordPost(FileOffset deltaPrev_, WordAttributes attribute_) : Post(deltaPrev_), attribute(attribute_) {}
+
+        WordAttributes attribute;
     };
 
 class EODPost: public Post
     {
     public:
-        EODPost(FileOffset deltaPrev, Attributes attribute) : Post(deltaPrev, attribute) {}
+        EODPost(): Post() {}
+        EODPost(FileOffset deltaPrev_, size_t urlIndex_) : Post(deltaPrev_), urlIndex(urlIndex) {}
+
+        size_t urlIndex;
     };
+
 
 class Sentinel: public Post
     {
@@ -80,14 +76,18 @@ class PostingList
     {
     public:
         // Represent the sync table
-        APESEARCH::vector<Post> posts;
+        PostingList(): posts(), synchTable(), numberOfBytes(0), numberOfPosts(0), numOfDocs(0) {}
+        ~PostingList() {}
+
+        APESEARCH::vector<Post *> posts;
+        APESEARCH::vector<SynchronizationEntry> synchTable;
         size_t numberOfBytes; // size of posting list
-        std::vector<SynchronizationEntry> synchTable;
         size_t numberOfPosts;   // Basically the number of occurnces of a particular token.
         size_t numOfDocs; // number of documents that contain this info.
         TokenType type; // Type of token ( be it eod, anchor text, url, tile, or body)
 
-        virtual Post *Seek( Location l );
+        Post *Seek( Location l );
+
 
     private:
         struct PostingListIndex //sync table
@@ -96,17 +96,28 @@ class PostingList
             Location PostLocation;
             };
 
-        virtual char *GetPostingList( );
+        //virtual char *GetPostingList( );
     };
 
 class WordPostingList : public PostingList
     {
 
     public:
-        Post *Seek ( Location l ) override;
+        WordPostingList(): PostingList() {}
+        ~WordPostingList() {}
 
-    private:
-        Post* post;
+        void appendToList(Location tokenLoc, WordAttributes attribute);
+
+    };
+
+class DocEndPostingList : public PostingList
+    {
+
+    public:
+        DocEndPostingList(): PostingList() {}
+        ~DocEndPostingList() {}
+
+        void appendToList(Location urlLoc, size_t urlIndex);
     };
 
 class Index 
@@ -130,22 +141,19 @@ class IndexHT
         ~IndexHT();
 
         std::pair<Location, Post *> findPost(  );
+        void addDoc(APESEARCH::string url, APESEARCH::vector<APESEARCH::string> &bodyText, size_t endDocLoc);
         Post *goToNext( Location location ); // May need to inherit here...
 
-
-
         //ISRWord *OpenISRWord( std::string word );
-
         //ISREndDoc *OpenISREndDoc( );
 
-    private:
-        hash::HashTable<const char *, PostingList *> chunk;
-        std::vector<std::string> urls;
+    // private:
+        hash::HashTable<const char *, WordPostingList *> chunk;
+        APESEARCH::unique_ptr<DocEndPostingList> docEndList;
+        APESEARCH::vector<APESEARCH::string> urls;
         size_t   WordsInIndex,
                     DocumentsInIndex,
                     LocationsInIndex,
                     MaximumLocation;
 
     };
-
-#endif INDEX_H_AS
