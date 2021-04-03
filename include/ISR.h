@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <utility>
 #include <iostream>
-#include <string>
+#include "../libraries/AS/include/AS/string.h"
 #include "Index.h"
 
 
@@ -39,7 +39,7 @@ class ISRWord : public ISR
     {
     public:
         ISRWord();
-        ISRWord(std::string _word);
+        ISRWord(APESEARCH::string _word);
         unsigned GetDocumentCount( );
         unsigned GetNumberOfOccurrences( );
         virtual Post *GetCurrentPost( );
@@ -51,7 +51,7 @@ class ISRWord : public ISR
         Location GetStartLocation( ) override {}
         Location GetEndLocation( ) override {}
 
-        std::string word;
+        APESEARCH::string word;
     };
 
 class ISREndDoc : public ISRWord

@@ -1,6 +1,6 @@
 #include <unistd.h>
 #include "ISR.h"
-#include <string>
+#include "../libraries/AS/include/AS/string.h"
 #include "Token.h"
 
 #ifndef _TUPLE_H
@@ -21,11 +21,11 @@ namespace query{
 
     class SearchWord : public Tuple {
         public:
-            SearchWord(std::string _word);
+            SearchWord(APESEARCH::string _word);
             ~SearchWord();
             ISR* Compile() override;
 
-            std::string word;
+            APESEARCH::string word;
     };
 
     class UnarySimpleConstraint : public Tuple {

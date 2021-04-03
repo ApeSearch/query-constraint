@@ -23,13 +23,17 @@ using namespace query;
 class QueryParser
 {
     public:
-        QueryParser( std::string queryLine );
+        QueryParser( APESEARCH::string queryLine );
 
         QueryParser(const QueryParser &other) {
             *this = other;
         }
 
         Token* FindNextToken(); //Gets next Token from stream
+
+        Token* getCurrentToken() {
+            return stream.getCurrentToken();
+        }
         
         bool FindOrOp();
         bool FindAndOp();
@@ -43,9 +47,9 @@ class QueryParser
         Tuple* FindSimpleConstraint();
         Tuple* FindUnarySimpleConstraint();
 
-        static std::string urlDecode(const char *src)
+        static APESEARCH::string urlDecode(const char *src)
             {
-            std::string dest;
+            APESEARCH::string dest;
             char a, b;
             while (*src) 
                 {
@@ -74,7 +78,7 @@ class QueryParser
                 return dest;
             }
 
-        std::string query;
+        APESEARCH::string query;
 
     private:
         TokenStream stream;

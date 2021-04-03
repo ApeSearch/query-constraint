@@ -1,7 +1,7 @@
 #include <vector>
-#include <string>
+#include "../libraries/AS/include/AS/string.h"
 
-std::vector<std::string> queries = {
+std::vector<APESEARCH::string> queries = {
     // 0 Basic queries
     "GET /q= HTTP/1.1", // <empty query>
     "GET /q=the HTTP/1.1", // the

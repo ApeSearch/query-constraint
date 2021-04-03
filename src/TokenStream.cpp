@@ -58,7 +58,8 @@ Token* TokenStream::TakeToken()
                         ++count;
                     }
                 // If we hit a '&' or '|' after we've already seen some other characters, we want to tokenize those as a word
-                return setCurrentToken(std::string(startChar, (currChar - count) - startChar), TokenType::TokenTypeWord);
+                APESEARCH::string tokenWord = APESEARCH::string(startChar, 0, (currChar - count) - startChar);
+                return setCurrentToken(tokenWord, TokenType::TokenTypeWord);
                 } // end case '&', '|'
             case '(': case ')': case '\"':
                 {
@@ -91,7 +92,8 @@ Token* TokenStream::TakeToken()
                     return setCurrentToken(startChar - 1, TokenType::TokenTypeNOT);
                     }
                 // Ignore all '-' found at the end of a word
-                return setCurrentToken(std::string(startChar, (currChar - count) - startChar), TokenType::TokenTypeWord);
+                APESEARCH::string tokenWord = APESEARCH::string(startChar, 0, (currChar - count) - startChar);
+                return setCurrentToken(tokenWord, TokenType::TokenTypeWord);
                 } // end case '-'
             } // end switch
         ++currChar;
@@ -117,7 +119,7 @@ bool TokenStream::Match(TokenType t)
 // Returns a pointer to currentToken's (unique_ptr) internal pointer 
 Token* TokenStream::setCurrentToken(char const *start, TokenType type)
     {
-    currentTokenString = std::string(start, currChar - start);
+    currentTokenString = APESEARCH::string(start, 0, currChar - start);
     checkOperatorKeyword(type);
     return (currentToken = tokenFactory(currentTokenString, type)).get();
     }
@@ -125,7 +127,7 @@ Token* TokenStream::setCurrentToken(char const *start, TokenType type)
 // Sets the current token string and current token to tokenString
 //
 // Returns a pointer to currentToken's (unique_ptr) internal pointer 
-Token* TokenStream::setCurrentToken(std::string tokenString, TokenType type)
+Token* TokenStream::setCurrentToken(APESEARCH::string &tokenString, TokenType type)
     {
     currentTokenString = tokenString;
     checkOperatorKeyword(type);

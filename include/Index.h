@@ -144,7 +144,7 @@ class IndexHT
         void addDoc(APESEARCH::string url, APESEARCH::vector<APESEARCH::string> &bodyText, size_t endDocLoc);
         Post *goToNext( Location location ); // May need to inherit here...
 
-        //ISRWord *OpenISRWord( std::string word );
+        //ISRWord *OpenISRWord( APESEARCH::string word );
         //ISREndDoc *OpenISREndDoc( );
 
     // private:

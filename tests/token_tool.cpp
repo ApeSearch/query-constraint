@@ -1,8 +1,8 @@
-#include <string>
 #include <vector>
 #include <iostream>
 
 #include "../include/QueryParser.h"
+#include "../libraries/AS/include/AS/string.h"
 
 void hexchar(unsigned char c, unsigned char &hex1, unsigned char &hex2);
 std::string urlencode(std::string s);
@@ -20,11 +20,13 @@ int main () {
     // Add in the extra crap from the get request's header
     std::string queryLine = "GET /q=" + encodedQuery + " HTTP/1.1";
 
-    auto Query = QueryParser(queryLine);
+    auto Query = QueryParser(APESEARCH::string(queryLine.c_str()));
     Token* curr;
     std::cout << "Decoded query: " << Query.query << "\n\n";
-    while ((curr = Query.FindNextToken())->getTokenType() != TokenTypeEOF) {
+    
+    while ((curr = Query.getCurrentToken())->getTokenType() != TokenTypeEOF) {
         std::cout << Token::printTokenType(curr->getTokenType()) << " " << curr->TokenString() << std::endl;
+        Query.FindNextToken();
     }
     std::cout << Token::printTokenType(TokenTypeEOF) << std::endl;
     std::cout << "=================================================\n";

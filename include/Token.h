@@ -1,5 +1,10 @@
 #include <unistd.h>
-#include <string>
+
+
+
+#include "../libraries/AS/include/AS/string.h"
+
+#include "../libraries/AS/include/AS/string.h"
 
 #ifndef _TOKEN_H
 #define _TOKEN_H
@@ -12,13 +17,13 @@ enum TokenType {
 class Token {
     public:
         virtual TokenType getTokenType() const = 0;
-        virtual std::string TokenString() const {
+        virtual APESEARCH::string TokenString() const {
             return nullptr;
         }
         // Destructors need to be virtual esp if there are derived classes that have member variables.
         virtual ~Token() {}
 
-        static TokenType evaluateToken(std::string input)
+        static TokenType evaluateToken(APESEARCH::string input)
             {
                 if (input == "%20") return TokenTypeAND;
                 if (input == "%22") return TokenTypePhrase;
@@ -26,7 +31,7 @@ class Token {
                 return TokenTypeInvalid;
             }
 
-        static std::string printTokenType(TokenType type)
+        static APESEARCH::string printTokenType(TokenType type)
             {
             switch(type)
                 {
@@ -58,92 +63,92 @@ class TokenEOF : public Token {
 
 class TokenWord : public Token {
     public:
-        TokenWord(std::string _token) : token(_token) {}
+        TokenWord(APESEARCH::string &_token) : token(_token) {}
 
         TokenType getTokenType() const override {
             return TokenType::TokenTypeWord;
         };
-        std::string TokenString() const override {
+        APESEARCH::string TokenString() const override {
             return token;
         };
 
     private:
-        std::string token;
+        APESEARCH::string token;
 };
 
 class TokenAND : public Token {
     public:
-        TokenAND(std::string _token) : token(_token) {}
+        TokenAND(APESEARCH::string &_token) : token(_token) {}
 
         TokenType getTokenType() const override {
             return TokenType::TokenTypeAND;
         };
-        std::string TokenString() const override {
+        APESEARCH::string TokenString() const override {
             return token;
         };
 
     private:
-        std::string token;
+        APESEARCH::string token;
 };
 
 class TokenOR : public Token {
     public:
-        TokenOR(std::string _token) : token(_token) {}
+        TokenOR(APESEARCH::string &_token) : token(_token) {}
 
         TokenType getTokenType() const override {
             return TokenType::TokenTypeOR;
         };
-        std::string TokenString() const override {
+        APESEARCH::string TokenString() const override {
             return token;
         };
 
     private:
-        std::string token;
+        APESEARCH::string token;
 };
 
 class TokenNOT : public Token {
     public:
-        TokenNOT(std::string _token) : token(_token) {}
+        TokenNOT(APESEARCH::string &_token) : token(_token) {}
 
         TokenType getTokenType() const override {
             return TokenType::TokenTypeNOT;
         };
-        std::string TokenString() const override {
+        APESEARCH::string TokenString() const override {
             return token;
         };
 
     private:
-        std::string token;
+        APESEARCH::string token;
 };
 
 class TokenPhrase : public Token {
     public:
-        TokenPhrase(std::string _token) : token(_token) {}
+        TokenPhrase(APESEARCH::string &_token) : token(_token) {}
 
         TokenType getTokenType() const override {
             return TokenType::TokenTypePhrase;
         };
-        std::string TokenString() const override {
+        APESEARCH::string TokenString() const override {
             return token;
         };
 
     private:
-        std::string token;
+        APESEARCH::string token;
 };
 
 class TokenNested : public Token {
     public:
-        TokenNested(std::string _token) : token(_token) {}
+        TokenNested(APESEARCH::string &_token) : token(_token) {}
 
         TokenType getTokenType() const override {
             return TokenType::TokenTypeNested;
         };
-        std::string TokenString() const override {
+        APESEARCH::string TokenString() const override {
             return token;
         };
 
     private:
-        std::string token;
+        APESEARCH::string token;
 };
 
 

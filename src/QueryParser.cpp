@@ -1,24 +1,24 @@
 #include "../include/QueryParser.h"
-#include <string>
+#include "../libraries/AS/include/AS/string.h"
 #include "assert.h"
 
-QueryParser::QueryParser( std::string queryLine )
+QueryParser::QueryParser( APESEARCH::string queryLine )
     {
         size_t pos = queryLine.find(' ');
     
-        std::string requestType(queryLine, 0, pos);
+        APESEARCH::string requestType(queryLine, 0, pos);
         assert(requestType == "GET");
 
         size_t startPos = queryLine.find('=');
         size_t endPos = queryLine.find(' ', startPos);
 
         // Get the query starting after the equal sign up until the space before the protocol
-        query = std::string(queryLine, startPos + 1, endPos - startPos - 1);
+        query = APESEARCH::string(queryLine, startPos + 1, endPos - startPos - 1);
         // Decode the encoded ASCII values from the query
-        query = QueryParser::urlDecode(query.c_str());
+        query = QueryParser::urlDecode(query.cstr());
 
         // Create the TokenStream
-        stream = TokenStream(query);
+        stream = TokenStream(query.cstr());
         stream.TakeToken();
 
     }

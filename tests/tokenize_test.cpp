@@ -11,8 +11,10 @@ int main()
                 auto Query = QueryParser(queryLine);
                 Token* curr;
                 std::cout << "Query: " << Query.query << "\n\n";
-                while ((curr = Query.FindNextToken())->getTokenType() != TokenTypeEOF) {
+                
+                while ((curr = Query.getCurrentToken())->getTokenType() != TokenTypeEOF) {
                     std::cout << Token::printTokenType(curr->getTokenType()) << " " << curr->TokenString() << std::endl;
+                    Query.FindNextToken();
                 }
                 std::cout << Token::printTokenType(TokenTypeEOF) << std::endl;
                 std::cout << "=================================================\n";

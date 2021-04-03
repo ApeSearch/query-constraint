@@ -1,6 +1,6 @@
 #include "../include/Tuple.h"
 #include "assert.h"
-#include <string>
+#include "../libraries/AS/include/AS/string.h"
 #include <iostream>
 
 using namespace query;
@@ -13,7 +13,7 @@ Tuple::~Tuple() {
 
 // End Tuple
 
-SearchWord::SearchWord(std::string _word) : Tuple(), word(_word) {}
+SearchWord::SearchWord(APESEARCH::string _word) : Tuple(), word(_word) {}
 
 SearchWord::~SearchWord() {}
 
