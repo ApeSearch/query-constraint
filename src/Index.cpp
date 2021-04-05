@@ -27,13 +27,34 @@ Location DocEndPostingList::appendToList(Location urlLoc, size_t urlIndex) {
 }
 
 void WordPostingList::appendToList(Location tokenLoc, WordAttributes attribute) {
-    if(!posts.size()) 
-        posts.push_back(new WordPost(tokenLoc, attribute));
+    
+    if(!posts.size()){
+        if(tokenLoc < k2Exp7)
+            posts.emplace_back(tokenLoc);
+
+        else if(tokenLoc < k2Exp14){
+            posts.emplace_back((2 << 6) | (tokenLoc >> 8));
+            posts.emplace_back(tokenLoc & 0xff);
+        }
+
+        else if(tokenLoc < k2Exp21){
+            posts.emplace_back((6 << 5) | (tokenLoc >> 16));
+            posts.emplace_back((tokenLoc >> 8) & 0xff);
+            posts.emplace_back(tokenLoc & 0xff);
+        }
+        else{
+            posts.emplace_back((0xe << 4) | (tokenLoc >> 24));
+            posts.emplace_back((tokenLoc >> 16) & 0xff);
+            posts.emplace_back((tokenLoc >> 8) & 0xff);
+            posts.emplace_back(tokenLoc & 0xff);
+        }
+
+        posts.emplace_back(attribute);
+    }
+
     else{
         Location curLoc = 0;
-        for(Post* post : posts){
-            curLoc += post->deltaPrev;
-        }
+        
 
         posts.push_back(new WordPost(tokenLoc - curLoc, attribute));
 

@@ -20,15 +20,28 @@
  * 
  * 
  */
+
+
+//Constants to use for decoding and encoding deltas
+//Variable length encodings
+
+
+static const uint32_t k2Exp7 = 128;
+static const uint32_t k2Exp14 = 16384;
+static const uint32_t k2Exp21 = (2 * 1024 * 1024);
+static const uint32_t k2Exp28 = (256 * 1024 * 1024);
+
+
+
 typedef size_t Location; // The numbering of a token
 typedef size_t FileOffset; 
 
-enum WordAttributes : u_int8_t
+enum WordAttributes : uint8_t
     {
         WordAttributeNormal, WordAttributeBold, WordAttributeHeading, WordAttributeLarge
     };
 
-enum PostingListType : u_int8_t
+enum PostingListType : uint8_t
     {
         BodyText, TitleText, HeaderText, AnchorText, URL
     };
@@ -36,9 +49,10 @@ enum PostingListType : u_int8_t
 typedef union WordPostEntry
     {
         WordAttributes attribute;
-        u_int8_t delta;
+        uint8_t delta;
     };
 
+typedef uint8_t EODPostEntry;
 
 class SynchronizationEntry
    {
@@ -81,16 +95,13 @@ class Sentinel: public Post
         Sentinel();
     };
 
-
-
 class PostingList
     {
     public:
         // Represent the sync table
-        PostingList(): posts(), synchTable(), numberOfBytes(0), numberOfPosts(0), numOfDocs(0) {}
+        PostingList(): synchTable(), numberOfBytes(0), numberOfPosts(0), numOfDocs(0) {}
         ~PostingList() {}
 
-        APESEARCH::vector<Post *> posts;
         APESEARCH::vector<SynchronizationEntry> synchTable;
         size_t numberOfBytes; // size of posting list
         size_t numberOfPosts;   // Basically the number of occurnces of a particular token.
@@ -108,6 +119,9 @@ class WordPostingList : public PostingList
     {
 
     public:
+
+        APESEARCH::vector<WordPostEntry> posts;
+
         WordPostingList(): PostingList() {}
         ~WordPostingList() {}
 
@@ -119,6 +133,8 @@ class DocEndPostingList : public PostingList
     {
 
     public:
+        APESEARCH::vector<Post *> posts;
+
         DocEndPostingList(): PostingList() {}
         ~DocEndPostingList() {}
 
