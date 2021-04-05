@@ -1,17 +1,19 @@
 #include "../include/Index.h"
 #include <iostream>
 
-const APESEARCH::string the = "the";
 
-IndexHT::IndexHT() : chunk(), urls(), docEndList(new DocEndPostingList), WordsInIndex(0), DocumentsInIndex(0), 
-    LocationsInIndex(0), MaximumLocation(0) {}
+IndexHT::IndexHT() : chunk(), urls(), docEndList(new DocEndPostingList), LocationsInIndex(0), MaximumLocation(0) {}
 
 IndexHT::~IndexHT(){}
 
 
-void DocEndPostingList::appendToList(Location urlLoc, size_t urlIndex) {
-    if(!posts.size())
+Location DocEndPostingList::appendToList(Location urlLoc, size_t urlIndex) {
+    numOfDocs++;
+
+    if(!posts.size()){
         posts.push_back(new EODPost(urlLoc, urlIndex));
+        return 0;
+    }
     else {
         Location curLoc = 0;
         for(Post* post : posts){
@@ -19,6 +21,8 @@ void DocEndPostingList::appendToList(Location urlLoc, size_t urlIndex) {
         }
 
         posts.push_back(new EODPost(urlLoc - curLoc, urlIndex));
+
+        return curLoc;
     }
 }
 
@@ -35,24 +39,28 @@ void WordPostingList::appendToList(Location tokenLoc, WordAttributes attribute) 
 
         //std::cout << tokenLoc - curLoc << " " << posts[posts.size() - 1]->deltaPrev << std::endl;
     }
+
+    numberOfPosts++;
 }
 
 void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<APESEARCH::string> &bodyText, size_t endDocLoc){
 
     urls.push_back(url);
-    docEndList.get()->appendToList(endDocLoc, urls.size() - 1);
+
+    //get Previous Document's Absolute Location to add to current word index
+    Location prevDocLoc = docEndList.get()->appendToList(endDocLoc, urls.size() - 1);
+
 
     for(Location indexLoc = 0; indexLoc < bodyText.size(); ++indexLoc) {
         auto& word = bodyText[indexLoc];
 
         hash::Tuple<const char *, WordPostingList *> * entry = chunk.Find(word.cstr());
-
         if(!entry){
             WordPostingList * wl = new WordPostingList();
             entry = chunk.Find(word.cstr(), wl);
         }
 
-        entry->value->appendToList(indexLoc, WordAttributeNormal);
+        entry->value->appendToList(indexLoc + prevDocLoc, WordAttributeNormal);
     }
 }
 

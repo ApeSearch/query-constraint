@@ -23,9 +23,20 @@
 typedef size_t Location; // The numbering of a token
 typedef size_t FileOffset; 
 
-enum WordAttributes 
+enum WordAttributes : u_int8_t
     {
         WordAttributeNormal, WordAttributeBold, WordAttributeHeading, WordAttributeLarge
+    };
+
+enum PostingListType : u_int8_t
+    {
+        BodyText, TitleText, HeaderText, AnchorText, URL
+    };
+
+typedef union WordPostEntry
+    {
+        WordAttributes attribute;
+        u_int8_t delta;
     };
 
 
@@ -84,18 +95,12 @@ class PostingList
         size_t numberOfBytes; // size of posting list
         size_t numberOfPosts;   // Basically the number of occurnces of a particular token.
         size_t numOfDocs; // number of documents that contain this info.
-        TokenType type; // Type of token ( be it eod, anchor text, url, tile, or body)
+        PostingListType type; // Type of token ( be it eod, anchor text, url, tile, or body)
 
         Post *Seek( Location l );
 
 
     private:
-        struct PostingListIndex //sync table
-            {
-            FileOffset Offset;
-            Location PostLocation;
-            };
-
         //virtual char *GetPostingList( );
     };
 
@@ -117,7 +122,9 @@ class DocEndPostingList : public PostingList
         DocEndPostingList(): PostingList() {}
         ~DocEndPostingList() {}
 
-        void appendToList(Location urlLoc, size_t urlIndex);
+        //Appends to DocEndPostingList and returns the previous
+        //Document's absolute location for calculating offset
+        Location appendToList(Location urlLoc, size_t urlIndex); 
     };
 
 class Index 
@@ -151,9 +158,6 @@ class IndexHT
         hash::HashTable<const char *, WordPostingList *> chunk;
         APESEARCH::unique_ptr<DocEndPostingList> docEndList;
         APESEARCH::vector<APESEARCH::string> urls;
-        size_t   WordsInIndex,
-                    DocumentsInIndex,
-                    LocationsInIndex,
-                    MaximumLocation;
+        size_t LocationsInIndex, MaximumLocation;
 
     };
