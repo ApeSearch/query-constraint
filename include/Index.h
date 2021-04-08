@@ -41,6 +41,7 @@ enum WordAttributes
         WordAttributeNormal, WordAttributeBold, WordAttributeHeading, WordAttributeLarge
     };
 
+
 enum PostingListType
     {
         BodyText, TitleText, HeaderText, AnchorText, URL
@@ -118,7 +119,7 @@ class PostingList
 
         Post *Seek( Location l );
 
-        virtual void appendToList(Location loc_, Attributes attribute) = 0;
+        virtual void appendToList(Location loc_, Attributes attribute, size_t lastDocIndex = 0) = 0;
 
 
     private:
@@ -132,7 +133,7 @@ class WordPostingList : public PostingList
 
         WordPostingList(): PostingList() {}
 
-        void appendToList(Location loc_, Attributes attribute) override;
+        void appendToList(Location loc_, Attributes attribute, size_t lastDocIndex = 0) override;
 
         
     };
@@ -145,7 +146,7 @@ class DocEndPostingList : public PostingList
         DocEndPostingList(): PostingList() {}
         ~DocEndPostingList() {}
 
-        void appendToList(Location loc_, Attributes attribute) override; 
+        void appendToList(Location loc_, Attributes attribute, size_t lastDocIndex = 0) override; 
     };
 
 class Index 
@@ -169,7 +170,7 @@ class IndexHT
         ~IndexHT();
 
         //std::pair<Location, Post *> findPost(  );
-        void addDoc(APESEARCH::string url, APESEARCH::vector<APESEARCH::string> &text, size_t endDocLoc, PostingListType type);
+        void addDoc(APESEARCH::string url, APESEARCH::vector<APESEARCH::string> text, size_t endDocLoc, PostingListType type);
         Post *goToNext( Location location ); // May need to inherit here...
 
         //ISRWord *OpenISRWord( APESEARCH::string word );

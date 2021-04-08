@@ -33,9 +33,9 @@ namespace hash {
       FNV() = default;
       size_t operator()( const APESEARCH::string &data ) const
          {
-         //TODO optimize 
+        //  //TODO optimize 
          size_t length = data.size();
-
+// 
          static const size_t FnvOffsetBasis=146959810393466560;
          static const size_t FnvPrime=1099511628211ul;
          size_t hash = FnvOffsetBasis;
@@ -67,7 +67,7 @@ namespace hash {
       public:
          bool operator()( const APESEARCH::string &L, const APESEARCH::string &R) const
             {
-               return L.compare(R);
+               return !L.compare(R);
             }
    };
 
@@ -173,7 +173,7 @@ namespace hash {
                *bucket = new Bucket< Key, Value >( k, initialValue, hashVal );
                ++numberOfBuckets;
                } // end if
-         
+
             return & ( * bucket )->tuple;
             }
          size_t getCollisions() const { return collisions; }

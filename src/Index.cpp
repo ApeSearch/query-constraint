@@ -14,41 +14,46 @@ IndexHT::~IndexHT(){
 }
 
 
-void DocEndPostingList::appendToList(Location loc_, Attributes attribute){
+void DocEndPostingList::appendToList(Location loc_, Attributes attribute, size_t lastDocIndex){
     if(posts.size())
         loc_ += posts.back()->loc;
     posts.push_back(new EODPost(loc_, attribute.urlIndex));
     numOfDocs++;
 }
 
-void WordPostingList::appendToList(Location loc_, Attributes attribute){
+void WordPostingList::appendToList(Location loc_, Attributes attribute, size_t lastDocIndex){
     if(posts.size())
-        loc_ += posts.back()->loc;
+        loc_ += lastDocIndex;
     posts.push_back(new WordPost(loc_, attribute.attribute));
     numberOfPosts++;
 }
 
-void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<APESEARCH::string> &text, 
+void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<APESEARCH::string> text, 
     size_t endDocLoc, PostingListType type){
-
+    
     urls.push_back(url);
 
-    hash::Tuple<APESEARCH::string, PostingList *> * entry = dict.Find(APESEARCH::string("%"));
-    //could this go out of scope, and pass by reference screws everything?
 
-    if(!entry)
+    hash::Tuple<APESEARCH::string, PostingList *> * entry = dict.Find(APESEARCH::string("%"));
+    size_t lastDocIndex = 0;
+
+    if(entry)
+        lastDocIndex = entry->value->posts.back()->loc;
+    else
         entry = dict.Find(APESEARCH::string("%"), new DocEndPostingList());
+
+    entry->value->appendToList(endDocLoc, urls.size() - 1);
 
     for(Location indexLoc = 0; indexLoc < text.size(); ++indexLoc) {
         APESEARCH::string& word = text[indexLoc];
-
         entry = dict.Find(word);
 
         if(!entry){
             WordPostingList * wl = new WordPostingList();
             entry = dict.Find(word, wl);
         }
-        entry->value->appendToList(indexLoc, WordAttributeNormal);
+
+        entry->value->appendToList(indexLoc, WordAttributeNormal, lastDocIndex);
     }
 }
 
