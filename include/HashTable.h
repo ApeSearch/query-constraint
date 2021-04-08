@@ -12,6 +12,7 @@
 using std::sort;
 #include "../libraries/AS/include/AS/algorithms.h" // for APESEARCH::swap
 #include "../libraries/AS/include/AS/utility.h" // for APESEARCH::pair
+#include "../libraries/AS/include/AS/string.h"
 
 #define DEFAULTSIZE 4096
 
@@ -30,10 +31,10 @@ namespace hash {
    {
    public:
       FNV() = default;
-      size_t operator()( const char *data ) const
+      size_t operator()( const APESEARCH::string &data ) const
          {
          //TODO optimize 
-         size_t length = strlen(data);
+         size_t length = data.size();
 
          static const size_t FnvOffsetBasis=146959810393466560;
          static const size_t FnvPrime=1099511628211ul;
@@ -41,7 +42,7 @@ namespace hash {
          for (  size_t i = 0; i < length; ++i)
             {
             hash *= FnvPrime;
-            hash ^= (unsigned long)data[ i ];
+            hash ^= (unsigned long)data[i];
             } // end for
          return hash;
          } //end operator()
@@ -59,6 +60,15 @@ namespace hash {
          return !strcmp( L, R );
          }
 
+   };
+
+   class StringComparator
+   {
+      public:
+         bool operator()( const APESEARCH::string &L, const APESEARCH::string &R) const
+            {
+               return L.compare(R);
+            }
    };
 
 
@@ -92,7 +102,7 @@ namespace hash {
             } // end ~Bucket()
    };
 
-   template< typename Key, typename Value, class Hash = FNV, class Comparator = CStringComparator > class HashTable
+   template< typename Key, typename Value, class Hash = FNV, class Comparator = StringComparator > class HashTable
       {
       private:
 
@@ -131,7 +141,6 @@ namespace hash {
       Bucket< Key, Value > **helperFind( const Key& k, uint32_t hashVal ) const
          {
          // Applying a bit-wise mask on the least-sig bits
-         //std::cout << k << " " << hashVal << std::endl;
          uint32_t index = hashVal & ( tableSize - 1 ); // modulo operation using bitwise AND (only works with power of two table size)
          Bucket< Key, Value > **bucket = buckets + index;
 
@@ -228,7 +237,7 @@ namespace hash {
          // Your constructor may take as many default arguments
          // as you like.
 
-         HashTable( size_t tb = DEFAULTSIZE, Hash hasher = FNV(), Comparator comp = CStringComparator() ) : tableSize( computeTwosPowCeiling( (ssize_t)tb ) ), 
+         HashTable( size_t tb = DEFAULTSIZE, Hash hasher = FNV(), Comparator comp = StringComparator() ) : tableSize( computeTwosPowCeiling( (ssize_t)tb ) ), 
             buckets( new Bucket< Key, Value > *[ tableSize ] ), numberOfBuckets( 0 ), compare( comp ), hashFunc( hasher )
             {
             assert( tb );

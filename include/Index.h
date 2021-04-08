@@ -36,24 +36,29 @@ static const uint32_t k2Exp28 = (256 * 1024 * 1024);
 typedef size_t Location; // The numbering of a token
 typedef size_t FileOffset; 
 
-enum WordAttributes : uint8_t
+enum WordAttributes
     {
         WordAttributeNormal, WordAttributeBold, WordAttributeHeading, WordAttributeLarge
     };
 
-enum PostingListType : uint8_t
+enum PostingListType
     {
         BodyText, TitleText, HeaderText, AnchorText, URL
     };
 
-typedef union WordPostEntry
+typedef union Attributes
     {
+        Attributes(WordAttributes attribute_) : attribute(attribute) {}
+        Attributes(size_t urlIndex_) : urlIndex(urlIndex_) {}
+        //Is a destructor needed here?
+
         WordAttributes attribute;
-        uint8_t delta;
+        size_t urlIndex;
     };
 
-typedef uint8_t EODPostEntry;
 
+
+/* This class is only needed when flattening the in memory hashtable
 class SynchronizationEntry
    {
     size_t highBitOfSeekLoc; // Relative to a posting list ( ordered )
@@ -61,31 +66,31 @@ class SynchronizationEntry
     size_t absoluteLoc; // Relative to every posting list.
    };
 
+*/
+
 class Post
     {
     public:
-        Post() : deltaPrev() {}
-        Post(FileOffset deltaPrev_) : deltaPrev(deltaPrev_) {}
+        Post() : loc(), attribute(WordAttributeNormal){}
+        Post(Location loc_, Attributes attribute_) : loc(loc_), attribute(attribute_) {}
 
-        FileOffset deltaPrev;
+        Location loc;
+        Attributes attribute;
     };
 
 class WordPost: public Post
     {
     public:
         WordPost(): Post() {}
-        WordPost(FileOffset deltaPrev_, WordAttributes attribute_) : Post(deltaPrev_), attribute(attribute_) {}
+        WordPost(FileOffset loc_, WordAttributes attribute_) : Post(loc_, attribute_) {}
 
-        WordAttributes attribute;
     };
 
 class EODPost: public Post
     {
     public:
         EODPost(): Post() {}
-        EODPost(FileOffset deltaPrev_, size_t urlIndex_) : Post(deltaPrev_), urlIndex(urlIndex) {}
-
-        size_t urlIndex;
+        EODPost(Location loc_, size_t urlIndex_) : Post(loc_, urlIndex_) {}
     };
 
 
@@ -99,16 +104,21 @@ class PostingList
     {
     public:
         // Represent the sync table
-        PostingList(): synchTable(), numberOfBytes(0), numberOfPosts(0), numOfDocs(0) {}
-        ~PostingList() {}
+        PostingList(): posts(), numberOfBytes(0), numberOfPosts(0), numOfDocs(0) {}
+        ~PostingList() {
+            for(size_t i = 0; i < posts.size(); ++i)
+                delete posts[i];
+        }
 
-        APESEARCH::vector<SynchronizationEntry> synchTable;
+        APESEARCH::vector<Post *> posts;
         size_t numberOfBytes; // size of posting list
         size_t numberOfPosts;   // Basically the number of occurnces of a particular token.
         size_t numOfDocs; // number of documents that contain this info.
         PostingListType type; // Type of token ( be it eod, anchor text, url, tile, or body)
 
         Post *Seek( Location l );
+
+        virtual void appendToList(Location loc_, Attributes attribute) = 0;
 
 
     private:
@@ -120,27 +130,22 @@ class WordPostingList : public PostingList
 
     public:
 
-        APESEARCH::vector<WordPostEntry> posts;
-
         WordPostingList(): PostingList() {}
-        ~WordPostingList() {}
 
-        void appendToList(Location tokenLoc, WordAttributes attribute);
+        void appendToList(Location loc_, Attributes attribute) override;
 
+        
     };
 
 class DocEndPostingList : public PostingList
     {
 
     public:
-        APESEARCH::vector<Post *> posts;
 
         DocEndPostingList(): PostingList() {}
         ~DocEndPostingList() {}
 
-        //Appends to DocEndPostingList and returns the previous
-        //Document's absolute location for calculating offset
-        Location appendToList(Location urlLoc, size_t urlIndex); 
+        void appendToList(Location loc_, Attributes attribute) override; 
     };
 
 class Index 
@@ -163,16 +168,15 @@ class IndexHT
         IndexHT();
         ~IndexHT();
 
-        std::pair<Location, Post *> findPost(  );
-        void addDoc(APESEARCH::string url, APESEARCH::vector<APESEARCH::string> &bodyText, size_t endDocLoc);
+        //std::pair<Location, Post *> findPost(  );
+        void addDoc(APESEARCH::string url, APESEARCH::vector<APESEARCH::string> &text, size_t endDocLoc, PostingListType type);
         Post *goToNext( Location location ); // May need to inherit here...
 
         //ISRWord *OpenISRWord( APESEARCH::string word );
         //ISREndDoc *OpenISREndDoc( );
 
     // private:
-        hash::HashTable<const char *, WordPostingList *> chunk;
-        APESEARCH::unique_ptr<DocEndPostingList> docEndList;
+        hash::HashTable<APESEARCH::string, PostingList *> dict;
         APESEARCH::vector<APESEARCH::string> urls;
         size_t LocationsInIndex, MaximumLocation;
 

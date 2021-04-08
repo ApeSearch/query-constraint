@@ -2,98 +2,92 @@
 #include <iostream>
 
 
-IndexHT::IndexHT() : chunk(), urls(), docEndList(new DocEndPostingList), LocationsInIndex(0), MaximumLocation(0) {}
+IndexHT::IndexHT() : dict(), urls(), LocationsInIndex(0), MaximumLocation(0) {}
 
-IndexHT::~IndexHT(){}
+IndexHT::~IndexHT(){
+    hash::HashTable<APESEARCH::string, PostingList *>::Iterator itr = dict.begin();
 
-
-Location DocEndPostingList::appendToList(Location urlLoc, size_t urlIndex) {
-    numOfDocs++;
-
-    if(!posts.size()){
-        posts.push_back(new EODPost(urlLoc, urlIndex));
-        return 0;
-    }
-    else {
-        Location curLoc = 0;
-        for(Post* post : posts){
-            curLoc += post->deltaPrev;
-        }
-
-        posts.push_back(new EODPost(urlLoc - curLoc, urlIndex));
-
-        return curLoc;
+    while(itr != dict.end()){
+        delete itr->value;
+        itr++;
     }
 }
 
-void WordPostingList::appendToList(Location tokenLoc, WordAttributes attribute) {
-    
-    if(!posts.size()){
-        if(tokenLoc < k2Exp7)
-            posts.emplace_back(tokenLoc);
 
-        else if(tokenLoc < k2Exp14){
-            posts.emplace_back((2 << 6) | (tokenLoc >> 8));
-            posts.emplace_back(tokenLoc & 0xff);
-        }
+void DocEndPostingList::appendToList(Location loc_, Attributes attribute){
+    if(posts.size())
+        loc_ += posts.back()->loc;
+    posts.push_back(new EODPost(loc_, attribute.urlIndex));
+    numOfDocs++;
+}
 
-        else if(tokenLoc < k2Exp21){
-            posts.emplace_back((6 << 5) | (tokenLoc >> 16));
-            posts.emplace_back((tokenLoc >> 8) & 0xff);
-            posts.emplace_back(tokenLoc & 0xff);
-        }
-        else{
-            posts.emplace_back((0xe << 4) | (tokenLoc >> 24));
-            posts.emplace_back((tokenLoc >> 16) & 0xff);
-            posts.emplace_back((tokenLoc >> 8) & 0xff);
-            posts.emplace_back(tokenLoc & 0xff);
-        }
-
-        posts.emplace_back(attribute);
-    }
-
-    else{
-        Location curLoc = 0;
-        
-
-        posts.push_back(new WordPost(tokenLoc - curLoc, attribute));
-
-        //std::cout << tokenLoc - curLoc << " " << posts[posts.size() - 1]->deltaPrev << std::endl;
-    }
-
+void WordPostingList::appendToList(Location loc_, Attributes attribute){
+    if(posts.size())
+        loc_ += posts.back()->loc;
+    posts.push_back(new WordPost(loc_, attribute.attribute));
     numberOfPosts++;
 }
 
-void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<APESEARCH::string> &bodyText, size_t endDocLoc){
+void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<APESEARCH::string> &text, 
+    size_t endDocLoc, PostingListType type){
 
     urls.push_back(url);
 
-    //get Previous Document's Absolute Location to add to current word index
-    Location prevDocLoc = docEndList.get()->appendToList(endDocLoc, urls.size() - 1);
+    hash::Tuple<APESEARCH::string, PostingList *> * entry = dict.Find(APESEARCH::string("%"));
+    //could this go out of scope, and pass by reference screws everything?
 
+    if(!entry)
+        entry = dict.Find(APESEARCH::string("%"), new DocEndPostingList());
 
-    for(Location indexLoc = 0; indexLoc < bodyText.size(); ++indexLoc) {
-        auto& word = bodyText[indexLoc];
+    for(Location indexLoc = 0; indexLoc < text.size(); ++indexLoc) {
+        APESEARCH::string& word = text[indexLoc];
 
-        hash::Tuple<const char *, WordPostingList *> * entry = chunk.Find(word.cstr());
+        entry = dict.Find(word);
+
         if(!entry){
             WordPostingList * wl = new WordPostingList();
-            entry = chunk.Find(word.cstr(), wl);
+            entry = dict.Find(word, wl);
         }
-
-        entry->value->appendToList(indexLoc + prevDocLoc, WordAttributeNormal);
+        entry->value->appendToList(indexLoc, WordAttributeNormal);
     }
 }
 
 Post *PostingList::Seek(Location l) {
-    Location curLoc = 0;
+    Location index = 0;
+    for(; index < l && index < posts.size(); ++index);
 
-    for(Post* post : posts){
-        curLoc += post->deltaPrev;
+    if(index == posts.size())
+        return nullptr;
 
-        if(curLoc == l)
-            return post;
-    }
-
-    return nullptr;
+    return posts[index];
 }
+
+
+
+
+/*
+Below is code that will be used for writing the index into the disk.
+
+1. Variable Length Encoding of Deltas 
+
+if(tokenLoc < k2Exp7)
+    posts.emplace_back(tokenLoc);
+
+else if(tokenLoc < k2Exp14){
+    posts.emplace_back((2 << 6) | (tokenLoc >> 8));
+    posts.emplace_back(tokenLoc & 0xff);
+}
+
+else if(tokenLoc < k2Exp21){
+    posts.emplace_back((6 << 5) | (tokenLoc >> 16));
+    posts.emplace_back((tokenLoc >> 8) & 0xff);
+    posts.emplace_back(tokenLoc & 0xff);
+}
+else{
+    posts.emplace_back((0xe << 4) | (tokenLoc >> 24));
+    posts.emplace_back((tokenLoc >> 16) & 0xff);
+    posts.emplace_back((tokenLoc >> 8) & 0xff);
+    posts.emplace_back(tokenLoc & 0xff);
+}
+
+*/

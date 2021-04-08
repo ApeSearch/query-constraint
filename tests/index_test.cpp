@@ -17,23 +17,23 @@ int main()
         words.emplace_back("the");
         words.emplace_back("animals");
         
-        IndexHT index;
-        index.addDoc("https://eecs440.com", words, 9);
-        index.addDoc("https://eecs441.com", words, 19);
+        IndexHT *index = new IndexHT();
+        index->addDoc("https://eecs440.com", words, 9, BodyText);
+        index->addDoc("https://eecs441.com", words, 19, TitleText);
 
-        
-        hash::Tuple<const char *, WordPostingList *> * entry = index.chunk.Find("the");
+        hash::Tuple<APESEARCH::string, PostingList *> * entry = index->dict.Find(APESEARCH::string("the"));
+        hash::HashTable<APESEARCH::string, PostingList *>::Iterator itr = index->dict.begin();
 
-        WordPostingList* pl = entry->value;
-        
-        Location absoluteLoc = 0;
 
-        for(size_t i = 0; i < pl->numberOfPosts; ++i){
-            absoluteLoc += pl->posts[i]->deltaPrev;
-            std::cout << pl->posts[i]->deltaPrev << " " << absoluteLoc << std::endl;
+        while(itr != index->dict.end()){
+            std::cout << itr->key << std::endl;
+            itr++;
         }
 
-        assert(pl->numberOfPosts == 6);
-        assert(index.docEndList.get()->numOfDocs == 2);
-        
+        /*PostingList* pl = entry->value;
+
+        for(size_t i = 0; i < pl->numberOfPosts; ++i){
+            std::cout << pl->posts[i]->loc << std::endl;
+        }
+        */
     }
