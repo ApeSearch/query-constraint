@@ -3,9 +3,18 @@
 ISR::ISR() {}
 
 ISRWord::ISRWord() : ISR() {}
-ISRWord::ISRWord(APESEARCH::string _word) : ISR(), word(_word) {}
-unsigned ISRWord::GetDocumentCount( ) {}
-unsigned ISRWord::GetNumberOfOccurrences( ) {}
+
+ISRWord::ISRWord(PostingList * _posts) : ISR(), posts(_posts){}
+
+ISREndDoc::ISREndDoc() : ISRWord() {}
+
+ISREndDoc::ISREndDoc(PostingList* _posts) : ISRWord(_posts) {}
+
+// Return the number of documents that contain this word
+unsigned ISRWord::GetDocumentCount( ) { return posts->numOfDocs; }
+
+unsigned ISRWord::GetNumberOfOccurrences( ) { return posts->numberOfPosts; }
+
 Post *ISRWord::GetCurrentPost( ) {}
 
 ISREndDoc::ISREndDoc() {}

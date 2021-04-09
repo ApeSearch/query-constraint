@@ -13,15 +13,9 @@
 #include "Index.h"
 
 
-class ISR;
-class ISRWord;
-class ISREndDoc;
-
 class ISR //fix inheritance to be logical, remove duplicate code and member variables
     {
-    Index *index;
-    PostingList *eofDocList;
-    PostingList *tokenList;
+
     public:
         ISR();
         virtual ~ISR() {}
@@ -33,35 +27,41 @@ class ISR //fix inheritance to be logical, remove duplicate code and member vari
         virtual Post *Seek( Location target ) = 0;
         virtual Location GetStartLocation( ) = 0;
         virtual Location GetEndLocation( ) = 0;
+
     };
 
 class ISRWord : public ISR
     {
     public:
         ISRWord();
-        ISRWord(APESEARCH::string _word);
+        ISRWord(PostingList * _posts);
+
         unsigned GetDocumentCount( );
         unsigned GetNumberOfOccurrences( );
         virtual Post *GetCurrentPost( );
 
-        // Needed 
+        // needed
         Post *Next( ) override {}
         Post *NextDocument( ) override {}
         Post *Seek( Location target ) override {}
         Location GetStartLocation( ) override {}
         Location GetEndLocation( ) override {}
 
-        APESEARCH::string word;
+    private:
+        PostingList* posts;
     };
 
 class ISREndDoc : public ISRWord
     {
     public:
         ISREndDoc();
+        ISREndDoc(PostingList* _posts);
 
         unsigned GetDocumentLength( );
         unsigned GetTitleLength( );
         unsigned GetUrlLength( );
+
+
     };
 
 class ISROr : public ISR

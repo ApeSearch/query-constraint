@@ -25,12 +25,17 @@
 //Constants to use for decoding and encoding deltas
 //Variable length encodings
 
-
+/*
 static const uint32_t k2Exp7 = 128;
 static const uint32_t k2Exp14 = 16384;
 static const uint32_t k2Exp21 = (2 * 1024 * 1024);
 static const uint32_t k2Exp28 = (256 * 1024 * 1024);
 
+*/
+
+class ISR;
+class ISRWord;
+class ISREndDoc;
 
 
 typedef size_t Location; // The numbering of a token
@@ -47,7 +52,7 @@ enum PostingListType
         BodyText, TitleText, HeaderText, AnchorText, URL
     };
 
-typedef union Attributes
+typedef union Attributes //attributes for all kinds of posting lists, only one value will be used
     {
         Attributes(WordAttributes attribute_) : attribute(attribute) {}
         Attributes(size_t urlIndex_) : urlIndex(urlIndex_) {}
@@ -70,7 +75,7 @@ class SynchronizationEntry
 */
 
 class Post
-    {
+    { //in memory version of post, will replace loc with deltaPrev once written to disk
     public:
         Post() : loc(), attribute(WordAttributeNormal){}
         Post(Location loc_, Attributes attribute_) : loc(loc_), attribute(attribute_) {}
@@ -94,13 +99,6 @@ class EODPost: public Post
         EODPost(Location loc_, size_t urlIndex_) : Post(loc_, urlIndex_) {}
     };
 
-
-class Sentinel: public Post
-    {
-    public:
-        Sentinel();
-    };
-
 class PostingList
     {
     public:
@@ -111,7 +109,7 @@ class PostingList
                 delete posts[i];
         }
 
-        APESEARCH::vector<Post *> posts;
+        APESEARCH::vector<Post *> posts; //pointers to individual posts
         size_t numberOfBytes; // size of posting list
         size_t numberOfPosts;   // Basically the number of occurnces of a particular token.
         size_t numOfDocs; // number of documents that contain this info.
@@ -119,6 +117,9 @@ class PostingList
 
         Post *Seek( Location l );
 
+
+        //pure virtual function to handle appending a new post to list. lastDocIndex is for 
+        //word/token posts to determine absolute location based on location of last document
         virtual void appendToList(Location loc_, Attributes attribute, size_t lastDocIndex = 0) = 0;
 
 
@@ -173,8 +174,8 @@ class IndexHT
         void addDoc(APESEARCH::string url, APESEARCH::vector<APESEARCH::string> text, size_t endDocLoc, PostingListType type);
         Post *goToNext( Location location ); // May need to inherit here...
 
-        //ISRWord *OpenISRWord( APESEARCH::string word );
-        //ISREndDoc *OpenISREndDoc( );
+        ISRWord* getWordISR ( APESEARCH::string word );
+        ISREndDoc* getEndDocISR ( );
 
     // private:
         hash::HashTable<APESEARCH::string, PostingList *> dict;

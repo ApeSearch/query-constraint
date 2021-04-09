@@ -1,4 +1,5 @@
 #include "../include/Index.h"
+#include "../include/ISR.h"
 #include <iostream>
 
 
@@ -67,7 +68,15 @@ Post *PostingList::Seek(Location l) {
     return posts[index];
 }
 
+ISRWord* IndexHT::getWordISR ( APESEARCH::string word ) {
+    hash::Tuple<APESEARCH::string, PostingList *> * entry = dict.Find(word);
+    return entry ? entry->value : nullptr;
+}
 
+ISREndDoc* IndexHT::getEndDocISR ( ) {
+    hash::Tuple<APESEARCH::string, PostingList *> * entry = dict.Find(APESEARCH::string("%"));
+    return entry ? entry->value : nullptr;
+}
 
 
 /*
