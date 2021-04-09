@@ -21,9 +21,9 @@ int main()
         
         IndexHT *index = new IndexHT();
         index->addDoc("https://eecs440.com", words, 9, BodyText);
-        index->addDoc("https://eecs441.com", words, 19, TitleText); 
+        index->addDoc("https://eecs441.com", words, 19, AnchorText); 
 
-        APESEARCH::string strToFind = "the";
+        APESEARCH::string strToFind = "$the";
 
         hash::Tuple<APESEARCH::string, PostingList *> * entry = index->dict.Find(strToFind);
         hash::HashTable<APESEARCH::string, PostingList *>::Iterator itr = index->dict.begin();
@@ -31,7 +31,7 @@ int main()
         for(size_t i = 0; i < entry->value->posts.size(); ++i){
             std::cout << entry->value->posts[i]->loc << std::endl;
         }
-
+        
         while(itr != index->dict.end()){
             std::cout << itr->key << std::endl;
             itr++;

@@ -15,9 +15,27 @@ unsigned ISRWord::GetDocumentCount( ) { return posts->numOfDocs; }
 
 unsigned ISRWord::GetNumberOfOccurrences( ) { return posts->numberOfPosts; }
 
-Post *ISRWord::GetCurrentPost( ) {}
+Post *ISRWord::GetCurrentPost( ) {
 
-ISREndDoc::ISREndDoc() {}
+    return nullptr;
+}
+
+Post * ISRWord::Next( ) {
+    return GetCurrentPost();
+}
+
+Post * ISRWord::NextDocument( ) {
+    return nullptr;
+}
+
+Post * ISRWord::Seek( Location target ) {
+    return nullptr;
+}
+
+Location ISRWord::GetStartLocation( ) {}
+
+Location ISRWord::GetEndLocation( ) {}
+
 
 unsigned ISREndDoc::GetDocumentLength( ) {}
 unsigned ISREndDoc::GetTitleLength( ) {}

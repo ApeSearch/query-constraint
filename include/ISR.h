@@ -41,11 +41,11 @@ class ISRWord : public ISR
         virtual Post *GetCurrentPost( );
 
         // needed
-        Post *Next( ) override {}
-        Post *NextDocument( ) override {}
-        Post *Seek( Location target ) override {}
-        Location GetStartLocation( ) override {}
-        Location GetEndLocation( ) override {}
+        Post *Next( ) override;
+        Post *NextDocument( ) override;
+        Post *Seek( Location target ) override;
+        Location GetStartLocation( ) override;
+        Location GetEndLocation( ) override;
 
     private:
         PostingList* posts;

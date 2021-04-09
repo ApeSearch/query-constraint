@@ -18,9 +18,8 @@ SearchWord::SearchWord(APESEARCH::string _word) : Tuple(), word(_word) {}
 SearchWord::~SearchWord() {}
 
 ISR* SearchWord::Compile() {
-    // TODO: unique ptrs
-    std::cout << word << std::endl;
-    return new ISRWord(word);
+    // TODO: Get SearchWord ISR from index
+    return nullptr; 
 }
 
 // End SearchWord

@@ -23,8 +23,7 @@ void DocEndPostingList::appendToList(Location loc_, Attributes attribute, size_t
 }
 
 void WordPostingList::appendToList(Location loc_, Attributes attribute, size_t lastDocIndex){
-    if(posts.size())
-        loc_ += lastDocIndex;
+    loc_ += lastDocIndex;
     posts.push_back(new WordPost(loc_, attribute.attribute));
     numberOfPosts++;
 }
@@ -46,13 +45,24 @@ void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<APESEARCH::string>
     entry->value->appendToList(endDocLoc, urls.size() - 1);
 
     for(Location indexLoc = 0; indexLoc < text.size(); ++indexLoc) {
-        APESEARCH::string& word = text[indexLoc];
+        APESEARCH::string word = text[indexLoc];
+        switch (type) {
+            case TitleText:
+                word.push_front('%');
+                break;
+            case URL:
+                word.push_front('#');
+                break;
+            case AnchorText:
+                word.push_front('$');
+                break;
+            default:
+                break;
+        }
         entry = dict.Find(word);
 
-        if(!entry){
-            WordPostingList * wl = new WordPostingList();
-            entry = dict.Find(word, wl);
-        }
+        if(!entry)
+            entry = dict.Find(word, new WordPostingList());
 
         entry->value->appendToList(indexLoc, WordAttributeNormal, lastDocIndex);
     }
@@ -70,12 +80,12 @@ Post *PostingList::Seek(Location l) {
 
 ISRWord* IndexHT::getWordISR ( APESEARCH::string word ) {
     hash::Tuple<APESEARCH::string, PostingList *> * entry = dict.Find(word);
-    return entry ? entry->value : nullptr;
+    return new ISRWord(entry->value);
 }
 
 ISREndDoc* IndexHT::getEndDocISR ( ) {
     hash::Tuple<APESEARCH::string, PostingList *> * entry = dict.Find(APESEARCH::string("%"));
-    return entry ? entry->value : nullptr;
+    return new ISREndDoc(entry->value);
 }
 
 

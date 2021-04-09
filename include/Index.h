@@ -102,7 +102,7 @@ class EODPost: public Post
 class PostingList
     {
     public:
-        // Represent the sync table
+
         PostingList(): posts(), numberOfBytes(0), numberOfPosts(0), numOfDocs(0) {}
         ~PostingList() {
             for(size_t i = 0; i < posts.size(); ++i)
@@ -117,13 +117,11 @@ class PostingList
 
         Post *Seek( Location l );
 
-
         //pure virtual function to handle appending a new post to list. lastDocIndex is for 
         //word/token posts to determine absolute location based on location of last document
         virtual void appendToList(Location loc_, Attributes attribute, size_t lastDocIndex = 0) = 0;
 
 
-    private:
         //virtual char *GetPostingList( );
     };
 
