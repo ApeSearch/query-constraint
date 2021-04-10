@@ -1,4 +1,3 @@
- 
 #pragma once
 
 #include "Token.h"
@@ -13,7 +12,7 @@
  *  expose the functionality of the Index. That is, perhaps having a pointer to a posting list, you can
  *  basically use that to find the next post in a posting list.
  *  
- *  
+ * 
  * 
  * 
  * 
@@ -30,7 +29,6 @@ static const uint32_t k2Exp7 = 128;
 static const uint32_t k2Exp14 = 16384;
 static const uint32_t k2Exp21 = (2 * 1024 * 1024);
 static const uint32_t k2Exp28 = (256 * 1024 * 1024);
-
 */
 
 class ISR;
@@ -71,7 +69,6 @@ class SynchronizationEntry
     size_t seekOffset;  // Relative to the start of the posting list.
     size_t absoluteLoc; // Relative to every posting list.
    };
-
 */
 
 class Post
@@ -113,6 +110,7 @@ class PostingList
         size_t numberOfBytes; // size of posting list
         size_t numberOfPosts;   // Basically the number of occurnces of a particular token.
         size_t numOfDocs; // number of documents that contain this info.
+        PostingListType type; // Type of token ( be it eod, anchor text, url, tile, or body)
 
         Post *Seek( Location l );
 
@@ -151,6 +149,14 @@ class IndexHT
     {
 
     public:
+        class Dictionary
+            {
+                public:
+                    Location GetNumberOfWords();
+                    Location GetNumberOfUniqueWords();
+                    Location GetNumberOfDocuments();
+            };
+
         IndexHT();
         ~IndexHT();
 
@@ -162,4 +168,6 @@ class IndexHT
 
         hash::HashTable<APESEARCH::string, PostingList *> dict;
         APESEARCH::vector<APESEARCH::string> urls;
+        size_t LocationsInIndex, MaximumLocation;
+
     };
