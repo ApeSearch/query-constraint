@@ -1,4 +1,4 @@
-#include "../include/Index.h"
+#include "../include/IndexHT.h"
 #include "../include/ISR.h"
 #include <iostream>
 
@@ -92,26 +92,37 @@ ISREndDoc* IndexHT::getEndDocISR ( ) {
 /*
 Below is code that will be used for writing the index into the disk.
 
-1. Variable Length Encoding of Deltas 
 
-if(tokenLoc < k2Exp7)
-    posts.emplace_back(tokenLoc);
 
-else if(tokenLoc < k2Exp14){
-    posts.emplace_back((2 << 6) | (tokenLoc >> 8));
-    posts.emplace_back(tokenLoc & 0xff);
+void WordPostingList::encodeAddLoc(Location tokenLoc){
+    WordPostEntry e;
+
+    while (tokenLoc > 127) {
+        e.delta = tokenLoc | 0b10000000;
+        posts.emplace_back(e);
+        tokenLoc >>= 7;
+    }
+
+    return;
 }
 
-else if(tokenLoc < k2Exp21){
-    posts.emplace_back((6 << 5) | (tokenLoc >> 16));
-    posts.emplace_back((tokenLoc >> 8) & 0xff);
-    posts.emplace_back(tokenLoc & 0xff);
-}
-else{
-    posts.emplace_back((0xe << 4) | (tokenLoc >> 24));
-    posts.emplace_back((tokenLoc >> 16) & 0xff);
-    posts.emplace_back((tokenLoc >> 8) & 0xff);
-    posts.emplace_back(tokenLoc & 0xff);
+Location WordPostingList::decodeDeltas(size_t &postIndex){
+    size_t addedDeltas = 0;
+    uint8_t shift = 0;
+
+    uint8_t bitmaskLower = 0b01111111;
+    uint8_t highBitmask = ~bitmaskLower;
+
+
+    while (postIndex < posts.size() - 1) {
+        uint8_t byte = posts[postIndex++].delta;
+        addedDeltas |= (bitmaskLower | byte) << shift;
+        if((highBitmask & byte) == 0)
+            break;
+        shift += 7;
+    }
+
+    return addedDeltas;
 }
 
 */

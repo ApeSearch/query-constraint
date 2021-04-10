@@ -10,7 +10,7 @@
 #include <utility>
 #include <iostream>
 #include "../libraries/AS/include/AS/string.h"
-#include "Index.h"
+#include "IndexHT.h"
 
 
 class ISR //fix inheritance to be logical, remove duplicate code and member variables
@@ -35,6 +35,7 @@ class ISRWord : public ISR
     public:
         ISRWord();
         ISRWord(PostingList * _posts);
+        ~ISRWord() {delete posts;}
 
         unsigned GetDocumentCount( );
         unsigned GetNumberOfOccurrences( );

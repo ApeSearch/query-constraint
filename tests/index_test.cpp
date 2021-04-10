@@ -1,5 +1,5 @@
 #include "queries.h"
-#include "../include/Index.h"
+#include "../include/IndexHT.h"
 #include "../libraries/AS/include/AS/string.h"
 #include <iostream>
 #include <cassert>

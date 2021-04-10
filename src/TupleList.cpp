@@ -6,7 +6,9 @@ using namespace query;
 
 TupleList::TupleList(): Top(nullptr), Bottom(nullptr) {}
 
-TupleList::~TupleList() {}
+TupleList::~TupleList() {
+    
+}
 
 void TupleList::Empty()
     {
