@@ -20,19 +20,19 @@ namespace query {
     class OrExpression : public TupleList {
         public:
             OrExpression();
-            ISR* Compile();
+            ISR* Compile(IndexHT *indexPtr);
     };
 
     class AndExpression : public TupleList {
         public:
             AndExpression();
-            ISR* Compile();
+            ISR* Compile(IndexHT *indexPtr);
     };
 
     class Phrase : public TupleList {
         public:
             Phrase();
-            ISR* Compile();
+            ISR* Compile(IndexHT *indexPtr);
     };
 
 }

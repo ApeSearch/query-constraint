@@ -18,6 +18,7 @@ class ISR //fix inheritance to be logical, remove duplicate code and member vari
 
     public:
         ISR();
+        ISR(IndexHT *_indexPtr);
         virtual ~ISR() {}
 
         // Store information the index provides i.e. the posting list, the location 
@@ -28,13 +29,14 @@ class ISR //fix inheritance to be logical, remove duplicate code and member vari
         virtual Location GetStartLocation( ) = 0;
         virtual Location GetEndLocation( ) = 0;
 
+        IndexHT *indexPtr;
     };
 
 class ISRWord : public ISR
     {
     public:
         ISRWord();
-        ISRWord(PostingList * _posts);
+        ISRWord(PostingList * _posts, IndexHT *indexPtr);
         ~ISRWord() {delete posts;}
 
         unsigned GetDocumentCount( );
@@ -56,7 +58,7 @@ class ISREndDoc : public ISRWord
     {
     public:
         ISREndDoc();
-        ISREndDoc(PostingList* _posts);
+        ISREndDoc(PostingList* _posts, IndexHT *indexPtr);
 
         unsigned GetDocumentLength( );
         unsigned GetTitleLength( );
@@ -69,6 +71,7 @@ class ISROr : public ISR
     {
         public:
             ISROr();
+            ISROr(IndexHT *_indexPtr);
 
             ISR **terms;
             unsigned numTerms;
@@ -88,30 +91,41 @@ class ISROr : public ISR
                 // Seek all the ISRs to the first occurrence beginning at
                 // the target location. Return null if there is no match.
                 // The document is the document containing the nearest term.
+                for (int i = 0; i < numTerms; ++i) 
+                    terms[i]->Seek(target);
                 }
 
             Post *Next( ) override
                 {
-                // Do a next on the nearest term, then return
-                // the new nearest match.
+                // Do a next on the nearest term
+                terms[nearestTerm]->Next();
+                // Return the new nearest match.
+                nearestTerm = 0;
+                for (int i = 0; i < numTerms; ++i) {
+                    if (terms[i]->GetStartLocation() < terms[nearestTerm]->GetStartLocation())
+                        nearestTerm = i;
+                }
+                return nullptr;
                 }
 
             Post *NextDocument( ) override
                 {
                 // Seek all the ISRs to the first occurrence just past
                 // the end of this document.
-                // return Seek( DocumentEnd->GetEndLocation( ) + 1 );
+                return Seek( DocumentEnd->GetEndLocation( ) + 1 );
                 }
         
         private:
             unsigned nearestTerm;
             Location nearestStartLocation, nearestEndLocation;
+            ISREndDoc *DocumentEnd;
     };
 
 class ISRAnd : public ISR 
     {
         public:
             ISRAnd();
+            ISRAnd(IndexHT *_indexPtr);
 
             ISR **terms;
             unsigned numTerms;
@@ -120,9 +134,12 @@ class ISRAnd : public ISR
                 {
                     // 1. Seek all the ISRs to the first occurrence beginning at
                     //    the target location.
+                    for (int i = 0; i < numTerms; ++i) 
+                        terms[i]->Seek(target);
 
                     // 2. Move the document end ISR to just past the furthest
                     //    word, then calculate the document begin location.
+                    DocumentEnd->Seek( terms[farthestTerm]->GetStartLocation() + 1 );
 
                     // 3. Seek all the other terms to past the document begin.
 
@@ -141,7 +158,7 @@ class ISRAnd : public ISR
                 {
                 // Seek all the ISRs to the first occurrence just past
                 // the end of this document.
-                // return Seek( DocumentEnd->GetEndLocation( ) + 1 );
+                return Seek( DocumentEnd->GetEndLocation( ) + 1 );
                 }
 
             Location GetStartLocation() override
@@ -157,12 +174,15 @@ class ISRAnd : public ISR
         private: 
             unsigned nearestTerm, farthestTerm;
             Location nearestStartLocation, nearestEndLocation;
+
+            ISREndDoc *DocumentEnd;
     };
 
 class ISRPhrase : public ISR
     {
     public:
         ISRPhrase();
+        ISRPhrase(IndexHT *_indexPtr);
 
         ISR **terms;
         unsigned numTerms;
@@ -180,18 +200,21 @@ class ISRPhrase : public ISR
             {
             // Seek all the ISRs to the first occurrence just past
             // the end of this document.
-            // return Seek( DocumentEnd->GetEndLocation( ) + 1 );
+            return Seek( DocumentEnd->GetEndLocation( ) + 1 );
             }
 
         Post *Seek( Location target ) override
             {
                 // 1. Seek all ISRs to the first occurrence beginning at
                 //    the target location.
+                for (int i = 0; i < numTerms; ++i) 
+                    terms[i]->Seek(target);
 
                 // 2. Pick the furthest term and attempt to seek all
                 //    the other terms to the first location beginning
                 //    where they should appear relative to the furthest
                 //    term.
+
 
                 // 3. If any term is past the desired location, return
                 //    to step 2.
@@ -201,7 +224,7 @@ class ISRPhrase : public ISR
 
         Post * Next() override
             {
-            // return Seek( nearestStartLocation + 1 );
+            return Seek( nearestStartLocation + 1 );
             }
     private: 
         unsigned nearestTerm, farthestTerm;
@@ -212,6 +235,7 @@ class ISRContainer : public ISR
     {
     public:
         ISRContainer();
+        ISRContainer(IndexHT *_indexPtr);
 
         ISR **contained; //List of ISRs to include
         ISR *excluded; //ISR to exclude
@@ -242,11 +266,12 @@ class ISRContainer : public ISR
 
         Post *Next( ) override
             {
-            // Seek( contained[ nearestContained ]->GetStartlocation( ) + 1 );
+            Seek( contained[ nearestContained ]->GetStartLocation( ) + 1 );
             }
 
     private:
         unsigned nearestTerm, farthestTerm;
+        unsigned nearestContained;
         Location nearestStartLocation, nearestEndLocation;
     };
 

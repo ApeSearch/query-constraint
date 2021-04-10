@@ -7,12 +7,14 @@
 #include <iostream>
 #include <cstring> // for strlen
 #include <assert.h>
-#include <algorithm> // for std::sort
+#include <iomanip>
 #include <vector>
+#include <algorithm> // for std::sort
 using std::sort;
 #include "../libraries/AS/include/AS/algorithms.h" // for APESEARCH::swap
 #include "../libraries/AS/include/AS/utility.h" // for APESEARCH::pair
 #include "../libraries/AS/include/AS/string.h"
+#include "../libraries/AS/include/AS/vector.h"
 
 #define DEFAULTSIZE 4096
 
@@ -118,12 +120,12 @@ namespace hash {
          friend class Iterator;
          friend class HashBlob;
       
-      std::vector< Bucket< Key, Value> *> flattenHashTable()
+      APESEARCH::vector< Bucket< Key, Value> *> flattenHashTable()
          {
          
          Bucket< Key, Value > *currBucket = *buckets;
          Bucket< Key, Value > **mainLevel = buckets;
-         std::vector< Bucket< Key, Value> * > bucketVec;
+         APESEARCH::vector< Bucket< Key, Value> * > bucketVec;
          bucketVec.reserve( numberOfBuckets );
 
          // ++ happens first then dereference
@@ -191,6 +193,28 @@ namespace hash {
             return bucket ? &bucket->tuple : nullptr;
             } // end Find()
 
+         APESEARCH::vector< APESEARCH::vector< Bucket< Key, Value> *> > vectorOfBuckets() const
+         {
+            Bucket< Key, Value > **mainLevel = buckets;
+            Bucket< Key, Value > **const end = buckets + tableSize;
+            APESEARCH::vector< APESEARCH::vector< Bucket< Key, Value> *> > bucketVec;
+            bucketVec.reserve( numOfLinkedLists() );
+            size_t bucketCnt = 0;
+            for ( ;advancePtr( &mainLevel, end, bucketVec ); ++mainLevel )
+               {
+               APESEARCH::vector< Bucket< Key, Value> *>& bucketRef = bucketVec.back();
+               assert( !bucketRef.size() );
+               for ( Bucket< Key, Value > *currBucket = *mainLevel ; currBucket ; currBucket = currBucket->next )
+                  {
+                  bucketRef.emplace_back( currBucket );
+                  ++bucketCnt;
+                  }
+               assert( bucketRef.size() );
+               bucketRef.shrink_to_fit();
+               } // end for
+            assert( bucketCnt == numberOfBuckets );
+            return bucketVec;
+         } // end vectorOfBuckets()
 
          //!Invalidates any Iterators / pointers
          // Modify or rebuild the hash table as you see fit
@@ -202,7 +226,7 @@ namespace hash {
             // So it might be necessary to shrink the table size
             size_t expectedTS = size_t ( static_cast<double>(numberOfBuckets) / loadFactor );
 
-            std::vector< Bucket< Key, Value > *> flattened = flattenHashTable();
+            APESEARCH::vector< Bucket< Key, Value > *> flattened = flattenHashTable();
             delete []buckets;
             
             // Sort so that most frequent words are inserted first
@@ -256,11 +280,11 @@ namespace hash {
             } // end ~HashTable()
 
 
-         std::vector< const Bucket< Key, Value> * > constflattenHashTable()
+         APESEARCH::vector< const Bucket< Key, Value> * > constflattenHashTable()
             {
             Bucket< Key, Value > const *currBucket = *buckets;
             Bucket< Key, Value > **mainLevel = buckets;
-            std::vector< const Bucket< Key, Value> * > bucketVec;
+            APESEARCH::vector< const Bucket< Key, Value> * > bucketVec;
             bucketVec.reserve( numberOfBuckets );
 
             for ( Bucket< Key, Value > **const end = buckets + tableSize; 
@@ -297,18 +321,19 @@ namespace hash {
             return numOfLL;
             }
 
-         bool advancePtr( Bucket< Key, Value > ***mainLevel, Bucket< Key, Value > **end, std::vector< APESEARCH::pair< Bucket< Key, Value > **, size_t > >& bucketVec ) const
+      bool advancePtr( Bucket< Key, Value > ***mainLevel, Bucket< Key, Value > **end, APESEARCH::vector< APESEARCH::vector< Bucket< Key, Value> *> >& bucketVec ) const
+         {
+         for ( ; *mainLevel != end; ++(*mainLevel) )
             {
-            for ( ; *mainLevel != end; ++(*mainLevel) )
+            if ( **mainLevel )
                {
-               if ( **mainLevel )
-                  {
-                  bucketVec.emplace_back( APESEARCH::pair< Bucket< Key, Value > **, size_t>( *mainLevel, 0 ) );
-                  return true;
-                  }
-               } // end if
-            return false;
-            }
+               bucketVec.emplace_back( APESEARCH::vector< Bucket< Key, Value> *>() );
+               return true;
+               }
+            } // end if
+         return false;
+         }
+         
          
    private:
          //! May be helpful when implementing Minimal perfect hash function
@@ -329,160 +354,184 @@ namespace hash {
                } // end for
             return bucketVec;
             } 
+         
+         void assertLinkedList( std::vector< Bucket< Key, Value> *>& vec ) const
+         {
+         for ( typename std::vector< Bucket< Key, Value> *>::iterator currBucket = vec.begin(); currBucket != vec.end(); ++currBucket )
+            {
+            if ( currBucket + 1 == vec.end() )
+               assert( !( ( *currBucket )->next ) );
+            else 
+               assert( ( *currBucket )->next == *( currBucket + 1 ) );
+            }
+         } // end assertLinkedList()
+
    public:
-         double averageCollisonsPerBucket() const
-            {
-            if ( !numberOfBuckets )
-               return 0;
-            return numberOfBuckets / static_cast<double> ( numOfLinkedLists() );
+      double averageCollisonsPerBucket() const
+         {
+         if ( !numberOfBuckets )
+            return 0;
+         size_t numOfLL = numOfLinkedLists();
+         return static_cast<double> ( numberOfBuckets - numOfLL ) / static_cast<double> ( numOfLL );
+         }
+
+      double averageBucketsPerLL() const 
+         {
+         if ( !numberOfBuckets )
+            return 0;
+         size_t numOfLL = numOfLinkedLists();
+         return static_cast<double> ( numberOfBuckets ) / static_cast<double> ( numOfLL );
+         }
+
+      void printStats() const 
+         {
+         int width = 33;
+         /*std::cout << "------- Hash Table Stats Beg -------\n";
+         std::cout << std::setw( width ) << std::left << "Total Buckets Allocated: " << size() << '\n';
+         std::cout << std::setw( width ) << std::left << "Table Size: " << table_size() << '\n';
+         std::cout << std::setw( width ) << std::left << "Number of Collisions: " << collisions << '\n';
+         std::cout << std::setw( width ) << std::left << "load_factor: " << load_factor() << '\n';
+         std::cout << std::setw( width ) << std::left << "Percentage of Collisions: " << ratioOfColli() << '\n';
+         std::cout << std::setw( width ) << std::left << "Average Collisions per Bucket: "  << averageCollisonsPerBucket() << '\n';
+         std::cout << std::setw( width ) << std::left << "Average Buckets Per Linked List: " << averageBucketsPerLL() << '\n';
+         std::cout << "------- Hash Table Stats End -------\n";*/
+         }
+
+      template<typename KeyItr = Key, typename ValueItr = Value>
+      class Iterator
+         {
+         private:
+
+            friend class HashTable;
+            // Your code here.
+            HashTable const *table; // for the tableSize
+            Bucket< Key, Value > **mainLevel;
+            Bucket< Key, Value > **currentBucket;
+
+            Iterator( HashTable const *_table, size_t bucket ) :  table( _table ), mainLevel( table->buckets + bucket ) {
+               for (  Bucket< Key, Value > **end = table->buckets + table->tableSize
+                  ; mainLevel != end && !(*mainLevel); ++mainLevel ); // Order of comparison is required: *mainLevel could be an invalid read if mainLevel == end
+               currentBucket = mainLevel;
             }
 
-         void printStats() const 
-            {
-            std::cout << "Total Buckets Allocated: " << size() << '\n';
-            std::cout << "Table Size: " << table_size() << '\n';
-            std::cout << "load_factor: " << load_factor() << '\n';
-            std::cout << "Percentage of Collisions: " << ratioOfColli() << '\n';
-            std::cout << "Average Collisions per Bucket: " << averageCollisonsPerBucket() << '\n';
-            }
+            // This constructor can be used for finds that want to return an iterator instead
+            Iterator( HashTable const *_table, Bucket<Key, Value> **b ) :  table( _table ), 
+                  mainLevel( table ? table->buckets + ( ( *b )->hashValue  & ( table->tableSize - 1 ) ) : nullptr ), currentBucket( b ) {}
 
-         class Iterator
-            {
-            private:
-
-               friend class HashTable;
-               // Your code here.
-               HashTable *table; // for the tableSize
-               Bucket< Key, Value > **mainLevel;
-               Bucket< Key, Value > **currentBucket;
-
-               Iterator( HashTable *_table, size_t bucket ) :  table( _table ), mainLevel( table->buckets + bucket ) {
-                  for (  Bucket< Key, Value > **end = table->buckets + table->tableSize
-                     ; mainLevel != end && !(*mainLevel); ++mainLevel ); // Order of comparison is required: *mainLevel could be an invalid read if mainLevel == end
-                  currentBucket = mainLevel;
-               }
-
-               // This constructor can be used for finds that want to return an iterator instead
-               Iterator( HashTable *_table, Bucket<Key, Value> **b ) :  table( _table ), currentBucket( b ), 
-                     mainLevel( table ? table->buckets + ( *b )->hashValue & ( table->tableSize - 1 ) : nullptr ) {}
-
-               Iterator( HashTable *_table, size_t bucketInd, Bucket<Key, Value> *b ) :  table( _table ), mainLevel( table ? table->buckets + bucketInd : nullptr ), currentBucket( mainLevel )
-                  {
-                  // Your code here.
-                  if ( !table )
-                     return;
-                  assert( bucketInd < table->tableSize );
-
-                  // Follows linked list until either reaches something or a nullptr
-                  for( ; *currentBucket && *currentBucket != b; currentBucket = & ( *currentBucket )->next );
-
-                  if ( ! ( *currentBucket ) )
-                     currentBucket = mainLevel = table->buckets + table->tableSize;
-                  }
-
-               inline void advanceBucket( )
-                  {
-                  if ( ( *currentBucket )->next )
-                     currentBucket = & ( *currentBucket )->next;
-                  else
-                     {
-                     ++mainLevel; // Go to next place
-                     // Order of comparasions matter since *(buckets + tableSize) isn't owned by us 
-                     // Need to find a top-level bucket that's valid
-                     for ( Bucket< Key, Value > **end = table->buckets + table->tableSize
-                        ; mainLevel != end && !(*mainLevel); ++mainLevel ); 
-                     currentBucket = mainLevel;
-                     }
-                  } // end advanceBucket()
-
-            public:
-
-               Iterator( ) : Iterator( nullptr, 0, nullptr )
-                  {
-                  }
-
-               ~Iterator( )
-                  {
-                  }
-
-               Tuple< Key, Value > &operator*( )
-                  {
-                  // Your code here.
-                  return ( *currentBucket )->tuple;
-                  }
-
-               Tuple< Key, Value > *operator->( ) const
-                  {
-                  // Your code here.
-                  return & ( *currentBucket )->tuple;
-                  }
-
-               // Prefix ++
-               Iterator &operator++( )
-                  {
-                  advanceBucket();
-                  return *this;
-                  }
-
-               // Postfix ++
-               Iterator operator++( int )
-                  {
-                  Iterator old( *this );
-                  advanceBucket();
-                  return old;
-                  }
-
-               bool operator==( const Iterator &rhs ) const
-                  {
-                  return currentBucket == rhs.currentBucket;
-                  }
-
-               bool operator!=( const Iterator &rhs ) const
-                  {
-                  return currentBucket != rhs.currentBucket;
-                  }
-
-               Iterator operator+( ssize_t var )
-                  {
-                  Iterator copy( *this );
-                  for ( ssize_t n = 0; n < var; ++n )
-                     copy.advanceBucket();
-                  return copy;
-                  }
-            };
-
-         Iterator begin( )
-            {
-            return Iterator( this, size_t ( 0 ) );
-            }
-
-         Iterator end( )
-            {
-            return Iterator( this, tableSize );
-            }
-         
-         Iterator FindItr( const Key& k ) const
-            {
-            Bucket< Key, Value > **bucket = helperFind( k, hashFunc( k ) );
-
-            return *bucket ? Iterator( this, bucket ) : end();
-            }
-         
-         //! Warning while this is simple, it also isn't very efficient
-         void OptimizeElegant( double loadFactor = 0.5 )
-            {
-            size_t expectedTS = size_t ( static_cast<double>(numberOfBuckets) / loadFactor );
-            size_t newTbSize = computeTwosPowCeiling( (ssize_t) expectedTS );
-
-            HashTable temp ( newTbSize );
-
-            for ( Iterator itr = begin(); itr != end(); ++itr )
+            Iterator( HashTable *_table, size_t bucketInd, Bucket<Key, Value> *b ) :  table( _table ), mainLevel( table ? table->buckets + bucketInd : nullptr ), currentBucket( mainLevel )
                {
-               Tuple <Key, Value> *pair = &( *itr.currentBucket )->tuple;
-               temp.Find( pair->key, pair->value );
+               // Your code here.
+               if ( !table )
+                  return;
+               assert( bucketInd < table->tableSize );
+
+               // Follows linked list until either reaches something or a nullptr
+               for( ; *currentBucket && *currentBucket != b; currentBucket = & ( *currentBucket )->next );
+
+               if ( ! ( *currentBucket ) )
+                  currentBucket = mainLevel = table->buckets + table->tableSize;
                }
-            swap( temp );
-            }
+
+            inline void advanceBucket( )
+               {
+               if ( ( *currentBucket )->next )
+                  currentBucket = & ( *currentBucket )->next;
+               else
+                  {
+                  ++mainLevel; // Go to next place
+                  // Order of comparasions matter since *(buckets + tableSize) isn't owned by us 
+                  // Need to find a top-level bucket that's valid
+                  for ( Bucket< Key, Value > **end = table->buckets + table->tableSize
+                     ; mainLevel != end && !(*mainLevel); ++mainLevel ); 
+                  currentBucket = mainLevel;
+                  }
+               } // end advanceBucket()
+
+         public:
+
+            Iterator( ) : Iterator( nullptr, 0, nullptr )
+               {
+               }
+
+            ~Iterator( )
+               {
+               }
+
+            Tuple< Key, Value > &operator*( )
+               {
+               // Your code here.
+               return ( *currentBucket )->tuple;
+               }
+
+            Tuple< Key, Value > *operator->( ) const
+               {
+               // Your code here.
+               return & ( *currentBucket )->tuple;
+               }
+
+            // Prefix ++
+            Iterator &operator++( )
+               {
+               advanceBucket();
+               return *this;
+               }
+
+            // Postfix ++
+            Iterator operator++( int )
+               {
+               Iterator old( *this );
+               advanceBucket();
+               return old;
+               }
+
+            bool operator==( const Iterator &rhs ) const
+               {
+               return currentBucket == rhs.currentBucket;
+               }
+
+            bool operator!=( const Iterator &rhs ) const
+               {
+               return currentBucket != rhs.currentBucket;
+               }
+
+            Iterator operator+( ssize_t var )
+               {
+               Iterator copy( *this );
+               for ( ssize_t n = 0; n < var; ++n )
+                  copy.advanceBucket();
+               return copy;
+               }
+         };
+      
+      typedef Iterator<Key, Value> iterator;
+      typedef Iterator<const Key, const Value> const_iterator;
+
+      iterator begin( ) const
+         {
+         return iterator( this, size_t ( 0 ) );
+         }
+
+      iterator end( ) const
+         {
+         return iterator( this, tableSize );
+         }
+
+      const_iterator cbegin( ) const
+         {
+         return const_iterator( this, size_t ( 0 ) );
+         }
+      
+      const_iterator cend( ) const
+         {
+         return const_iterator( this, tableSize );
+         }
+      
+      iterator FindItr( const Key& k ) const
+         {
+         Bucket< Key, Value > **bucket = helperFind( k, ( uint32_t )( *hashFunc )( k ) );
+
+         return *bucket ? iterator( this, bucket ) : end();
+         }
       };
 
       template<typename Key, typename Value >

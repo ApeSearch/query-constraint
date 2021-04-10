@@ -7,18 +7,17 @@
 int main() 
     {
         APESEARCH::vector<APESEARCH::string> words = {
-            APESEARCH::string("the"),
-            APESEARCH::string("cow"),
-            APESEARCH::string("the"),
-            APESEARCH::string("pig"),
-            APESEARCH::string("and"),
-            APESEARCH::string("all"),
-            APESEARCH::string("of"),
-            APESEARCH::string("the"),
-            APESEARCH::string("animals"),
+            "the",
+            "cow",
+            "the",
+            "pig",
+            "and",
+            "all",
+            "of",
+            "the",
+            "animals",
         };
 
-        
         IndexHT *index = new IndexHT();
         index->addDoc("https://eecs440.com", words, 9, BodyText);
         index->addDoc("https://eecs441.com", words, 19, AnchorText); 
@@ -26,9 +25,9 @@ int main()
         APESEARCH::string strToFind = "$the";
 
         hash::Tuple<APESEARCH::string, PostingList *> * entry = index->dict.Find(strToFind);
-        hash::HashTable<APESEARCH::string, PostingList *>::Iterator itr = index->dict.begin();
+        hash::HashTable<APESEARCH::string, PostingList *>::iterator itr = index->dict.begin();
 
-        for(size_t i = 0; i < entry->value->posts.size(); ++i){
+        for(size_t i = 0; i < entry->value->posts.size(); ++i) {
             std::cout << entry->value->posts[i]->loc << std::endl;
         }
         
@@ -38,5 +37,4 @@ int main()
         }
 
         delete index;
-
     }

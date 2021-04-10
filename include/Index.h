@@ -1,5 +1,5 @@
 #pragma once
-#include "IndexHT.h"
+
 #include "../libraries/AS/include/AS/string.h"
 #include "../libraries/AS/include/AS/vector.h"
 #include "../libraries/AS/include/AS/listdir.h"
@@ -10,26 +10,37 @@
 //2. Attribute
 //3. Sync table
 
-class Post {
-    public:
-        // I just threw the 8 in there so this would compile
-        uint8_t delta[8];
-        Attributes attribute;
-        
-};
+#define SYNCTABLESIZE 32
 
+class SyncEntry
+   {
+    size_t absoluteLoc;
+    size_t seekOffset;
+   };
 
 class SerializedPostingList
    {
-
     public:
-        size_t bytesForSyncTable;
-        char syncTable[ Unknown ];
+        size_t bytesOfPostingList;
+        //size_t absoluteLoc;
+        SyncEntry syncTable[ SYNCTABLESIZE ];
+        // Pure bit manipulation..
+   };
+
+class IndexBlob
+   {
+   size_t MagicNumber,
+         Version,
+         BlobSize,
+         NumOfDocs,
+         MaxAbsolLoc,
+         VectorStart, // Byte offset that points to beginning of vector array
+         NumberOfBuckets,
+         Buckets[ Unkown ];
    };
 
 
-
-class Index{
+class Index {
     public:
         Index() {}
 
