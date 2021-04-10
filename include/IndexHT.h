@@ -113,7 +113,6 @@ class PostingList
         size_t numberOfBytes; // size of posting list
         size_t numberOfPosts;   // Basically the number of occurnces of a particular token.
         size_t numOfDocs; // number of documents that contain this info.
-        PostingListType type; // Type of token ( be it eod, anchor text, url, tile, or body)
 
         Post *Seek( Location l );
 
@@ -155,15 +154,12 @@ class IndexHT
         IndexHT();
         ~IndexHT();
 
-        //std::pair<Location, Post *> findPost(  );
         void addDoc(APESEARCH::string url, APESEARCH::vector<APESEARCH::string> text, size_t endDocLoc, PostingListType type);
         Post *goToNext( Location location ); // May need to inherit here...
 
         ISRWord* getWordISR ( APESEARCH::string word );
         ISREndDoc* getEndDocISR ( );
 
-    // private:
         hash::HashTable<APESEARCH::string, PostingList *> dict;
         APESEARCH::vector<APESEARCH::string> urls;
-
     };
