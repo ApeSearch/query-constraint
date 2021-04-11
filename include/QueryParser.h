@@ -18,8 +18,6 @@
 #ifndef _QUERY_PARSER_H
 #define _QUERY_PARSER_H
 
-using namespace query;
-
 class QueryParser
 {
     public:
@@ -38,14 +36,14 @@ class QueryParser
         bool FindOrOp();
         bool FindAndOp();
 
-        Tuple* FindOrConstraint();
-        Tuple* FindAndConstraint();
-        Tuple* FindPhrase();
+        query::Tuple* FindOrConstraint();
+        query::Tuple* FindAndConstraint();
+        query::Tuple* FindPhrase();
 
-        Tuple* FindNestedConstraint();
-        Tuple* FindSearchWord();
-        Tuple* FindSimpleConstraint();
-        Tuple* FindUnarySimpleConstraint();
+        query::Tuple* FindNestedConstraint();
+        query::Tuple* FindSearchWord();
+        query::Tuple* FindSimpleConstraint();
+        query::Tuple* FindUnarySimpleConstraint();
 
         static APESEARCH::string urlDecode(const char *src)
             {

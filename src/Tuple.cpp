@@ -5,9 +5,9 @@
 
 using namespace query;
 
-Tuple::Tuple() : next(nullptr) {}
+query::Tuple::Tuple() : next(nullptr) {}
 
-Tuple::~Tuple() {
+query::Tuple::~Tuple() {
 
 }
 

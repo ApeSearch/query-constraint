@@ -29,11 +29,10 @@ Token* QueryParser::FindNextToken()
         return stream.TakeToken();
     }
 
-
-Tuple* QueryParser::FindOrConstraint()
+query::Tuple* QueryParser::FindOrConstraint()
     {   
-        TupleList* orExp = new OrExpression();
-        Tuple* andConstraint = FindAndConstraint();
+        query::TupleList* orExp = new query::OrExpression();
+        query::Tuple* andConstraint = FindAndConstraint();
         
         if(!andConstraint)
             return nullptr;
@@ -73,10 +72,10 @@ bool QueryParser::FindOrOp()
         return false;
     }
 
-Tuple* QueryParser::FindAndConstraint()
+query::Tuple* QueryParser::FindAndConstraint()
     {
-        TupleList* andExp = new AndExpression();
-        Tuple* simpleConstraint = FindSimpleConstraint();
+        query::TupleList* andExp = new query::AndExpression();
+        query::Tuple* simpleConstraint = FindSimpleConstraint();
 
 
         while(simpleConstraint){
@@ -96,22 +95,20 @@ Tuple* QueryParser::FindAndConstraint()
 
     }
 
-// "the | quick.brown"
-
-Tuple* QueryParser::FindPhrase()
+query::Tuple* QueryParser::FindPhrase()
     {
         Token* token = stream.getCurrentToken();
         
         if(token->getTokenType() != TokenTypePhrase)
             return nullptr;
         
-        TupleList* tupleList = new Phrase();
+        query::TupleList* tupleList = new query::Phrase();
         
         token = FindNextToken();
         while(token->getTokenType() != TokenTypePhrase && token->getTokenType() != TokenTypeEOF) {
             if(token->getTokenType() != TokenTypeWord)
                 continue;
-            Tuple* tuple = new SearchWord(token->TokenString());
+            query::Tuple* tuple = new query::SearchWord(token->TokenString());
             tupleList->Append(tuple);
             token = FindNextToken();
         }
@@ -123,7 +120,7 @@ Tuple* QueryParser::FindPhrase()
         return tupleList;
     }
 
-Tuple* QueryParser::FindNestedConstraint()
+query::Tuple* QueryParser::FindNestedConstraint()
     {
         Token* token = stream.getCurrentToken();
 
@@ -132,7 +129,7 @@ Tuple* QueryParser::FindNestedConstraint()
         
         FindNextToken();
         
-        Tuple* tuple = FindOrConstraint();
+        query::Tuple* tuple = FindOrConstraint();
 
         if(!tuple)
             return nullptr;
@@ -143,25 +140,27 @@ Tuple* QueryParser::FindNestedConstraint()
 
         FindNextToken();
 
-        return new NestedConstraint(tuple);
+        return new query::NestedConstraint(tuple);
         //return tuple;
         
     }
-Tuple* QueryParser::FindSearchWord()
+
+query::Tuple* QueryParser::FindSearchWord()
     {
         Token* token = stream.getCurrentToken();
 
         if(!token || token->getTokenType() != TokenTypeWord)
             return nullptr;
         
-        SearchWord* tuple = new SearchWord(token->TokenString());
+        query::SearchWord* tuple = new query::SearchWord(token->TokenString());
         FindNextToken();
 
         return tuple;
     }
-Tuple* QueryParser::FindSimpleConstraint()
+
+query::Tuple* QueryParser::FindSimpleConstraint()
     {
-        Tuple* tuple = FindUnarySimpleConstraint();
+        query::Tuple* tuple = FindUnarySimpleConstraint();
 
         if(!tuple)
             tuple = FindNestedConstraint();
@@ -175,12 +174,13 @@ Tuple* QueryParser::FindSimpleConstraint()
         return tuple;
     
     }
-Tuple* QueryParser::FindUnarySimpleConstraint()
+
+query::Tuple* QueryParser::FindUnarySimpleConstraint()
     {
 
         if(stream.getCurrentToken()->getTokenType() != TokenTypeNOT)
             return nullptr;
         
         FindNextToken();
-        return new UnarySimpleConstraint(FindSimpleConstraint());
+        return new query::UnarySimpleConstraint(FindSimpleConstraint());
     }

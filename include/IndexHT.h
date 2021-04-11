@@ -100,7 +100,7 @@ class PostingList
 
         APESEARCH::vector<Post *> posts; //pointers to individual posts
         APESEARCH::vector<uint8_t> deltas;
-
+        
         Post *Seek( Location l );
 
         //pure virtual function to handle appending a new post to list. lastDocIndex is for 

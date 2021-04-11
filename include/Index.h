@@ -28,16 +28,18 @@ class SerializedPostingList
    };
 
 class IndexBlob
-   {
-   size_t MagicNumber,
-         Version,
-         BlobSize,
-         NumOfDocs,
-         MaxAbsolLoc,
-         VectorStart, // Byte offset that points to beginning of vector array
-         NumberOfBuckets,
-         Buckets[ Unkown ];
-   };
+    {
+    public: 
+
+    size_t MagicNumber,
+        Version,
+        BlobSize,
+        NumOfDocs,
+        MaxAbsolLoc,
+        VectorStart, // Byte offset that points to beginning of vector array
+        NumberOfBuckets,
+        Buckets[ Unknown ];
+    };
 
 
 class Index {

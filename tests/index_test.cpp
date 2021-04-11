@@ -22,7 +22,7 @@ int main()
         index->addDoc("https://eecs440.com", words, 9, BodyText);
         index->addDoc("https://eecs441.com", words, 19, AnchorText); 
 
-        APESEARCH::string strToFind = "$the";
+        APESEARCH::string strToFind = "the";
 
         hash::Tuple<APESEARCH::string, PostingList *> * entry = index->dict.Find(strToFind);
         hash::HashTable<APESEARCH::string, PostingList *>::iterator itr = index->dict.begin();

@@ -11,6 +11,9 @@
 #	LDFLAGS
 #endif
 
+FrameWorkSRC=libraries/unit_test_framework/src
+FrameWorkSources=$(wildcard ${FrameWorkSRC}/*.cpp)
+FrameWorkOBJS=$(FrameWorkSources:.cpp=.o)
 
 SRC=src
 SOURCES=$(wildcard ${SRC}/*.cpp)
@@ -23,7 +26,7 @@ EXECDIR=tests/bin
 OUTPUT=tests/output
 
 TEST_SRC:=$(basename $(wildcard ${TESTDIR}/*.cpp))
-$(TEST_SRC): %: %.cpp ${OBJS}
+$(TEST_SRC): %: %.cpp ${OBJS} ${FrameWorkOBJS}
 	@mkdir -p ${EXECDIR}
 	@mkdir -p ${OUTPUT}
 	${CC} -Dtesting -o  ${EXECDIR}/$(notdir $@) $^ -pthread

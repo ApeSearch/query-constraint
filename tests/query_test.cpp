@@ -7,7 +7,7 @@ int main()
     std::cout << queryLine << "\n========\n";
     auto query = QueryParser(queryLine);
 
-    Tuple* orConstraint = query.FindOrConstraint();
+    query::Tuple* orConstraint = query.FindOrConstraint();
     
     if(!orConstraint)
         return 0;

@@ -48,6 +48,8 @@ ISR* OrExpression::Compile(IndexHT *indexPtr)
 
     for(auto i = orISR->terms; i < orISR->terms + orISR->numTerms; ++i, curr = curr->next)
         *i = curr->Compile(indexPtr);
+
+    return orISR;
     }
 
 AndExpression::AndExpression() : TupleList() {}

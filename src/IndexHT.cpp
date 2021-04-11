@@ -50,7 +50,9 @@ size_t WordPostingList::bytesRequired() {
 }
 
 
-//endDocPostingList bytesRequired
+size_t DocEndPostingList::bytesRequired() {
+    
+} 
 
 
 
@@ -100,7 +102,7 @@ void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<APESEARCH::string>
 
 Post *PostingList::Seek(Location l) {
     Location index = 0;
-    for(; index < l && index < posts.size(); ++index);
+    for(; index < posts.size() && posts[index]->loc != l; ++index);
 
     if(index == posts.size())
         return nullptr;

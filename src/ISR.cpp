@@ -6,7 +6,7 @@ ISR::ISR(IndexHT *_indexPtr) : indexPtr(_indexPtr) {}
 
 ISRWord::ISRWord() : ISR() {}
 
-ISRWord::ISRWord(PostingList * _posts, IndexHT *_indexPtr) : ISR(_indexPtr), posts(_posts), postIndex(0) {}
+ISRWord::ISRWord(PostingList * _posts, IndexHT *_indexPtr) : ISR(_indexPtr), posts(_posts), postIndex(0), startLocation(posts->posts[0]->loc) {}
 
 ISREndDoc::ISREndDoc() : ISRWord() {}
 
@@ -18,25 +18,34 @@ unsigned ISRWord::GetDocumentCount( ) { }
 unsigned ISRWord::GetNumberOfOccurrences( ) { }
 
 Post *ISRWord::GetCurrentPost( ) {
-    return ;
+    return posts->Seek(startLocation);
 }
 
 Post * ISRWord::Next( ) {
-    return GetCurrentPost();
-}
-
-Post * ISRWord::NextDocument( ) {
-    return nullptr;
+    Post * next = posts->posts[++postIndex];
+    if (next)
+        startLocation = next->loc;
+    return next;
 }
 
 Post * ISRWord::Seek( Location target ) {
-    return posts->Seek(target);
+    Post *found = posts->Seek(target);
+    if (found)
+        startLocation = found->loc;
+    return found;
 }
 
-Location ISRWord::GetStartLocation( ) {}
+Location ISRWord::GetStartLocation( ) {
+    return posts->posts[postIndex]->loc;
+}
 
-Location ISRWord::GetEndLocation( ) {}
+Location ISRWord::GetEndLocation( ) {
+    return posts->posts[postIndex]->loc;;
+}
 
+Post* ISRWord::NextDocument( ) {
+    return nullptr;
+}
 
 unsigned ISREndDoc::GetDocumentLength( ) {}
 unsigned ISREndDoc::GetTitleLength( ) {}
@@ -54,7 +63,7 @@ ISROr::ISROr(IndexHT *_indexPtr) : ISR(_indexPtr), terms(nullptr), numTerms(0), 
 
 ISRAnd::ISRAnd(IndexHT *_indexPtr) : ISR(_indexPtr), terms(nullptr), numTerms(0), DocumentEnd(indexPtr->getEndDocISR()) {}
 
-ISRPhrase::ISRPhrase(IndexHT *_indexPtr) : ISR(_indexPtr), terms(nullptr), numTerms(0) {}
+ISRPhrase::ISRPhrase(IndexHT *_indexPtr) : ISR(_indexPtr), terms(nullptr), numTerms(0), DocumentEnd(indexPtr->getEndDocISR()) {}
 
 ISRContainer::ISRContainer(IndexHT *_indexPtr) : ISR(_indexPtr), contained(nullptr), excluded(nullptr), endDoc(nullptr), 
     countContained(0), countExcluded(0) {} 

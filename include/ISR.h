@@ -43,15 +43,18 @@ class ISRWord : public ISR
         unsigned GetNumberOfOccurrences( );
         virtual Post *GetCurrentPost( );
 
-        // needed
         Post *Next( ) override;
-        Post *NextDocument( ) override;
         Post *Seek( Location target ) override;
+
         Location GetStartLocation( ) override;
         Location GetEndLocation( ) override;
 
+        Post *NextDocument( ) override;
+
     private:
         PostingList* posts;
+        Location startLocation;
+        unsigned postIndex;
     };
 
 class ISREndDoc : public ISRWord
@@ -63,8 +66,6 @@ class ISREndDoc : public ISRWord
         unsigned GetDocumentLength( );
         unsigned GetTitleLength( );
         unsigned GetUrlLength( );
-
-
     };
 
 class ISROr : public ISR
@@ -91,8 +92,16 @@ class ISROr : public ISR
                 // Seek all the ISRs to the first occurrence beginning at
                 // the target location. Return null if there is no match.
                 // The document is the document containing the nearest term.
+                Location minLocation;
                 for (int i = 0; i < numTerms; ++i) 
+                    {
                     terms[i]->Seek(target);
+                    if (terms[i]->GetStartLocation() < terms[nearestTerm]->GetStartLocation())
+                        minLocation = i;
+                    }
+                   
+                   return (minLocation < DocumentEnd->GetEndLocation()) ? DocumentEnd->GetCurrentPost() : nullptr;
+                
                 }
 
             Post *Next( ) override
@@ -105,7 +114,7 @@ class ISROr : public ISR
                     if (terms[i]->GetStartLocation() < terms[nearestTerm]->GetStartLocation())
                         nearestTerm = i;
                 }
-                return nullptr;
+                return terms[nearestTerm]->Seek(terms[nearestTerm]->GetStartLocation());
                 }
 
             Post *NextDocument( ) override
@@ -227,6 +236,7 @@ class ISRPhrase : public ISR
             return Seek( nearestStartLocation + 1 );
             }
     private: 
+        ISREndDoc *DocumentEnd;
         unsigned nearestTerm, farthestTerm;
         Location nearestStartLocation, nearestEndLocation;
     };
