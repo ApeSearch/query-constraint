@@ -85,7 +85,7 @@ class ISROr : public ISR
                 delete DocumentEnd;
             }
 
-            ISR **terms;
+            APESEARCH::unique_ptr<ISR*> terms;
             unsigned numTerms;
 
             Location GetStartLocation() override
@@ -132,7 +132,7 @@ class ISROr : public ISR
             Post *Next( ) override
                 {
                 // Do a next on the nearest term
-                terms[nearestTerm]->Next();
+                (terms.get())[nearestTerm]->Next();
                 // Return the new nearest match.
                 nearestTerm = 0;
                 for (int i = 0; i < numTerms; ++i) {

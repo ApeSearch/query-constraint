@@ -35,9 +35,9 @@ void TupleList::Append(Tuple* t)
 
 OrExpression::OrExpression() : TupleList() {}
 
-ISR* OrExpression::Compile(IndexHT *indexPtr) 
+APESEARCH::unique_ptr<ISR> OrExpression::Compile(IndexHT *indexPtr) 
     {
-    ISROr* orISR = new ISROr(indexPtr);
+    APESEARCH::unique_ptr<ISROr> orISR = APESEARCH::unique_ptr<ISROr>(new ISROr(indexPtr));
 
     Tuple* curr = Top;
     while (curr != nullptr)
@@ -47,15 +47,15 @@ ISR* OrExpression::Compile(IndexHT *indexPtr)
         }
     
     curr = Top;
-    orISR->terms = new ISR*[orISR->numTerms];
+    orISR->terms = APESEARCH::unique_ptr<ISR*>(new ISR*[orISR->numTerms]);
 
     int failed = 0;
-    for(auto i = orISR->terms; i < orISR->terms + orISR->numTerms; ++i, curr = curr->next)
+    for(auto i = orISR->terms.get(); i < orISR->terms.get() + orISR->numTerms; ++i, curr = curr->next)
         {
-        ISR * compiled = curr->Compile(indexPtr);
+        APESEARCH::unique_ptr<ISR> compiled = curr->Compile(indexPtr);
             if (compiled) 
                 {
-                *(i-failed) = compiled;
+                *(i-failed) = compiled.get();
                 }
             else ++failed;
         }
@@ -67,7 +67,7 @@ ISR* OrExpression::Compile(IndexHT *indexPtr)
 
 AndExpression::AndExpression() : TupleList() {}
 
-ISR* AndExpression::Compile(IndexHT *indexPtr) {
+APESEARCH::unique_ptr<ISR> AndExpression::Compile(IndexHT *indexPtr) {
 
     ISRAnd* andISR = new ISRAnd(indexPtr);
 
@@ -89,7 +89,7 @@ ISR* AndExpression::Compile(IndexHT *indexPtr) {
 
 Phrase::Phrase() : TupleList() {}
 
-ISR* Phrase::Compile(IndexHT *indexPtr) {
+APESEARCH::unique_ptr<ISR> Phrase::Compile(IndexHT *indexPtr) {
     std::cout << "PhraseISR" << std::endl;
 
     ISRPhrase* phraseISR = new ISRPhrase(indexPtr);

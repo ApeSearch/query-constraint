@@ -90,7 +90,7 @@ query::Tuple* QueryParser::FindAndConstraint()
             delete andExp;
             return nullptr;
         }
-
+    
         else if(andExp->Top == andExp->Bottom)
             return andExp->Top;
 

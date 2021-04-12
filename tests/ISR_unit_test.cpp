@@ -119,12 +119,39 @@ TEST(ISRor) {
     };
 
     for (int i = 0; i < trees.size(); ++i) {
-        ISR* tree = trees[i];
         for (int j = 0; j < index->numDocs; ++j) {
             ASSERT_EQUAL(expected[i][j], trees[i]->NextDocument() != nullptr); 
         }
     }
 }
 
+TEST(ISRphrase) {
+    APESEARCH::unique_ptr<IndexHT> index = buildIndex();
+
+    APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("\"the\""); // doc1
+    // APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("the | this"); // doc1, doc2
+    // APESEARCH::unique_ptr<query::Tuple> constraint3 = buildParseTree("what | the | do"); // doc1
+    // APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("what | it | do"); // none
+
+    APESEARCH::vector<ISR *> trees = {
+        constraint1->Compile(index.get()),
+        // constraint2->Compile(index.get()),
+        // constraint3->Compile(index.get()),
+        // constraint4->Compile(index.get())
+    };
+
+    APESEARCH::vector<APESEARCH::vector<bool>> expected = {
+        {true, false},
+        // {true, true},
+        // {true, false},
+        // {false, false}
+    };
+
+    for (int i = 0; i < trees.size(); ++i) {
+        for (int j = 0; j < index->numDocs; ++j) {
+            ASSERT_EQUAL(expected[i][j], trees[i]->NextDocument() != nullptr); 
+        }
+    }
+}
 
 TEST_MAIN();

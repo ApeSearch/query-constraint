@@ -12,7 +12,8 @@ namespace query{
     class Tuple {
         public:
             Tuple* next; //next pointer in linked list
-            virtual ISR* Compile(IndexHT *indexPtr) = 0;
+            // virtual ISR* Compile(IndexHT *indexPtr) = 0;
+            virtual APESEARCH::unique_ptr<ISR> Compile(IndexHT * indexPtr) = 0;
             Tuple();
             virtual ~Tuple(); //deallocate node from heap
 
@@ -23,7 +24,8 @@ namespace query{
         public:
             SearchWord(APESEARCH::string _word);
             ~SearchWord();
-            ISR* Compile(IndexHT *indexPtr) override;
+            // ISR* Compile(IndexHT *indexPtr) override;
+            APESEARCH::unique_ptr<ISR> Compile(IndexHT *indexPtr);
 
             APESEARCH::string word;
     };
@@ -32,7 +34,8 @@ namespace query{
         public:
             UnarySimpleConstraint(Tuple* tup);
             ~UnarySimpleConstraint();
-            ISR* Compile(IndexHT *indexPtr) override;
+            // ISR* Compile(IndexHT *indexPtr) override;
+            APESEARCH::unique_ptr<ISR> Compile(IndexHT *indexPtr);
 
             TokenType op;
             Tuple* actualConstraint;
@@ -42,7 +45,8 @@ namespace query{
         public:
             NestedConstraint(Tuple* tup);
             ~NestedConstraint();
-            ISR* Compile(IndexHT *indexPtr) override;
+            // ISR* Compile(IndexHT *indexPtr) override;
+            APESEARCH::unique_ptr<ISR> Compile(IndexHT *indexPtr);
 
             Tuple* constraint;
     };

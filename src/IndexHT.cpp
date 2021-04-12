@@ -107,14 +107,24 @@ Post *PostingList::Seek(Location l) {
     return posts[index];
 }
 
-ISRWord* IndexHT::getWordISR ( APESEARCH::string word ) {
+// ISRWord* IndexHT::getWordISR ( APESEARCH::string word ) {
+//     hash::Tuple<APESEARCH::string, PostingList *> * entry = dict.Find(word);
+//     return entry ? new ISRWord(entry->value, this) : nullptr;
+// }
+
+// ISREndDoc* IndexHT::getEndDocISR ( ) {
+//     hash::Tuple<APESEARCH::string, PostingList *> * entry = dict.Find(APESEARCH::string("%"));
+//     return new ISREndDoc(entry->value, this);
+// }
+
+APESEARCH::unique_ptr<ISRWord> IndexHT::getWordISR ( APESEARCH::string word ) {
     hash::Tuple<APESEARCH::string, PostingList *> * entry = dict.Find(word);
-    return entry ? new ISRWord(entry->value, this) : nullptr;
+    return entry ? APESEARCH::unique_ptr<ISRWord>(new ISRWord(entry->value, this)) : nullptr;
 }
 
-ISREndDoc* IndexHT::getEndDocISR ( ) {
+APESEARCH::unique_ptr<ISREndDoc> IndexHT::getEndDocISR ( ) {
     hash::Tuple<APESEARCH::string, PostingList *> * entry = dict.Find(APESEARCH::string("%"));
-    return new ISREndDoc(entry->value, this);
+    return APESEARCH::unique_ptr<ISREndDoc>(new ISREndDoc(entry->value, this));
 }
 
 void IndexHT::SerializeIndex(const APESEARCH::string &fileName) {

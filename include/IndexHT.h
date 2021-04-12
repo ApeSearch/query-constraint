@@ -151,9 +151,13 @@ class IndexHT
 
         void SerializeIndex(const APESEARCH::string &fileName);
 
-        ISRWord *getWordISR ( APESEARCH::string word );
-        ISREndDoc *getEndDocISR ( );
-        
+        // ISRWord *getWordISR ( APESEARCH::string word );
+        // ISREndDoc *getEndDocISR ( );
+
+        APESEARCH::unique_ptr<ISRWord> getWordISR( APESEARCH::string word );
+
+        APESEARCH::unique_ptr<ISREndDoc> getEndDocISR ( );
+
         hash::HashTable<APESEARCH::string, PostingList *> dict;
         APESEARCH::vector<APESEARCH::string> urls;
         size_t LocationsInIndex, MaximumLocation, numDocs;
