@@ -19,7 +19,8 @@ class ISR //fix inheritance to be logical, remove duplicate code and member vari
     public:
         ISR();
         ISR(IndexHT *_indexPtr);
-        virtual ~ISR() {}
+        virtual ~ISR() {
+        }
 
         // Store information the index provides i.e. the posting list, the location 
         // ( so as to provide information about how to search for the next location or a post assoicated with a location)
@@ -37,13 +38,14 @@ class ISRWord : public ISR
     public:
         ISRWord();
         ISRWord(PostingList * _posts, IndexHT *indexPtr);
+        ISRWord(PostingList * _posts, IndexHT *_indexPtr, Location _start);
         ~ISRWord() {delete posts;}
 
         unsigned GetDocumentCount( );
         unsigned GetNumberOfOccurrences( );
         virtual Post *GetCurrentPost( );
 
-        Post *Next( ) override;
+        virtual Post *Next( ) override;
         Post *Seek( Location target ) override;
 
         Location GetStartLocation( ) override;
@@ -51,9 +53,9 @@ class ISRWord : public ISR
 
         Post *NextDocument( ) override;
 
-    private:
+    // private:
         PostingList* posts;
-        Location startLocation;
+        Location startLocation, endLocation;
         unsigned postIndex;
     };
 
@@ -66,6 +68,9 @@ class ISREndDoc : public ISRWord
         unsigned GetDocumentLength( );
         unsigned GetTitleLength( );
         unsigned GetUrlLength( );
+
+        Post *Next( ) override;
+
     };
 
 class ISROr : public ISR
@@ -73,6 +78,12 @@ class ISROr : public ISR
         public:
             ISROr();
             ISROr(IndexHT *_indexPtr);
+            ~ISROr() {
+                for (auto i = 0; i < numTerms; ++i) {
+                    delete terms[i];
+                }
+                delete DocumentEnd;
+            }
 
             ISR **terms;
             unsigned numTerms;
@@ -92,16 +103,30 @@ class ISROr : public ISR
                 // Seek all the ISRs to the first occurrence beginning at
                 // the target location. Return null if there is no match.
                 // The document is the document containing the nearest term.
-                Location minLocation;
+                if (!numTerms) return nullptr;
+
+                Location docStartLoc = DocumentEnd->GetStartLocation();
+                Location docEndLoc = DocumentEnd->GetEndLocation();
+
+                // Max found location = end of doc location
+                Location minLocation = docEndLoc;
                 for (int i = 0; i < numTerms; ++i) 
                     {
-                    terms[i]->Seek(target);
-                    if (terms[i]->GetStartLocation() < terms[nearestTerm]->GetStartLocation())
-                        minLocation = i;
+                    if (terms[i]->Seek(target)) 
+                        {
+                        Location currentLoc = terms[i]->GetStartLocation();
+
+                        // Ensure that the found location is within the document boundaries
+                        // must be >= docStartLoc to ensure that the first word in the index is found
+                        if (currentLoc < minLocation && currentLoc >= docStartLoc)
+                            {
+                            nearestTerm = i;
+                            minLocation = currentLoc;
+                            }
+                        }
                     }
-                   
-                   return (minLocation < DocumentEnd->GetEndLocation()) ? DocumentEnd->GetCurrentPost() : nullptr;
-                
+                    
+                return (minLocation < docEndLoc) ? terms[nearestTerm]->Seek(minLocation) : nullptr;
                 }
 
             Post *Next( ) override
@@ -111,8 +136,13 @@ class ISROr : public ISR
                 // Return the new nearest match.
                 nearestTerm = 0;
                 for (int i = 0; i < numTerms; ++i) {
-                    if (terms[i]->GetStartLocation() < terms[nearestTerm]->GetStartLocation())
+                    Location currentLoc = terms[i]->GetStartLocation();
+                    Location minLoc = terms[nearestTerm]->GetStartLocation();
+                    if (currentLoc < minLoc ) {
                         nearestTerm = i;
+                        nearestStartLocation = currentLoc;
+                    }
+                        
                 }
                 return terms[nearestTerm]->Seek(terms[nearestTerm]->GetStartLocation());
                 }
@@ -121,8 +151,23 @@ class ISROr : public ISR
                 {
                 // Seek all the ISRs to the first occurrence just past
                 // the end of this document.
-                return Seek( DocumentEnd->GetEndLocation( ) + 1 );
+                Post* seeked = Seek( DocumentEnd->GetStartLocation( ) );
+                DocumentEnd->Next();
+
+                return seeked;
                 }
+
+            void initNearest() {
+                for (int i = 0; i < numTerms; ++i) {
+                    if (terms[i]) {
+                        Location loc = terms[i]->GetStartLocation();
+                        if (loc < nearestStartLocation) {
+                            nearestTerm = i;
+                            nearestStartLocation = terms[i]->GetStartLocation();
+                        }
+                    }
+                }
+            }
         
         private:
             unsigned nearestTerm;
@@ -135,6 +180,11 @@ class ISRAnd : public ISR
         public:
             ISRAnd();
             ISRAnd(IndexHT *_indexPtr);
+            ~ISRAnd() {
+                for (auto i = 0; i < numTerms; ++i) {
+                    delete terms[i];
+                }
+            }
 
             ISR **terms;
             unsigned numTerms;
@@ -148,7 +198,7 @@ class ISRAnd : public ISR
 
                     // 2. Move the document end ISR to just past the furthest
                     //    word, then calculate the document begin location.
-                    DocumentEnd->Seek( terms[farthestTerm]->GetStartLocation() + 1 );
+                    DocumentEnd->Seek( terms[farthestTerm]->GetStartLocation() );
 
                     // 3. Seek all the other terms to past the document begin.
 

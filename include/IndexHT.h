@@ -132,7 +132,6 @@ class DocEndPostingList : public PostingList
     public:
 
         DocEndPostingList(): PostingList() {}
-        ~DocEndPostingList() {}
 
         size_t bytesRequired( );
 
@@ -154,7 +153,7 @@ class IndexHT
 
         ISRWord *getWordISR ( APESEARCH::string word );
         ISREndDoc *getEndDocISR ( );
-
+        
         hash::HashTable<APESEARCH::string, PostingList *> dict;
         APESEARCH::vector<APESEARCH::string> urls;
         size_t LocationsInIndex, MaximumLocation, numDocs;

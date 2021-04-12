@@ -34,9 +34,10 @@ query::Tuple* QueryParser::FindOrConstraint()
         query::TupleList* orExp = new query::OrExpression();
         query::Tuple* andConstraint = FindAndConstraint();
         
-        if(!andConstraint)
+        if(!andConstraint) {
+            delete orExp;
             return nullptr;
-        
+        }
         orExp->Append(andConstraint);
 
 
@@ -85,9 +86,11 @@ query::Tuple* QueryParser::FindAndConstraint()
             simpleConstraint = FindSimpleConstraint();
         }
 
-        if(!andExp->Top)
+        if(!andExp->Top){
+            delete andExp;
             return nullptr;
-        
+        }
+
         else if(andExp->Top == andExp->Bottom)
             return andExp->Top;
 
@@ -114,6 +117,7 @@ query::Tuple* QueryParser::FindPhrase()
         }
 
         if(token->getTokenType() == TokenTypeEOF) {
+            delete tupleList;
             return nullptr;
         }
 
@@ -172,7 +176,6 @@ query::Tuple* QueryParser::FindSimpleConstraint()
             tuple = FindSearchWord();
         
         return tuple;
-    
     }
 
 query::Tuple* QueryParser::FindUnarySimpleConstraint()

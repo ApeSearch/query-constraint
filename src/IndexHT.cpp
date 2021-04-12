@@ -17,7 +17,7 @@ IndexHT::~IndexHT(){
 
 void DocEndPostingList::appendToList(Location loc_, Attributes attribute, size_t lastDocIndex){
     if(posts.size())
-        loc_ += posts.back()->loc;
+        loc_ += (posts.back()->loc + 1);
     posts.push_back(new EODPost(loc_, attribute.urlIndex));
 
 }
@@ -54,19 +54,16 @@ size_t DocEndPostingList::bytesRequired() {
     
 } 
 
-
-
 void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<APESEARCH::string> &text, 
     size_t endDocLoc, PostingListType type){
     
     urls.push_back(url);
 
-
     hash::Tuple<APESEARCH::string, PostingList *> * entry = dict.Find(APESEARCH::string("%"));
     size_t lastDocIndex = 0;
 
     if(entry)
-        lastDocIndex = entry->value->posts.back()->loc;
+        lastDocIndex = entry->value->posts.back()->loc + 1;
     else
         entry = dict.Find(APESEARCH::string("%"), new DocEndPostingList());
     
@@ -102,7 +99,7 @@ void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<APESEARCH::string>
 
 Post *PostingList::Seek(Location l) {
     Location index = 0;
-    for(; index < posts.size() && posts[index]->loc != l; ++index);
+    for(; index < posts.size() && (l > posts[index]->loc && posts[index]->loc != l); ++index);
 
     if(index == posts.size())
         return nullptr;
@@ -112,7 +109,7 @@ Post *PostingList::Seek(Location l) {
 
 ISRWord* IndexHT::getWordISR ( APESEARCH::string word ) {
     hash::Tuple<APESEARCH::string, PostingList *> * entry = dict.Find(word);
-    return new ISRWord(entry->value, this);
+    return entry ? new ISRWord(entry->value, this) : nullptr;
 }
 
 ISREndDoc* IndexHT::getEndDocISR ( ) {

@@ -7,7 +7,12 @@ using namespace query;
 TupleList::TupleList(): Top(nullptr), Bottom(nullptr) {}
 
 TupleList::~TupleList() {
-    
+    Tuple* current = Top;
+    while( current != 0 ) {
+        Tuple* next = current->next;
+        delete current;
+        current = next;
+    }
 }
 
 void TupleList::Empty()
@@ -32,9 +37,7 @@ OrExpression::OrExpression() : TupleList() {}
 
 ISR* OrExpression::Compile(IndexHT *indexPtr) 
     {
-    std::cout << "ORISR" << std::endl;
-
-    ISROr* orISR = new ISROr();
+    ISROr* orISR = new ISROr(indexPtr);
 
     Tuple* curr = Top;
     while (curr != nullptr)
@@ -46,8 +49,18 @@ ISR* OrExpression::Compile(IndexHT *indexPtr)
     curr = Top;
     orISR->terms = new ISR*[orISR->numTerms];
 
+    int failed = 0;
     for(auto i = orISR->terms; i < orISR->terms + orISR->numTerms; ++i, curr = curr->next)
-        *i = curr->Compile(indexPtr);
+        {
+        ISR * compiled = curr->Compile(indexPtr);
+            if (compiled) 
+                {
+                *(i-failed) = compiled;
+                }
+            else ++failed;
+        }
+
+    orISR->numTerms -= failed;
 
     return orISR;
     }
@@ -56,8 +69,8 @@ AndExpression::AndExpression() : TupleList() {}
 
 ISR* AndExpression::Compile(IndexHT *indexPtr) {
 
-    ISRAnd* andISR = new ISRAnd();
-    std::cout << "ANDISR" << std::endl;
+    ISRAnd* andISR = new ISRAnd(indexPtr);
+
     Tuple* curr = Top;
     while (curr != nullptr)
         {
@@ -67,7 +80,7 @@ ISR* AndExpression::Compile(IndexHT *indexPtr) {
     
     curr = Top;
     andISR->terms = new ISR*[andISR->numTerms];
-
+    
     for(auto i = andISR->terms; i < andISR->terms + andISR->numTerms; ++i, curr = curr->next)
         *i = curr->Compile(indexPtr);
 
@@ -79,7 +92,7 @@ Phrase::Phrase() : TupleList() {}
 ISR* Phrase::Compile(IndexHT *indexPtr) {
     std::cout << "PhraseISR" << std::endl;
 
-    ISRPhrase* phraseISR = new ISRPhrase();
+    ISRPhrase* phraseISR = new ISRPhrase(indexPtr);
 
     Tuple* curr = Top;
 

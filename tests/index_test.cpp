@@ -33,6 +33,10 @@ int main()
         
         while(itr != index->dict.end()){
             std::cout << itr->key << std::endl;
+            for(size_t i = 0; i < itr->value->posts.size(); ++i) {
+                std::cout << itr->value->posts[i]->loc << " ";
+            }
+            std::cout << std::endl;
             itr++;
         }
 

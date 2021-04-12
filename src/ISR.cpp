@@ -6,11 +6,15 @@ ISR::ISR(IndexHT *_indexPtr) : indexPtr(_indexPtr) {}
 
 ISRWord::ISRWord() : ISR() {}
 
-ISRWord::ISRWord(PostingList * _posts, IndexHT *_indexPtr) : ISR(_indexPtr), posts(_posts), postIndex(0), startLocation(posts->posts[0]->loc) {}
+ISRWord::ISRWord(PostingList * _posts, IndexHT *_indexPtr) : ISR(_indexPtr), posts(_posts), postIndex(0), startLocation(posts->posts[0]->loc), endLocation(posts->posts[0]->loc) {}
+
+ISRWord::ISRWord(PostingList * _posts, IndexHT *_indexPtr, Location _start) : ISRWord(_posts, _indexPtr) {
+    startLocation = _start;
+}
 
 ISREndDoc::ISREndDoc() : ISRWord() {}
 
-ISREndDoc::ISREndDoc(PostingList* _posts, IndexHT *_indexPtr) : ISRWord(_posts, _indexPtr) {}
+ISREndDoc::ISREndDoc(PostingList* _posts, IndexHT *_indexPtr) : ISRWord(_posts, _indexPtr, 0) {}
 
 // Return the number of documents that contain this word
 unsigned ISRWord::GetDocumentCount( ) { }
@@ -22,11 +26,26 @@ Post *ISRWord::GetCurrentPost( ) {
 }
 
 Post * ISRWord::Next( ) {
-    Post * next = posts->posts[++postIndex];
-    if (next)
+    if (++postIndex < posts->posts.size()) 
+        {
+        Post * next = posts->posts[postIndex];
         startLocation = next->loc;
-    return next;
+        return next;
+        }
+    return nullptr;
 }
+
+Post * ISREndDoc::Next( ) {
+    startLocation = endLocation;
+    if (++postIndex < posts->posts.size()) 
+        {
+        Post * next = posts->posts[postIndex];
+        endLocation = next->loc;
+        return next;
+        }
+    return nullptr;
+}
+
 
 Post * ISRWord::Seek( Location target ) {
     Post *found = posts->Seek(target);
@@ -36,11 +55,11 @@ Post * ISRWord::Seek( Location target ) {
 }
 
 Location ISRWord::GetStartLocation( ) {
-    return posts->posts[postIndex]->loc;
+    return startLocation;
 }
 
 Location ISRWord::GetEndLocation( ) {
-    return posts->posts[postIndex]->loc;;
+    return endLocation;
 }
 
 Post* ISRWord::NextDocument( ) {
@@ -59,11 +78,11 @@ ISRPhrase::ISRPhrase() {}
 
 ISRContainer::ISRContainer() {} 
 
-ISROr::ISROr(IndexHT *_indexPtr) : ISR(_indexPtr), terms(nullptr), numTerms(0), DocumentEnd(indexPtr->getEndDocISR()) {} 
+ISROr::ISROr(IndexHT *_indexPtr) : ISR(_indexPtr), terms(nullptr), numTerms(0), nearestTerm(0), DocumentEnd(indexPtr->getEndDocISR()) {} 
 
-ISRAnd::ISRAnd(IndexHT *_indexPtr) : ISR(_indexPtr), terms(nullptr), numTerms(0), DocumentEnd(indexPtr->getEndDocISR()) {}
+ISRAnd::ISRAnd(IndexHT *_indexPtr) : ISR(_indexPtr), terms(nullptr), numTerms(0), nearestTerm(0), farthestTerm(0), DocumentEnd(indexPtr->getEndDocISR()) {}
 
-ISRPhrase::ISRPhrase(IndexHT *_indexPtr) : ISR(_indexPtr), terms(nullptr), numTerms(0), DocumentEnd(indexPtr->getEndDocISR()) {}
+ISRPhrase::ISRPhrase(IndexHT *_indexPtr) : ISR(_indexPtr), terms(nullptr), numTerms(0), nearestTerm(0), farthestTerm(0), DocumentEnd(indexPtr->getEndDocISR()) {}
 
 ISRContainer::ISRContainer(IndexHT *_indexPtr) : ISR(_indexPtr), contained(nullptr), excluded(nullptr), endDoc(nullptr), 
     countContained(0), countExcluded(0) {} 
