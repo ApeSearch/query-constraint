@@ -55,7 +55,7 @@ ISR* OrExpression::Compile(IndexHT *indexPtr)
         ISR * compiled = curr->Compile(indexPtr);
             if (compiled) 
                 {
-                *(i-failed) = compiled;
+                *(i - failed) = compiled;
                 }
             else ++failed;
         }
@@ -90,8 +90,6 @@ ISR* AndExpression::Compile(IndexHT *indexPtr) {
 Phrase::Phrase() : TupleList() {}
 
 ISR* Phrase::Compile(IndexHT *indexPtr) {
-    std::cout << "PhraseISR" << std::endl;
-
     ISRPhrase* phraseISR = new ISRPhrase(indexPtr);
 
     Tuple* curr = Top;
