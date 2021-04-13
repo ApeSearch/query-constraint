@@ -2,6 +2,8 @@
 #include "../libraries/AS/include/AS/string.h"
 #include "assert.h"
 
+APESEARCH::vector<char> QueryParser::decorators = {'%', '#', '$'};
+
 QueryParser::QueryParser( APESEARCH::string queryLine )
     {
         size_t pos = queryLine.find(' ');
@@ -105,25 +107,42 @@ query::Tuple* QueryParser::FindPhrase()
         if(!token || token->getTokenType() != TokenTypePhrase)
             return nullptr;
         
-        query::TupleList* tupleList = new query::Phrase();
+        query::TupleList* orList = new query::OrExpression();
+
+        for(size_t i = 0; i < 4; ++i) //4 different decorators
+            orList->Append(new query::Phrase()); //phrase decorators
         
         token = FindNextToken();
         while(token->getTokenType() != TokenTypePhrase && token->getTokenType() != TokenTypeEOF) {
             if(token->getTokenType() != TokenTypeWord)
                 continue;
+            
             query::Tuple* tuple = new query::SearchWord(token->TokenString());
-            tupleList->Append(tuple);
+
+            query::Phrase* nextPhrase = (query::Phrase* ) orList->Top;
+            nextPhrase->Append(tuple);
+            nextPhrase = (query::Phrase* ) nextPhrase->next;
+            
+            for(size_t i = 0; i < 3; ++i){
+                APESEARCH::string temp = token->TokenString();
+                temp.push_front(decorators[i]);
+
+                query::Tuple* tuple = new query::SearchWord(temp);
+
+                nextPhrase->Append(tuple);
+                nextPhrase = (query::Phrase*) nextPhrase->next;
+            }
             token = FindNextToken();
         }
 
         if(token->getTokenType() == TokenTypeEOF) {
-            delete tupleList;
+            delete orList;
             return nullptr;
         }
 
         FindNextToken();
-
-        return tupleList;
+        
+        return orList;
     }
 
 query::Tuple* QueryParser::FindNestedConstraint()
@@ -152,16 +171,24 @@ query::Tuple* QueryParser::FindNestedConstraint()
     }
 
 query::Tuple* QueryParser::FindSearchWord()
-    {
+    {   
+        query::TupleList* orList = new query::OrExpression();
         Token* token = stream.getCurrentToken();
 
         if(!token || token->getTokenType() != TokenTypeWord)
             return nullptr;
+
+        for (int i = 0; i < decorators.size(); ++i) {
+            APESEARCH::string decoratedWord = token->TokenString();
+            decoratedWord.push_front(decorators[i]);
+            orList->Append( new query::SearchWord(decoratedWord));
+        }
+        orList->Append( new query::SearchWord(token->TokenString()));
+
         
-        query::SearchWord* tuple = new query::SearchWord(token->TokenString());
         FindNextToken();
 
-        return tuple;
+        return orList;
     }
 
 query::Tuple* QueryParser::FindSimpleConstraint()

@@ -21,6 +21,7 @@
 class QueryParser
 {
     public:
+        static APESEARCH::vector<char> decorators;
         QueryParser( APESEARCH::string queryLine );
 
         QueryParser(const QueryParser &other) {

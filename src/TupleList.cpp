@@ -62,6 +62,8 @@ ISR* OrExpression::Compile(IndexHT *indexPtr)
 
     orISR->numTerms -= failed;
 
+    // orISR->Decorate();
+
     return orISR;
     }
 
@@ -105,6 +107,8 @@ ISR* Phrase::Compile(IndexHT *indexPtr) {
 
     for(auto i = phraseISR->terms; i < phraseISR->terms + phraseISR->numTerms; ++i, curr = curr->next)
         *i = curr->Compile(indexPtr);
+
+
 
     return phraseISR;
 }

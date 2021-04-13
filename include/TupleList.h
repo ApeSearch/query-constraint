@@ -2,6 +2,8 @@
 #include "ISR.h"
 #include "Tuple.h"
 
+#include "../libraries/AS/include/AS/vector.h"
+
 #ifndef _TUPLELIST_H
 #define _TUPLELIST_H
 
@@ -10,6 +12,7 @@ namespace query {
 
     class TupleList : public Tuple {
         public:
+
             Tuple *Top, *Bottom; //List of tuples, linked list
             void Empty();
             void Append(Tuple *t); //Add on a tuple
