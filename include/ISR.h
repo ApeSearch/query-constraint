@@ -112,7 +112,8 @@ class ISROr : public ISR
                 Location minLocation = docEndLoc;
                 for (int i = 0; i < numTerms; ++i) 
                     {
-                    if (terms[i]->Seek(target)) 
+                    Post * post = terms[i]->Seek(target);
+                    if (post) 
                         {
                         Location currentLoc = terms[i]->GetStartLocation();
 
@@ -152,6 +153,9 @@ class ISROr : public ISR
                 // Seek all the ISRs to the first occurrence just past
                 // the end of this document.
                 Post* seeked = Seek( DocumentEnd->GetStartLocation( ) );
+                for (int i = 0; i < numTerms; ++i) {
+                    terms[i]->NextDocument();
+                }
                 DocumentEnd->Next();
 
                 return seeked;
@@ -191,21 +195,43 @@ class ISRAnd : public ISR
 
             Post *Seek( Location target ) override
                 {
-                    // 1. Seek all the ISRs to the first occurrence beginning at
-                    //    the target location.
-                    for (int i = 0; i < numTerms; ++i) 
-                        terms[i]->Seek(target);
+                // 1. Seek all the ISRs to the first occurrence beginning at
+                //    the target location.
+                Location docStartLoc = DocumentEnd->GetStartLocation();
+                Location docEndLoc = DocumentEnd->GetEndLocation();
 
-                    // 2. Move the document end ISR to just past the furthest
-                    //    word, then calculate the document begin location.
-                    DocumentEnd->Seek( terms[farthestTerm]->GetStartLocation() );
+                nearestStartLocation = DocumentEnd->GetEndLocation();
+                nearestEndLocation = target;
+                for (int i = 0; i < numTerms; ++i) {\
+                    // If one of the terms doesn't have a posting list, this document isn't a match
+                    if (terms[i] == nullptr) return nullptr;
 
-                    // 3. Seek all the other terms to past the document begin.
+                    Post* foundPost = terms[i]->Seek(target);
+                    if (!foundPost || foundPost->loc > docEndLoc) return nullptr;
+                    if (foundPost->loc >= nearestEndLocation)
+                        {
+                        nearestEndLocation = foundPost->loc;
+                        farthestTerm = i;
+                        }
+                    if (foundPost->loc <= nearestStartLocation)
+                        {
+                        post = foundPost;
+                        nearestStartLocation = foundPost->loc;
+                        nearestTerm = i;
+                        }
+                }
 
-                    // 4. If any term is past the document end, return to
-                    //    step 2.
+                return post;
 
-                    // 5. If any ISR reaches the end, there is no match.
+                // 2. Move the document end ISR to just past the furthest
+                //    word, then calculate the document begin location.
+
+                // 3. Seek all the other terms to past the document begin.
+
+                // 4. If any term is past the document end, return to
+                //    step 2.
+
+                // 5. If any ISR reaches the end, there is no match.
                 }
 
             Post * Next() override
@@ -217,6 +243,10 @@ class ISRAnd : public ISR
                 {
                 // Seek all the ISRs to the first occurrence just past
                 // the end of this document.
+                Post* seeked = Seek( DocumentEnd->GetStartLocation( ) );
+                DocumentEnd->Next();
+
+                return seeked;
                 }
 
             Location GetStartLocation() override
@@ -230,6 +260,8 @@ class ISRAnd : public ISR
                 }
 
         private: 
+            Post *post;
+
             unsigned nearestTerm, farthestTerm;
             Location nearestStartLocation, nearestEndLocation;
 
@@ -323,7 +355,6 @@ class ISRPhrase : public ISR
                                 break;
                             }
                         }
-
                     }
                     if (found)
                         return DocumentEnd->GetCurrentPost();
