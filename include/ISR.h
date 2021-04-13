@@ -114,22 +114,21 @@ class ISROr : public ISR
                 Location minLocation = docEndLoc;
                 for (int i = 0; i < numTerms; ++i) 
                     {
-                    Post * post = terms[i]->Seek(target);
-                    if (post) 
+                    Post * foundPost = terms[i]->Seek(target);
+                    if (foundPost) 
                         {
-                        Location currentLoc = terms[i]->GetStartLocation();
-
                         // Ensure that the found location is within the document boundaries
                         // must be >= docStartLoc to ensure that the first word in the index is found
-                        if (currentLoc < minLocation && currentLoc >= docStartLoc)
+                        if (foundPost->loc < minLocation && foundPost->loc >= docStartLoc)
                             {
+                            post = foundPost;
                             nearestTerm = i;
-                            minLocation = currentLoc;
+                            minLocation = foundPost->loc;
                             }
                         }
                     }
                     
-                return (minLocation < docEndLoc) ? DocumentEnd->GetCurrentPost() : nullptr;
+                return (minLocation < docEndLoc) ? post : nullptr;
                 }
 
             Post *Next( ) override
@@ -176,6 +175,8 @@ class ISROr : public ISR
             }
         
         private:
+            Post * post;
+
             unsigned nearestTerm;
             Location nearestStartLocation, nearestEndLocation;
             ISREndDoc *DocumentEnd;
@@ -315,25 +316,26 @@ class ISRPhrase : public ISR
                     // If one of the terms doesn't have a posting list, it won't be found
                     if (terms[i] == nullptr) return nullptr;
 
-                    Post* post = terms[i]->Seek(target);
-                    if (!post) return nullptr;
+                    Post* foundPost = terms[i]->Seek(target);
+                    if (!foundPost) return nullptr;
                     if (terms[i]->GetStartLocation() >= docStartLoc) 
                         {
-                        if (post->loc >= nearestEndLocation)
+                        if (foundPost->loc >= nearestEndLocation)
                             {
-                            nearestEndLocation = post->loc;
+                            nearestEndLocation = foundPost->loc;
                             farthestTerm = i;
                             }
-                        if (post->loc <= nearestStartLocation)
+                        if (foundPost->loc <= nearestStartLocation)
                             {
-                            nearestStartLocation = post->loc;
+                            post = foundPost;
+                            nearestStartLocation = foundPost->loc;
                             nearestTerm = i;
                             }
                         }
                 }
 
                 if (numTerms == 1 && nearestStartLocation < docEndLoc) {
-                    return DocumentEnd->GetCurrentPost();
+                    return post;
                 }
 
                 // 2. Pick the furthest term and attempt to seek all
@@ -352,18 +354,19 @@ class ISRPhrase : public ISR
                         }
                         else continue;
                         if (found) {
-                            Post* post = terms[i]->Seek(expectedLoc);
+                            post = terms[i]->Seek(expectedLoc);
                             if (post == nullptr || post->loc > docEndLoc)
                                 return nullptr;
                             if (post->loc != expectedLoc) {
                                 nearestEndLocation = (post->loc > nearestEndLocation) ? terms[(farthestTerm = i)]->GetStartLocation() : nearestEndLocation;
+                                nearestStartLocation = (post->loc < nearestStartLocation) ? terms[(nearestTerm = i)]->GetStartLocation() : nearestStartLocation;
                                 found = false;
                                 break;
                             }
                         }
                     }
                     if (found)
-                        return DocumentEnd->GetCurrentPost();
+                        return post;
                 }
 
 
@@ -383,6 +386,8 @@ class ISRPhrase : public ISR
             return Seek( nearestStartLocation + 1 );
             }
     private: 
+        Post * post;
+
         ISREndDoc *DocumentEnd;
         unsigned nearestTerm, farthestTerm;
         Location nearestStartLocation, nearestEndLocation;
