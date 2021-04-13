@@ -12,7 +12,6 @@
 #include "../libraries/AS/include/AS/string.h"
 #include "IndexHT.h"
 
-
 class ISR //fix inheritance to be logical, remove duplicate code and member variables
     {
 
@@ -46,7 +45,7 @@ class ISRWord : public ISR
         virtual Post *GetCurrentPost( );
 
         virtual Post *Next( ) override;
-        Post *Seek( Location target ) override;
+        virtual Post *Seek( Location target ) override;
 
         Location GetStartLocation( ) override;
         Location GetEndLocation( ) override;
@@ -57,6 +56,8 @@ class ISRWord : public ISR
         PostingList* posts;
         Location startLocation, endLocation;
         unsigned postIndex;
+
+        Location docStartLocation;
     };
 
 class ISREndDoc : public ISRWord
@@ -70,6 +71,7 @@ class ISREndDoc : public ISRWord
         unsigned GetUrlLength( );
 
         Post *Next( ) override;
+        Post *Seek( Location target ) override;
 
     };
 
@@ -244,6 +246,10 @@ class ISRAnd : public ISR
                 // Seek all the ISRs to the first occurrence just past
                 // the end of this document.
                 Post* seeked = Seek( DocumentEnd->GetStartLocation( ) );
+                for (int i = 0; i < numTerms; ++i) {
+                    if (terms[i])
+                        terms[i]->NextDocument();
+                }
                 DocumentEnd->Next();
 
                 return seeked;

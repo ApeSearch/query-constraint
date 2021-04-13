@@ -6,7 +6,8 @@ ISR::ISR(IndexHT *_indexPtr) : indexPtr(_indexPtr) {}
 
 ISRWord::ISRWord() : ISR() {}
 
-ISRWord::ISRWord(PostingList * _posts, IndexHT *_indexPtr) : ISR(_indexPtr), posts(_posts), postIndex(0), startLocation(posts->posts[0]->loc), endLocation(posts->posts[0]->loc) {}
+ISRWord::ISRWord(PostingList * _posts, IndexHT *_indexPtr) : ISR(_indexPtr), posts(_posts), postIndex(0), startLocation(posts->posts[0]->loc),
+                                                            endLocation(posts->posts[0]->loc), docStartLocation(0) {}
 
 ISRWord::ISRWord(PostingList * _posts, IndexHT *_indexPtr, Location _start) : ISRWord(_posts, _indexPtr) {
     startLocation = _start;
@@ -54,6 +55,14 @@ Post * ISRWord::Seek( Location target ) {
     return found;
 }
 
+Post * ISREndDoc::Seek( Location target ) {
+    Post *found = posts->Seek(target);
+    if (found)
+        startLocation = endLocation;
+        endLocation = found->loc;
+    return found;
+}
+
 Location ISRWord::GetStartLocation( ) {
     return startLocation;
 }
@@ -63,7 +72,14 @@ Location ISRWord::GetEndLocation( ) {
 }
 
 Post* ISRWord::NextDocument( ) {
-    return nullptr;
+    ISREndDoc* DocumentEnd = indexPtr->getEndDocISR();
+
+    if (docStartLocation != 0)
+        DocumentEnd->Seek(docStartLocation + 1);
+
+    Post *seeked = Seek(docStartLocation);
+    docStartLocation = DocumentEnd->GetEndLocation();
+    return (seeked && (seeked->loc < DocumentEnd->GetEndLocation())) ? seeked : nullptr;
 }
 
 unsigned ISREndDoc::GetDocumentLength( ) {}
