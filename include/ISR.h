@@ -278,35 +278,56 @@ class ISRPhrase : public ISR
                     if (terms[i] == nullptr) return nullptr;
 
                     Post* post = terms[i]->Seek(target);
+                    if (!post) return nullptr;
                     if (terms[i]->GetStartLocation() >= docStartLoc) 
                         {
-                        if (post->loc > nearestEndLocation)
+                        if (post->loc >= nearestEndLocation)
                             {
                             nearestEndLocation = post->loc;
                             farthestTerm = i;
                             }
-                        else if (post->loc < nearestStartLocation)
+                        if (post->loc <= nearestStartLocation)
                             {
                             nearestStartLocation = post->loc;
-                            nearestTerm;
+                            nearestTerm = i;
                             }
                         }
+                }
+
+                if (numTerms == 1 && nearestStartLocation < docEndLoc) {
+                    return DocumentEnd->GetCurrentPost();
                 }
 
                 // 2. Pick the furthest term and attempt to seek all
                 //    the other terms to the first location beginning
                 //    where they should appear relative to the furthest
                 //    term.
-                for (int i = 0; i < numTerms; ++i) {
-                    Post *post;
-                    if (i < farthestTerm) {
-                        post = terms[i]->Seek(nearestEndLocation - farthestTerm - i);
-                    } else if (i > farthestTerm) {
-                        post = terms[i]->Seek(nearestEndLocation + farthestTerm + i);
-                    }
-                    
-                }
+                while (true)
+                {
+                    bool found = true;
+                    for (int i = 0; i < numTerms; ++i) {
+                        Location expectedLoc;
+                        if (i < farthestTerm) {
+                            expectedLoc = nearestEndLocation - farthestTerm + i;
+                        } else if (i > farthestTerm) {
+                            expectedLoc = nearestEndLocation + farthestTerm + i;
+                        }
+                        else continue;
+                        if (found) {
+                            Post* post = terms[i]->Seek(expectedLoc);
+                            if (post == nullptr || post->loc > docEndLoc)
+                                return nullptr;
+                            if (post->loc != expectedLoc) {
+                                nearestEndLocation = (post->loc > nearestEndLocation) ? terms[(farthestTerm = i)]->GetStartLocation() : nearestEndLocation;
+                                found = false;
+                                break;
+                            }
+                        }
 
+                    }
+                    if (found)
+                        return DocumentEnd->GetCurrentPost();
+                }
 
 
                 if (nearestEndLocation > docEndLoc) 

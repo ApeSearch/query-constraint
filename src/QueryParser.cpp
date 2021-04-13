@@ -102,7 +102,7 @@ query::Tuple* QueryParser::FindPhrase()
     {
         Token* token = stream.getCurrentToken();
         
-        if(token->getTokenType() != TokenTypePhrase)
+        if(!token || token->getTokenType() != TokenTypePhrase)
             return nullptr;
         
         query::TupleList* tupleList = new query::Phrase();
@@ -121,6 +121,8 @@ query::Tuple* QueryParser::FindPhrase()
             return nullptr;
         }
 
+        FindNextToken();
+
         return tupleList;
     }
 
@@ -128,7 +130,7 @@ query::Tuple* QueryParser::FindNestedConstraint()
     {
         Token* token = stream.getCurrentToken();
 
-        if(token->getTokenType() != TokenTypeNested)
+        if(!token || token->getTokenType() != TokenTypeNested)
             return nullptr;
         
         FindNextToken();
