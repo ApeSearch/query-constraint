@@ -1,6 +1,7 @@
 #include "../include/IndexHT.h"
 #include "../include/ISR.h"
 #include "../libraries/AS/include/AS/delta.h"
+#include "../include/Index.h"
 #include <iostream>
 
 
@@ -27,8 +28,9 @@ void WordPostingList::appendToList(Location loc_, Attributes attribute, size_t l
     posts.push_back(new WordPost(loc_, attribute.attribute));
 }
 
-size_t WordPostingList::bytesRequired() {
-    size_t numBytes = 0;
+size_t WordPostingList::bytesRequired(const APESEARCH::string &key) {
+
+    size_t numBytes = key.size() + 1;
     Location absoluteLocation = 0;
     numBytes += sizeof( SerializedPostingList );
 
@@ -46,11 +48,13 @@ size_t WordPostingList::bytesRequired() {
         deltas.push_back(posts[i]->attribute.attribute);
     }
 
+    bytesList = numBytes;
+
     return numBytes;
 }
 
 
-size_t DocEndPostingList::bytesRequired() {
+size_t DocEndPostingList::bytesRequired(const APESEARCH::string &key) {
     
 } 
 
@@ -117,7 +121,7 @@ ISREndDoc* IndexHT::getEndDocISR ( ) {
     return new ISREndDoc(entry->value, this);
 }
 
-void IndexHT::SerializeIndex(const APESEARCH::string &fileName) {
+size_t IndexHT::BytesRequired() {
     size_t bytesRequired = sizeof( IndexBlob );
 
     APESEARCH::vector< APESEARCH::vector< hash::Bucket< APESEARCH::string, PostingList*> *> > vec = dict.vectorOfBuckets();
@@ -125,18 +129,19 @@ void IndexHT::SerializeIndex(const APESEARCH::string &fileName) {
     for(size_t index = 0; index < vec.size(); ++index){
         for(size_t sameChain = 0; sameChain < vec[index].size(); ++sameChain){
             hash::Bucket<APESEARCH::string, PostingList*> * bucket = vec[index][sameChain];
-            bytesRequired += bucket->tuple.value->bytesRequired();
+            bytesRequired += bucket->tuple.value->bytesRequired(bucket->tuple.key);
         }
         bytesRequired += sizeof( size_t ); // Signifies end of the chained posting lists...
     }
+
     // Bytes for the url vector
     for(size_t i = 0; i < urls.size(); ++i)
         bytesRequired += urls[i].size() + 1;
     
+    //add in bytes for endDocPostingList
 
-    void *buffer;
-    IndexBlob * ptr = reinterpret_cast< IndexBlob * >( buffer );
-    ptr->MaxAbsolLoc = MaximumLocation;
+
+    return bytesRequired;
 }
 
 

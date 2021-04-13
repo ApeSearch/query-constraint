@@ -4,6 +4,8 @@
 #include "../libraries/AS/include/AS/vector.h"
 #include "../libraries/AS/include/AS/listdir.h"
 #include "../libraries/HashTable/include/HashTable/HashBlob.h"
+#include "../libraries/AS/include/AS/algorithms.h"
+#include "IndexHT.h"
 
 
 //1. Calculate deltas and figure out how many bytes will need to represent each delta
@@ -12,24 +14,70 @@
 
 #define SYNCTABLESIZE 32
 
-class SyncEntry
+struct SyncEntry
    {
     size_t absoluteLoc;
     size_t seekOffset;
    };
+
+
+//< bytesOfPostingList> 8 bytes
+
+//< sync Table > 32 * 16 bytes [ , , , ]
+
+//< Key > variable bytes ( as many as it takes )
+
+//< deltas >
 
 class SerializedPostingList
    {
     public:
         size_t bytesOfPostingList;
         //size_t absoluteLoc;
+
         SyncEntry syncTable[ SYNCTABLESIZE ];
+
+        static constexpr size_t sizeOfNullSentinel = sizeof( size_t ); // Just needs to be a Length
+
+        char Key[ Unknown ];
+
+        static SerializedPostingList * initSerializedPostingList(char* buffer, 
+        const Bucket<APESEARCH::string, PostingList *> * b, size_t length) {
+            SerializedPostingList *serialTuple = reinterpret_cast< SerializedPostingList * >( buffer ); 
+
+            serialTuple->bytesOfPostingList = length;
+
+            char *ptrAfterKey = strcpy( serialTuple->Key, b->tuple.key.cstr() ) + strlen( b->tuple.key.cstr() ) + 1;
+            
+            serialTuple->syncTable[0] = SyncEntry { b->tuple.value->deltas[0], 0 };
+            
+            size_t absoluteLocation = b->tuple.value->deltas[0], currentDelta = 1;
+            uint8_t highBit = 1;
+
+            //while(highBit < 256){
+            //    
+            //}
+            
+            APESEARCH::copy( b->tuple.value->deltas.begin(), b->tuple.value->deltas.end(), ( uint8_t * ) ptrAfterKey );
+            
+        }
+
+        static char * Write(char *buffer, char const * const bufferEnd,
+            const Bucket<APESEARCH::string, PostingList *> *b){
+                SerializedPostingList * serialList = initSerializedPostingList(buffer, b, b->tuple.value->bytesList);
+
+                return buffer + b->tuple.value->bytesList;
+        }
+
+        //should include other metadata
         // Pure bit manipulation..
    };
 
 class IndexBlob
     {
     public: 
+        static constexpr size_t decidedMagicNum = 69;
+        static constexpr size_t version = 1;
 
     size_t MagicNumber,
         Version,
@@ -39,6 +87,44 @@ class IndexBlob
         VectorStart, // Byte offset that points to beginning of vector array
         NumberOfBuckets,
         Buckets[ Unknown ];
+
+    static IndexBlob *Write( IndexBlob *ib, size_t bytes,
+            const IndexHT *indexHT ) {
+                ib->MagicNumber = IndexBlob::decidedMagicNum;
+                ib->Version = IndexBlob::version;
+
+                ib->BlobSize = bytes;
+                ib->NumberOfBuckets = indexHT->dict.table_size();
+                ib->NumOfDocs = indexHT->dict.numOfLinkedLists();
+
+                memset( ib->Buckets, 0, sizeof( size_t ) * ib->NumberOfBuckets );
+
+                ib->VectorStart = reinterpret_cast< IndexBlob * >( ib->Buckets ) - ib;
+
+                //points to beginning of posting lists
+                char *serialPtr =reinterpret_cast< char *>( ib->Buckets + indexHT->dict.table_size() );
+                char *end = reinterpret_cast< char *>( ib ) + bytes;
+
+                APESEARCH::vector< APESEARCH::vector< hash::Bucket< APESEARCH::string, PostingList*> *> > buckets = indexHT->dict.vectorOfBuckets();
+
+                for(size_t i = 0; i < buckets.size(); ++i){
+                    for(size_t sameChain = 0; sameChain < buckets[i].size(); ++sameChain){
+                        hash::Bucket<APESEARCH::string, PostingList*> * bucket = buckets[i][sameChain];
+                        
+                        
+                    }
+                }
+
+            }
+
+    static IndexBlob * Create(IndexHT *indexHT) {
+        const size_t bytesReq = indexHT->BytesRequired();
+
+        char *buffer = ( char * ) malloc( bytesReq );
+        memset( buffer, 0, bytesReq );
+
+        return Write(reinterpret_cast<IndexBlob *>( buffer ), bytesReq, indexHT);
+        }
     };
 
 

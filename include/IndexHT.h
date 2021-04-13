@@ -5,7 +5,6 @@
 #include "../libraries/AS/include/AS/vector.h"
 #include "../libraries/AS/include/AS/unique_ptr.h"
 #include "HashTable.h"
-#include "Index.h"
 
 /*
  * 
@@ -26,6 +25,9 @@
 class ISR;
 class ISRWord;
 class ISREndDoc;
+
+class SerializedPostingList;
+class IndexBlob;
 
 
 typedef size_t Location; // The numbering of a token
@@ -92,7 +94,7 @@ class PostingList
     {
     public:
 
-        PostingList(): posts(), deltas() {}
+        PostingList(): posts(), deltas(), bytesList(0) {}
         ~PostingList() {
             for(size_t i = 0; i < posts.size(); ++i)
                 delete posts[i];
@@ -100,13 +102,15 @@ class PostingList
 
         APESEARCH::vector<Post *> posts; //pointers to individual posts
         APESEARCH::vector<uint8_t> deltas;
+        size_t bytesList;
+
         
         Post *Seek( Location l );
 
         //pure virtual function to handle appending a new post to list. lastDocIndex is for 
         //word/token posts to determine absolute location based on location of last document
         virtual void appendToList(Location loc_, Attributes attribute, size_t lastDocIndex = 0) = 0;
-        virtual size_t bytesRequired( ) = 0;
+        virtual size_t bytesRequired( const APESEARCH::string &key ) = 0;
 
 
         //virtual char *GetPostingList( );
@@ -119,7 +123,7 @@ class WordPostingList : public PostingList
 
         WordPostingList(): PostingList() {}
 
-        size_t bytesRequired( );
+        size_t bytesRequired( const APESEARCH::string &key );
 
         void appendToList(Location loc_, Attributes attribute, size_t lastDocIndex = 0) override;
 
@@ -133,7 +137,7 @@ class DocEndPostingList : public PostingList
 
         DocEndPostingList(): PostingList() {}
 
-        size_t bytesRequired( );
+        size_t bytesRequired( const APESEARCH::string &key );
 
         void appendToList(Location loc_, Attributes attribute, size_t lastDocIndex = 0) override; 
     };
@@ -149,7 +153,7 @@ class IndexHT
         void addDoc(APESEARCH::string url, APESEARCH::vector<APESEARCH::string> &text, size_t endDocLoc, PostingListType type);
         Post *goToNext( Location location ); // May need to inherit here...
 
-        void SerializeIndex(const APESEARCH::string &fileName);
+        size_t BytesRequired();
 
         ISRWord *getWordISR ( APESEARCH::string word );
         ISREndDoc *getEndDocISR ( );
