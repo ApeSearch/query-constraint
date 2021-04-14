@@ -6,21 +6,21 @@
 
 int main() 
     {
-        APESEARCH::vector<APESEARCH::string> words = {
-            "the",
-            "cow",
-            "the",
-            "pig",
-            "and",
-            "all",
-            "of",
-            "the",
-            "animals",
+        APESEARCH::vector<IndexEntry> words = {
+            {"the", WordAttributeNormal},
+            {"cow", WordAttributeNormal},
+            {"the", WordAttributeNormal},
+            {"pig", WordAttributeNormal},
+            {"and", WordAttributeNormal},
+            {"all", WordAttributeNormal},
+            { "of", WordAttributeNormal},
+            {"the", WordAttributeNormal},
+            {"animals", WordAttributeNormal},
         };
 
         IndexHT *index = new IndexHT();
-        index->addDoc("https://eecs440.com", words, 9, BodyText);
-        index->addDoc("https://eecs441.com", words, 19, AnchorText); 
+        index->addDoc("https://eecs440.com", words, 9);
+        index->addDoc("https://eecs441.com", words, 19); //change
 
         APESEARCH::string strToFind = "the";
 

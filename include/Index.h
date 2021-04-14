@@ -12,7 +12,7 @@
 //2. Attribute
 //3. Sync table
 
-#define SYNCTABLESIZE 32
+#define SYNCTABLESIZE 64
 
 struct SyncEntry
    {
@@ -49,14 +49,23 @@ class SerializedPostingList
 
             char *ptrAfterKey = strcpy( serialTuple->Key, b->tuple.key.cstr() ) + strlen( b->tuple.key.cstr() ) + 1;
             
-            serialTuple->syncTable[0] = SyncEntry { b->tuple.value->deltas[0], 0 };
-            
-            size_t absoluteLocation = b->tuple.value->deltas[0], currentDelta = 1;
-            uint8_t highBit = 1;
 
-            //while(highBit < 256){
-            //    
-            //}
+            PostingList* pl = b->tuple.value;
+            memset(serialTuple->syncTable, 0, SYNCTABLESIZE * sizeof(size_t) * 2);
+            
+            serialTuple->syncTable[0] = SyncEntry{ pl->posts[0]->loc, 0 };
+            
+            size_t absoluteLocation = pl->posts[0]->loc, currentPost = 1;
+            uint8_t nextHighBit = 1;
+
+            for(; currentPost < pl->posts.size(); ++currentPost){
+                absoluteLocation += pl->posts[currentPost]->loc;
+
+                uint8_t highBit = absoluteLocation >> 24;
+
+                while(highBit >= nextHighBit)
+                    serialTuple->syncTable[nextHighBit++] = SyncEntry{ absoluteLocation, currentPost };
+            }
             
             APESEARCH::copy( b->tuple.value->deltas.begin(), b->tuple.value->deltas.end(), ( uint8_t * ) ptrAfterKey );
             
@@ -110,8 +119,6 @@ class IndexBlob
                 for(size_t i = 0; i < buckets.size(); ++i){
                     for(size_t sameChain = 0; sameChain < buckets[i].size(); ++sameChain){
                         hash::Bucket<APESEARCH::string, PostingList*> * bucket = buckets[i][sameChain];
-                        
-                        
                     }
                 }
 

@@ -54,16 +54,10 @@ typedef union Attributes //attributes for all kinds of posting lists, only one v
         size_t urlIndex;
     };
 
-
-
-/* This class is only needed when flattening the in memory hashtable
-class SynchronizationEntry
-   {
-    size_t highBitOfSeekLoc; // Relative to a posting list ( ordered )
-    size_t seekOffset;  // Relative to the start of the posting list.
-    size_t absoluteLoc; // Relative to every posting list.
-   };
-*/
+struct IndexEntry {
+    APESEARCH::string word;
+    WordAttributes attribute;
+};
 
 class Post
     { //in memory version of post, will replace loc with deltaPrev once written to disk
@@ -150,7 +144,7 @@ class IndexHT
         IndexHT();
         ~IndexHT();
 
-        void addDoc(APESEARCH::string url, APESEARCH::vector<APESEARCH::string> &text, size_t endDocLoc, PostingListType type);
+        void addDoc(APESEARCH::string url, APESEARCH::vector<IndexEntry> &text, size_t endDocLoc);
         Post *goToNext( Location location ); // May need to inherit here...
 
         size_t BytesRequired();

@@ -54,12 +54,12 @@ size_t WordPostingList::bytesRequired(const APESEARCH::string &key) {
 }
 
 
-size_t DocEndPostingList::bytesRequired(const APESEARCH::string &key) {
+size_t DocEndPostingList::bytesRequired(const APESEARCH::string &key) { //implement
     
 } 
 
-void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<APESEARCH::string> &text, 
-    size_t endDocLoc, PostingListType type){
+void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<IndexEntry> &text, 
+    size_t endDocLoc){ //change
     
     urls.push_back(url);
 
@@ -78,8 +78,8 @@ void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<APESEARCH::string>
     entry->value->appendToList(endDocLoc, urls.size() - 1);
 
     for(Location indexLoc = 0; indexLoc < text.size(); ++indexLoc) {
-        APESEARCH::string word = text[indexLoc];
-        switch (type) {
+        APESEARCH::string word = text[indexLoc].word;
+        switch (text[indexLoc].attribute) {
             case TitleText:
                 word.push_front('%');
                 break;

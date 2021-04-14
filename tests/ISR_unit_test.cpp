@@ -9,12 +9,25 @@ using std::cout; using std::endl;
 #include "../libraries/AS/include/AS/unique_ptr.h"
 #include "../libraries/unit_test_framework/include/unit_test_framework/unit_test_framework.h"
 
-APESEARCH::vector<APESEARCH::string> document1 = {
-    "pig", "the", "cow", "the", "pig", "and", "all", "of", "the", "animals",
+APESEARCH::vector<IndexEntry> document1 = {
+    {"pig", WordAttributeNormal}, 
+    {"the", WordAttributeNormal}, 
+    {"cow", WordAttributeNormal}, 
+    {"the", WordAttributeNormal}, 
+    {"pig", WordAttributeNormal}, 
+    {"and", WordAttributeNormal}, 
+    {"all", WordAttributeNormal}, 
+    {"of", WordAttributeNormal}, 
+    {"the", WordAttributeNormal}, 
+    {"animals", WordAttributeNormal},
 };
 
-APESEARCH::vector<APESEARCH::string> document2 = {
-    "this", "is", "a", "and", "test"
+APESEARCH::vector<IndexEntry> document2 = {
+    {"this", WordAttributeNormal}, 
+    {"is", WordAttributeNormal}, 
+    {"a", WordAttributeNormal}, 
+    {"and", WordAttributeNormal}, 
+    {"test", WordAttributeNormal}
 };
 
 void printIndex(IndexHT* index) {
@@ -42,8 +55,8 @@ void printIndex(IndexHT* index) {
 APESEARCH::unique_ptr<IndexHT> buildIndex() {
     APESEARCH::unique_ptr<IndexHT> index(new IndexHT());
 
-    index->addDoc("https://eecs440.com", document1, document1.size(), BodyText);
-    index->addDoc("https://eecs441.com", document2, document2.size(), BodyText);
+    index->addDoc("https://eecs440.com", document1, document1.size());
+    index->addDoc("https://eecs441.com", document2, document1.size() + document2.size());
 
     return index;
 }
