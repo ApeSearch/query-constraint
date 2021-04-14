@@ -41,4 +41,6 @@ int main()
         }
 
         delete index;
+
+        return 0;
     }

@@ -56,7 +56,7 @@ APESEARCH::unique_ptr<IndexHT> buildIndex() {
     APESEARCH::unique_ptr<IndexHT> index(new IndexHT());
 
     index->addDoc("https://eecs440.com", document1, document1.size());
-    index->addDoc("https://eecs441.com", document2, document1.size() + document2.size());
+    index->addDoc("https://eecs441.com", document2, document2.size());
 
     return index;
 }

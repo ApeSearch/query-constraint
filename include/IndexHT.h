@@ -35,13 +35,13 @@ typedef size_t FileOffset;
 
 enum WordAttributes : uint8_t
     {
-        WordAttributeNormal, WordAttributeBold, WordAttributeHeading, WordAttributeLarge
+        WordAttributeNormal, WordAttributeBold, WordAttributeHeading
     };
 
 
 enum PostingListType
     {
-        BodyText, TitleText, HeaderText, AnchorText, URL
+        BodyText, TitleText, AnchorText, URL
     };
 
 typedef union Attributes //attributes for all kinds of posting lists, only one value will be used
@@ -57,6 +57,7 @@ typedef union Attributes //attributes for all kinds of posting lists, only one v
 struct IndexEntry {
     APESEARCH::string word;
     WordAttributes attribute;
+    PostingListType plType;
 };
 
 class Post

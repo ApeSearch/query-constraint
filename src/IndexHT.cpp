@@ -64,22 +64,27 @@ void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<IndexEntry> &text,
     urls.push_back(url);
 
     hash::Tuple<APESEARCH::string, PostingList *> * entry = dict.Find(APESEARCH::string("%"));
-    size_t lastDocIndex = 0;
 
+    //stores absolute location of last doc
+    //so current tokens can add it to their
+    //relative location for determining absolute
+    //location in regards to a whole index chunk
+    size_t lastDocIndex = 0;
+    
     if(entry)
-        lastDocIndex = entry->value->posts.back()->loc + 1;
+        lastDocIndex = entry->value->posts.back()->loc + 1; 
     else
         entry = dict.Find(APESEARCH::string("%"), new DocEndPostingList());
     
     MaximumLocation = endDocLoc; //Keep Track of Maximum Location, location of end of last doc
     LocationsInIndex = text.size() + 1; //Add 1 for end doc location + number of tokens in doc
-    numDocs++;
+    numDocs++; //Keeps track of the number of documents
 
     entry->value->appendToList(endDocLoc, urls.size() - 1);
 
     for(Location indexLoc = 0; indexLoc < text.size(); ++indexLoc) {
         APESEARCH::string word = text[indexLoc].word;
-        switch (text[indexLoc].attribute) {
+        switch (text[indexLoc].plType) {
             case TitleText:
                 word.push_front('%');
                 break;
@@ -97,7 +102,7 @@ void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<IndexEntry> &text,
         if(!entry)
             entry = dict.Find(word, new WordPostingList());
 
-        entry->value->appendToList(indexLoc, WordAttributeNormal, lastDocIndex);
+        entry->value->appendToList(indexLoc, text[indexLoc].attribute, lastDocIndex);
     }
 }
 
