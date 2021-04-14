@@ -79,7 +79,10 @@ Post* ISRWord::NextDocument( ) {
 
     Post *seeked = Seek(docStartLocation);
     docStartLocation = DocumentEnd->GetEndLocation();
-    return (seeked && (seeked->loc < DocumentEnd->GetEndLocation())) ? seeked : nullptr;
+    
+    delete DocumentEnd;
+
+    return (seeked && (seeked->loc < docStartLocation)) ? seeked : nullptr;
 }
 
 unsigned ISREndDoc::GetDocumentLength( ) {}

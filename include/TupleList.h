@@ -23,6 +23,7 @@ namespace query {
     class OrExpression : public TupleList {
         public:
             OrExpression();
+            ~OrExpression();
             ISR* Compile(IndexHT *indexPtr);
     };
 

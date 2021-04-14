@@ -15,8 +15,6 @@ namespace query{
             virtual ISR* Compile(IndexHT *indexPtr) = 0;
             Tuple();
             virtual ~Tuple(); //deallocate node from heap
-
-            
     };
 
     class SearchWord : public Tuple {

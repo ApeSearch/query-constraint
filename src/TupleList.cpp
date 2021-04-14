@@ -7,12 +7,13 @@ using namespace query;
 TupleList::TupleList(): Top(nullptr), Bottom(nullptr) {}
 
 TupleList::~TupleList() {
-    Tuple* current = Top;
-    while( current != 0 ) {
-        Tuple* next = current->next;
-        delete current;
-        current = next;
-    }
+    // if (Top == Bottom) return;
+    // Tuple* current = Top;
+    // while( current != 0 ) {
+    //     Tuple* next = current->next;
+    //     delete current;
+    //     current = next;
+    // }
 }
 
 void TupleList::Empty()
@@ -35,6 +36,9 @@ void TupleList::Append(Tuple* t)
 
 OrExpression::OrExpression() : TupleList() {}
 
+OrExpression::~OrExpression() {
+}
+
 ISR* OrExpression::Compile(IndexHT *indexPtr) 
     {
     ISROr* orISR = new ISROr(indexPtr);
@@ -49,20 +53,14 @@ ISR* OrExpression::Compile(IndexHT *indexPtr)
     curr = Top;
     orISR->terms = new ISR*[orISR->numTerms];
 
-    int failed = 0;
-    for(auto i = orISR->terms; i < orISR->terms + orISR->numTerms; ++i, curr = curr->next)
+    // int failed = 0;
+    for(auto i = orISR->terms; i < orISR->terms + orISR->numTerms; ++i)
         {
-        ISR * compiled = curr->Compile(indexPtr);
-            if (compiled) 
-                {
-                *(i - failed) = compiled;
-                }
-            else ++failed;
+            *i = curr->Compile(indexPtr);
+            auto next = curr->next;
+            delete curr;
+            curr = next;
         }
-
-    orISR->numTerms -= failed;
-
-    // orISR->Decorate();
 
     return orISR;
     }
@@ -83,8 +81,14 @@ ISR* AndExpression::Compile(IndexHT *indexPtr) {
     curr = Top;
     andISR->terms = new ISR*[andISR->numTerms];
     
-    for(auto i = andISR->terms; i < andISR->terms + andISR->numTerms; ++i, curr = curr->next)
-        *i = curr->Compile(indexPtr);
+    for(auto i = andISR->terms; i < andISR->terms + andISR->numTerms; ++i) 
+        {
+            *i = curr->Compile(indexPtr);
+            auto next = curr->next;
+            delete curr;
+            curr = next;
+        }
+        
 
     return andISR;
 }
@@ -105,8 +109,14 @@ ISR* Phrase::Compile(IndexHT *indexPtr) {
     curr = Top;
     phraseISR->terms = new ISR*[phraseISR->numTerms];
 
-    for(auto i = phraseISR->terms; i < phraseISR->terms + phraseISR->numTerms; ++i, curr = curr->next)
-        *i = curr->Compile(indexPtr);
+    for(auto i = phraseISR->terms; i < phraseISR->terms + phraseISR->numTerms; ++i)
+        {
+            *i = curr->Compile(indexPtr);
+            auto next = curr->next;
+            delete curr;
+            curr = next;
+        }
+        
 
 
 

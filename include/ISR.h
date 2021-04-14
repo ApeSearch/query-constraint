@@ -38,7 +38,9 @@ class ISRWord : public ISR
         ISRWord();
         ISRWord(PostingList * _posts, IndexHT *indexPtr);
         ISRWord(PostingList * _posts, IndexHT *_indexPtr, Location _start);
-        ~ISRWord() {delete posts;}
+        ~ISRWord() {
+
+        }
 
         unsigned GetDocumentCount( );
         unsigned GetNumberOfOccurrences( );
@@ -81,9 +83,10 @@ class ISROr : public ISR
             ISROr();
             ISROr(IndexHT *_indexPtr);
             ~ISROr() {
-                for (auto i = 0; i < numTerms; ++i) {
+                for (int i = 0; i < numTerms; ++i) {
                     delete terms[i];
                 }
+                delete [] terms;
                 delete DocumentEnd;
             }
 
@@ -114,6 +117,7 @@ class ISROr : public ISR
                 Location minLocation = docEndLoc;
                 for (int i = 0; i < numTerms; ++i) 
                     {
+                    if (!terms[i]) continue;
                     Post * foundPost = terms[i]->Seek(target);
                     if (foundPost) 
                         {
@@ -155,7 +159,8 @@ class ISROr : public ISR
                 // the end of this document.
                 Post* seeked = Seek( DocumentEnd->GetStartLocation( ) );
                 for (int i = 0; i < numTerms; ++i) {
-                    terms[i]->NextDocument();
+                    if (terms[i])
+                        terms[i]->NextDocument();
                 }
                 DocumentEnd->Next();
 
@@ -188,9 +193,11 @@ class ISRAnd : public ISR
             ISRAnd();
             ISRAnd(IndexHT *_indexPtr);
             ~ISRAnd() {
-                for (auto i = 0; i < numTerms; ++i) {
+                for (int i = 0; i < numTerms; ++i) {
                     delete terms[i];
                 }
+                delete [] terms;
+                delete DocumentEnd;
             }
 
             ISR **terms;
@@ -280,6 +287,13 @@ class ISRPhrase : public ISR
     public:
         ISRPhrase();
         ISRPhrase(IndexHT *_indexPtr);
+        ~ISRPhrase() {
+            for (int i = 0; i < numTerms; ++i) {
+                delete terms[i];
+            }
+            delete [] terms;
+            delete DocumentEnd;
+        }
 
         ISR **terms;
         unsigned numTerms;

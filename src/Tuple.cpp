@@ -8,7 +8,7 @@ using namespace query;
 query::Tuple::Tuple() : next(nullptr) {}
 
 query::Tuple::~Tuple() {
-
+    
 }
 
 // End Tuple

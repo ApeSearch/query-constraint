@@ -167,6 +167,7 @@ TEST(ISRword) {
                 ASSERT_EQUAL(expected[i][j], trees[i] != nullptr);
             }
         }
+        delete trees[i];
     }
 }
 
@@ -196,6 +197,7 @@ TEST(ISRand) {
         for (int j = 0; j < index->numDocs; ++j) {
             ASSERT_EQUAL(expected[i][j], trees[i]->NextDocument() != nullptr); 
         }
+        delete trees[i];
     }
 }
 
@@ -225,6 +227,7 @@ TEST(ISRand_or) {
         for (int j = 0; j < index->numDocs; ++j) {
             ASSERT_EQUAL(expected[i][j], trees[i]->NextDocument() != nullptr); 
         }
+        delete trees[i];
     }
 }
 
@@ -254,6 +257,7 @@ TEST(ISRand_phrase) {
         for (int j = 0; j < index->numDocs; ++j) {
             ASSERT_EQUAL(expected[i][j], trees[i]->NextDocument() != nullptr); 
         }
+        delete trees[i];
     }
 }
 
@@ -283,6 +287,7 @@ TEST(ISRor) {
         for (int j = 0; j < index->numDocs; ++j) {
             ASSERT_EQUAL(expected[i][j], trees[i]->NextDocument() != nullptr); 
         }
+        delete trees[i];
     }
 }
 
@@ -312,6 +317,7 @@ TEST(ISRor_phrase) {
         for (int j = 0; j < index->numDocs; ++j) {
             ASSERT_EQUAL(expected[i][j], trees[i]->NextDocument() != nullptr); 
         }
+        delete trees[i];
     }
 }
 
@@ -349,6 +355,7 @@ TEST(ISRphrase) {
         for (int j = 0; j < index->numDocs; ++j) {
             ASSERT_EQUAL(expected[i][j], trees[i]->NextDocument() != nullptr); 
         }
+        delete trees[i];
     }
 }
 

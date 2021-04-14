@@ -49,8 +49,11 @@ query::Tuple* QueryParser::FindOrConstraint()
         }
 
         
-        if(orExp->Top == orExp->Bottom)
-            return orExp->Top;
+        if(orExp->Top == orExp->Bottom) {
+            query::Tuple *top = orExp->Top;
+            delete orExp;
+            return top;
+        }
 
         return orExp; //the memory will be deallocated after compiling into an ISR.
     }
@@ -93,8 +96,11 @@ query::Tuple* QueryParser::FindAndConstraint()
             return nullptr;
         }
 
-        else if(andExp->Top == andExp->Bottom)
-            return andExp->Top;
+        else if(andExp->Top == andExp->Bottom){
+            query::Tuple *top = andExp->Top;
+            delete andExp;
+            return top;
+        }
 
         return andExp; //the memory will be deallocated after compiling into an ISR.
 
@@ -175,8 +181,10 @@ query::Tuple* QueryParser::FindSearchWord()
         query::TupleList* orList = new query::OrExpression();
         Token* token = stream.getCurrentToken();
 
-        if(!token || token->getTokenType() != TokenTypeWord)
+        if(!token || token->getTokenType() != TokenTypeWord){
+            delete orList;
             return nullptr;
+        }
 
         for (int i = 0; i < decorators.size(); ++i) {
             APESEARCH::string decoratedWord = token->TokenString();
