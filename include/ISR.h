@@ -23,7 +23,7 @@ class ISR //fix inheritance to be logical, remove duplicate code and member vari
 
         // Store information the index provides i.e. the posting list, the location 
         // ( so as to provide information about how to search for the next location or a post assoicated with a location)
-        virtual Post *Next( ) = 0;
+        virtual Post *Next( Location endDocLoc ) = 0;
         virtual Post *NextDocument( Location docStartLoc, Location docEndLoc  ) = 0;
         virtual Post *Seek( Location target, Location endDocLoc ) = 0;
         virtual Location GetStartLocation( ) = 0;
@@ -36,8 +36,8 @@ class ISRWord : public ISR
     {
     public:
         ISRWord();
-        ISRWord(PostingList * _posts, IndexHT *indexPtr);
-        ISRWord(PostingList * _posts, IndexHT *_indexPtr, Location _start);
+        ISRWord(PostingList * _posts, IndexHT *indexPtr, APESEARCH::string word);
+        ISRWord(PostingList * _posts, IndexHT *_indexPtr, APESEARCH::string _word, Location _start);
         ~ISRWord() {
 
         }
@@ -46,7 +46,7 @@ class ISRWord : public ISR
         unsigned GetNumberOfOccurrences( );
         virtual Post *GetCurrentPost( );
 
-        virtual Post *Next( ) override;
+        virtual Post *Next( Location endDocLoc ) override;
         virtual Post *Seek( Location target, Location endDocLoc ) override;
 
         Location GetStartLocation( ) override;
@@ -55,6 +55,7 @@ class ISRWord : public ISR
         Post *NextDocument( Location docStartLoc, Location docEndLoc  ) override;
 
     // private:
+        APESEARCH::string word;
         PostingList* posts;
         Location startLocation, endLocation;
         unsigned postIndex;
@@ -70,7 +71,7 @@ class ISREndDoc : public ISRWord
         unsigned GetTitleLength( );
         unsigned GetUrlLength( );
 
-        Post *Next( ) override;
+        Post *Next( Location endDocLoc ) override;
         Post *Seek( Location target, Location endDocLoc ) override;
 
     };
@@ -125,6 +126,7 @@ class ISROr : public ISR
                             post = foundPost;
                             nearestTerm = i;
                             minLocation = foundPost->loc;
+                            nearestStartLocation = minLocation;
                             }
                         }
                     }
@@ -132,23 +134,34 @@ class ISROr : public ISR
                 return (minLocation < docEndLoc) ? post : nullptr;
                 }
 
-            Post *Next( ) override
+            Post *Next( Location endDocLoc ) override
                 {
                 // Do a next on the nearest term
-                terms[nearestTerm]->Next();
+                Post* nearestNextPost = terms[nearestTerm]->Next(endDocLoc);
+                unsigned currentNearest = nearestTerm;
+                Location thisLoc = terms[nearestTerm]->GetStartLocation();
+                
+                Location minLocation = endDocLoc;
                 // Return the new nearest match.
-                nearestTerm = 0;
                 for (int i = 0; i < numTerms; ++i) {
+                    if (!terms[i]) continue;
                     Location currentLoc = terms[i]->GetStartLocation();
-                    Location minLoc = terms[nearestTerm]->GetStartLocation();
-                    if (currentLoc < minLoc ) {
+
+                    if (currentLoc < minLocation ) {
                         nearestTerm = i;
                         nearestStartLocation = currentLoc;
-                    }
-                        
+                        minLocation = currentLoc;
+                    }  
                 }
-                return nullptr;
-                // return terms[nearestTerm]->Seek(terms[nearestTerm]->GetStartLocation(), );
+
+                Post *newNearest = terms[nearestTerm]->Seek(minLocation, endDocLoc);
+                if (!newNearest) nearestStartLocation = endDocLoc;
+                else if (newNearest->loc > endDocLoc) {
+                    nearestStartLocation = endDocLoc;
+                    return nullptr;
+                }
+                
+                return newNearest;
                 }
 
             Post *NextDocument( Location docStartLoc, Location docEndLoc  ) override
@@ -218,9 +231,33 @@ class ISRAnd : public ISR
                 // 5. If any ISR reaches the end, there is no match.
                 }
 
-            Post * Next() override
+            Post * Next( Location endDocLoc ) override
                 {
-                // return Seek( nearestStartLocation + 1 );
+                Post* nearestNextPost = terms[nearestTerm]->Next(endDocLoc);
+                unsigned currentNearest = nearestTerm;
+                Location thisLoc = terms[nearestTerm]->GetStartLocation();
+                
+                Location minLocation = endDocLoc;
+                // Return the new nearest match.
+                for (int i = 0; i < numTerms; ++i) {
+                    if (!terms[i]) continue;
+                    Location currentLoc = terms[i]->GetStartLocation();
+
+                    if (currentLoc < minLocation ) {
+                        nearestTerm = i;
+                        nearestStartLocation = currentLoc;
+                        minLocation = currentLoc;
+                    }  
+                }
+
+                Post *newNearest = terms[nearestTerm]->Seek(minLocation, endDocLoc);
+                if (!newNearest) nearestStartLocation = endDocLoc;
+                else if (newNearest->loc > endDocLoc) {
+                    nearestStartLocation = endDocLoc;
+                    return nullptr;
+                }
+                
+                return newNearest;
                 }
 
             Post *NextDocument( Location docStartLoc, Location docEndLoc ) override
@@ -297,19 +334,14 @@ class ISRPhrase : public ISR
                         {
                         if (foundPost->loc >= nearestEndLocation)
                             {
+                            post = foundPost;
                             nearestEndLocation = foundPost->loc;
                             farthestTerm = i;
-                            }
-                        if (foundPost->loc <= nearestStartLocation)
-                            {
-                            post = foundPost;
-                            nearestStartLocation = foundPost->loc;
-                            nearestTerm = i;
                             }
                         }
                 }
 
-                if (numTerms == 1 && nearestStartLocation < endDocLoc) {
+                if (numTerms == 1 && nearestEndLocation < endDocLoc) {
                     return post;
                 }
 
@@ -317,6 +349,7 @@ class ISRPhrase : public ISR
                 //    the other terms to the first location beginning
                 //    where they should appear relative to the furthest
                 //    term.
+                nearestStartLocation = endDocLoc;
                 while (true)
                 {
                     bool found = true;
@@ -352,9 +385,9 @@ class ISRPhrase : public ISR
                 // 4. If any ISR reaches the end, there is no match.
             }
 
-        Post * Next() override
+        Post * Next( Location endDocLoc ) override
             {
-            // return Seek( nearestStartLocation + 1 );
+            return Seek( nearestStartLocation + 1, endDocLoc );
             }
     private: 
         Post * post;
@@ -405,6 +438,7 @@ class ISRContainer : public ISR
                 if (foundPost->loc <= nearestStartLocation)
                     {
                     post = foundPost;
+                    nearestContained = i;
                     nearestStartLocation = foundPost->loc;
                     nearestTerm = i;
                     }
@@ -424,9 +458,9 @@ class ISRContainer : public ISR
             return post;
             }
 
-        Post *Next( ) override
+        Post *Next( Location endDocLoc ) override
             {
-            // Seek( contained[ nearestContained ]->GetStartLocation( ) + 1 );
+            Seek( contained[ nearestContained ]->GetStartLocation( ) + 1, endDocLoc );
             }
 
         Location GetStartLocation() override
@@ -443,7 +477,7 @@ class ISRContainer : public ISR
             {
             // Seek all the ISRs to the first occurrence just past
             // the end of this document.
-            return Seek( docStartLoc, docEndLoc);;
+            return Seek( docStartLoc, docEndLoc);
             }
 
     private:

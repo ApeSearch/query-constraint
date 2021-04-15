@@ -139,7 +139,7 @@ Post *PostingList::Seek(Location l) {
 
 ISRWord* IndexHT::getWordISR ( APESEARCH::string word ) {
     hash::Tuple<APESEARCH::string, PostingList *> * entry = dict.Find(word);
-    return entry ? new ISRWord(entry->value, this) : nullptr;
+    return entry ? new ISRWord(entry->value, this, word) : nullptr;
 }
 
 ISREndDoc* IndexHT::getEndDocISR ( ) {
