@@ -101,6 +101,19 @@ void printPhrase(query::TupleList* phrase) {
     cout << wordPtr->word << endl;
 }
 
+void checkDocuments(APESEARCH::vector<ISR *> &trees, APESEARCH::vector<APESEARCH::vector<bool>>& expected, IndexHT *index) {
+    for (int i = 0; i < trees.size(); ++i) {
+        APESEARCH::unique_ptr<ISREndDoc> docEnd = APESEARCH::unique_ptr<ISREndDoc>(index->getEndDocISR());
+        for (int j = 0; j < index->numDocs; ++j) {
+            Location start = docEnd->GetStartLocation();
+            Location end = docEnd->GetEndLocation();
+            ASSERT_EQUAL(expected[i][j], trees[i]->NextDocument(start, end) != nullptr); 
+            docEnd->Next();
+        }
+        delete trees[i];
+    }
+}
+
 TEST(ISRword) {
     APESEARCH::unique_ptr<IndexHT> index = buildIndex();
 
@@ -123,19 +136,7 @@ TEST(ISRword) {
         {false, true}
     };
 
-    // APESEARCH::unique_ptr<ISREndDoc> docEnd = APESEARCH::unique_ptr<ISREndDoc>(index->getEndDocISR());
-
-    for (int i = 0; i < trees.size(); ++i) {
-        for (int j = 0; j < index->numDocs; ++j) {
-            if (trees[i])   {
-                ASSERT_EQUAL(expected[i][j], trees[i]->NextDocument() != nullptr); 
-            }
-            else {
-                ASSERT_EQUAL(expected[i][j], trees[i] != nullptr);
-            }
-        }
-        delete trees[i];
-    }
+    checkDocuments(trees, expected, index.get());
 }
 
 TEST(ISRand) {
@@ -160,12 +161,7 @@ TEST(ISRand) {
         {false, true}
     };
 
-    for (int i = 0; i < trees.size(); ++i) {
-        for (int j = 0; j < index->numDocs; ++j) {
-            ASSERT_EQUAL(expected[i][j], trees[i]->NextDocument() != nullptr); 
-        }
-        delete trees[i];
-    }
+    checkDocuments(trees, expected, index.get());
 }
 
 TEST(ISRand_or) {
@@ -190,12 +186,7 @@ TEST(ISRand_or) {
         // {false, false}
     };
 
-    for (int i = 0; i < trees.size(); ++i) {
-        for (int j = 0; j < index->numDocs; ++j) {
-            ASSERT_EQUAL(expected[i][j], trees[i]->NextDocument() != nullptr); 
-        }
-        delete trees[i];
-    }
+    checkDocuments(trees, expected, index.get());
 }
 
 TEST(ISRand_phrase) {
@@ -220,12 +211,7 @@ TEST(ISRand_phrase) {
         {true, false}
     };
 
-    for (int i = 0; i < trees.size(); ++i) {
-        for (int j = 0; j < index->numDocs; ++j) {
-            ASSERT_EQUAL(expected[i][j], trees[i]->NextDocument() != nullptr); 
-        }
-        delete trees[i];
-    }
+    checkDocuments(trees, expected, index.get());
 }
 
 TEST(ISRor) {
@@ -250,12 +236,7 @@ TEST(ISRor) {
         {false, false}
     };
 
-    for (int i = 0; i < trees.size(); ++i) {
-        for (int j = 0; j < index->numDocs; ++j) {
-            ASSERT_EQUAL(expected[i][j], trees[i]->NextDocument() != nullptr); 
-        }
-        delete trees[i];
-    }
+    checkDocuments(trees, expected, index.get());
 }
 
 TEST(ISRor_phrase) {
@@ -280,12 +261,7 @@ TEST(ISRor_phrase) {
         {false, false}
     };
 
-    for (int i = 0; i < trees.size(); ++i) {
-        for (int j = 0; j < index->numDocs; ++j) {
-            ASSERT_EQUAL(expected[i][j], trees[i]->NextDocument() != nullptr); 
-        }
-        delete trees[i];
-    }
+    checkDocuments(trees, expected, index.get());
 }
 
 TEST(ISRphrase) {
@@ -318,12 +294,7 @@ TEST(ISRphrase) {
         {true, true}
     };
 
-    for (int i = 0; i < trees.size(); ++i) {
-        for (int j = 0; j < index->numDocs; ++j) {
-            ASSERT_EQUAL(expected[i][j], trees[i]->NextDocument() != nullptr); 
-        }
-        delete trees[i];
-    }
+    checkDocuments(trees, expected, index.get());
 }
 
 // literally just the same test as ISRAnd
@@ -349,42 +320,32 @@ TEST(ISRcontained) {
         {false, true}
     };
 
-    for (int i = 0; i < trees.size(); ++i) {
-        for (int j = 0; j < index->numDocs; ++j) {
-            ASSERT_EQUAL(expected[i][j], trees[i]->NextDocument() != nullptr); 
-        }
-        delete trees[i];
-    }
+    checkDocuments(trees, expected, index.get());
 }
 
 // TEST(ISRexcluded) {
 //     APESEARCH::unique_ptr<IndexHT> index = buildIndex();
 
-//     // APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("fox -the"); // doc1
+//     APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("fox -the"); // doc1
 //     APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("and -(fox)"); // doc1
-//     // APESEARCH::unique_ptr<query::Tuple> constraint3 = buildParseTree("and -(fox test)"); // none
-//     // APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("(test is)"); // none
+//     APESEARCH::unique_ptr<query::Tuple> constraint3 = buildParseTree("and -(fox test)"); // none
+//     APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("(test is)"); // none
 
 //     APESEARCH::vector<ISR *> trees = {
-//         // constraint1->Compile(index.get()),
+//         constraint1->Compile(index.get()),
 //         constraint2->Compile(index.get()),
-//         // constraint3->Compile(index.get()),
-//         // constraint4->Compile(index.get())
+//         constraint3->Compile(index.get()),
+//         constraint4->Compile(index.get())
 //     };
 
 //     APESEARCH::vector<APESEARCH::vector<bool>> expected = {
 //         {false, false},
 //         {false, true},
-//         // {false, false},
-//         // {false, true}
+//         {false, false},
+//         {false, true}
 //     };
 
-//     for (int i = 0; i < trees.size(); ++i) {
-//         for (int j = 0; j < index->numDocs; ++j) {
-//             ASSERT_EQUAL(expected[i][j], trees[i]->NextDocument() != nullptr); 
-//         }
-//         delete trees[i];
-//     }
+//     checkDocuments(trees, expected, index.get());
 // }
 
 TEST_MAIN();
