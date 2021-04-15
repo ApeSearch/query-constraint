@@ -157,7 +157,9 @@ query::Tuple* QueryParser::FindNestedConstraint()
 
         if(!token || token->getTokenType() != TokenTypeNested)
             return nullptr;
-        
+        else if ((token->getTokenType() == TokenTypeNested) && *token->TokenString().begin() != '(')
+            return nullptr;
+
         FindNextToken();
         
         query::Tuple* tuple = FindOrConstraint();
@@ -165,6 +167,7 @@ query::Tuple* QueryParser::FindNestedConstraint()
         if(!tuple)
             return nullptr;
 
+        token = stream.getCurrentToken();
         if(token->getTokenType() != TokenTypeNested){ //no ending parantheses
             return tuple;
         }

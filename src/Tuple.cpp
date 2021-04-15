@@ -28,7 +28,30 @@ UnarySimpleConstraint::UnarySimpleConstraint(Tuple* tup) : Tuple(), op(), actual
 
 UnarySimpleConstraint::~UnarySimpleConstraint() {}
 
-ISR* UnarySimpleConstraint::Compile(IndexHT *indexPtr) {}
+ISR* UnarySimpleConstraint::Compile(IndexHT *indexPtr) {
+    ISRContainer* containerISR = new ISRContainer(indexPtr);
+
+    ISROr *compiled = (ISROr *) actualConstraint->Compile(indexPtr);
+    delete actualConstraint;
+
+    ISR** termList;
+    unsigned termCount;
+    // jank garbage
+    if (compiled->numTerms) {
+        std::cout << "or" << std::endl;
+        containerISR->countExcluded = compiled->numTerms;
+        
+    } else {
+        std::cout << "container" << std::endl;
+        containerISR->countExcluded = ((ISRContainer *) compiled)->countContained;
+    }
+
+    containerISR->excluded = compiled;
+
+    // ISRAnd * contained = (ISRAnd *) compiled->terms[0];
+        
+    return containerISR;
+}
 
 // End UnarySimpleConstraint
 
@@ -36,6 +59,19 @@ NestedConstraint::NestedConstraint(Tuple* tup): Tuple(), constraint(tup) {}
 
 NestedConstraint::~NestedConstraint() {}
 
-ISR* NestedConstraint::Compile(IndexHT *indexPtr) {}
+ISR* NestedConstraint::Compile(IndexHT *indexPtr) {
+    ISRContainer* containerISR = new ISRContainer(indexPtr);
+
+    ISRAnd *compiled = (ISRAnd *) constraint->Compile(indexPtr);
+    delete constraint;
+
+    containerISR->countContained = compiled->numTerms;
+    containerISR->contained = new ISR*[compiled->numTerms];
+
+    for (int i = 0; i < containerISR->countContained; ++i)
+        containerISR->contained[i] = compiled->terms[i];
+        
+    return containerISR;
+}
 
 //Implement ISR constructors before Compile for each Tuple

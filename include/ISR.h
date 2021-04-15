@@ -433,11 +433,42 @@ class ISRContainer : public ISR
             //    step 2.
 
             // 5. If any ISR reaches the end, there is no match.
+            Location docStartLoc = DocumentEnd->GetStartLocation();
+            Location docEndLoc = DocumentEnd->GetEndLocation();
+
+            nearestStartLocation = DocumentEnd->GetEndLocation();
+            nearestEndLocation = target;
+            for (int i = 0; i < countContained; ++i) {\
+                // If one of the terms doesn't have a posting list, this document isn't a match
+                if (contained[i] == nullptr) return nullptr;
+
+                Post* foundPost = contained[i]->Seek(target);
+                if (!foundPost || foundPost->loc > docEndLoc) return nullptr;
+                if (foundPost->loc >= nearestEndLocation)
+                    {
+                    nearestEndLocation = foundPost->loc;
+                    farthestTerm = i;
+                    }
+                if (foundPost->loc <= nearestStartLocation)
+                    {
+                    post = foundPost;
+                    nearestStartLocation = foundPost->loc;
+                    nearestTerm = i;
+                    }
+            }
 
             // 6. Seek all the excluded ISRs to the first occurrence beginning at
-            //    the document begin location.// 7. If any excluded ISR falls within the document, reset the
+            //    the document begin location.
+            if (excluded) {
+                excluded->Seek(target);
+                Location loceroni = excluded->GetStartLocation();
+                return (loceroni < docEndLoc) ? post : nullptr;
+            }
+
+            // 7. If any excluded ISR falls within the document, reset the
             //    target to one past the end of the document and return to
             //    step 1.
+            return post;
             }
 
         Post *Next( ) override
@@ -445,10 +476,38 @@ class ISRContainer : public ISR
             Seek( contained[ nearestContained ]->GetStartLocation( ) + 1 );
             }
 
+        Location GetStartLocation() override
+            {
+                return nearestStartLocation;
+            }
+
+        Location GetEndLocation() override
+            {
+                return nearestEndLocation;
+            }
+
+        Post *NextDocument( ) override
+            {
+            // Seek all the ISRs to the first occurrence just past
+            // the end of this document.
+            Post* seeked = Seek( DocumentEnd->GetStartLocation( ) );
+            for (int i = 0; i < countContained; ++i) {
+                if (contained[i])
+                    contained[i]->NextDocument();
+            }
+            DocumentEnd->Next();
+
+            return seeked;
+            }
+
     private:
+        Post * post;
+
         unsigned nearestTerm, farthestTerm;
         unsigned nearestContained;
         Location nearestStartLocation, nearestEndLocation;
+
+        ISREndDoc *DocumentEnd;
     };
 
 #endif
