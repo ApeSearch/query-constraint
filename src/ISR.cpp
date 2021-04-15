@@ -6,16 +6,16 @@ ISR::ISR(IndexHT *_indexPtr) : indexPtr(_indexPtr) {}
 
 ISRWord::ISRWord() : ISR() {}
 
-ISRWord::ISRWord(PostingList * _posts, IndexHT *_indexPtr) : ISR(_indexPtr), posts(_posts), postIndex(0), startLocation(posts->posts[0]->loc),
-                                                            endLocation(posts->posts[0]->loc) {}
+ISRWord::ISRWord(PostingList * _posts, IndexHT *_indexPtr, APESEARCH::string _word) : ISR(_indexPtr), posts(_posts), postIndex(0), startLocation(posts->posts[0]->loc),
+                                                            endLocation(posts->posts[0]->loc), word(_word) {}
 
-ISRWord::ISRWord(PostingList * _posts, IndexHT *_indexPtr, Location _start) : ISRWord(_posts, _indexPtr) {
+ISRWord::ISRWord(PostingList * _posts, IndexHT *_indexPtr, APESEARCH::string _word, Location _start) : ISRWord(_posts, _indexPtr, _word) {
     startLocation = _start;
 }
 
 ISREndDoc::ISREndDoc() : ISRWord() {}
 
-ISREndDoc::ISREndDoc(PostingList* _posts, IndexHT *_indexPtr) : ISRWord(_posts, _indexPtr, 0) {}
+ISREndDoc::ISREndDoc(PostingList* _posts, IndexHT *_indexPtr) : ISRWord(_posts, _indexPtr, "%", 0) {}
 
 // Return the number of documents that contain this word
 unsigned ISRWord::GetDocumentCount( ) { }
@@ -26,17 +26,18 @@ Post *ISRWord::GetCurrentPost( ) {
     return posts->Seek(startLocation);
 }
 
-Post * ISRWord::Next( ) {
+Post * ISRWord::Next( Location endDocLoc ) {
     if (++postIndex < posts->posts.size()) 
         {
         Post * next = posts->posts[postIndex];
         startLocation = next->loc;
         return next;
         }
+    startLocation = endDocLoc;
     return nullptr;
 }
 
-Post * ISREndDoc::Next( ) {
+Post * ISREndDoc::Next( Location endDocLoc ) {
     startLocation = endLocation;
     if (++postIndex < posts->posts.size()) 
         {
