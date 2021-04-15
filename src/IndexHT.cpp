@@ -16,16 +16,16 @@ IndexHT::~IndexHT(){
     }
 }
 
-void DocEndPostingList::appendToList(Location loc_, Attributes attribute, size_t lastDocIndex){
+void DocEndPostingList::appendToList(Location loc_, size_t urlIndex, size_t lastDocIndex){
     if(posts.size())
         loc_ += lastDocIndex;
-    posts.push_back(new EODPost(loc_, attribute.urlIndex));
+    posts.push_back(new EODPost(loc_, urlIndex));
 
 }
 
-void WordPostingList::appendToList(Location loc_, Attributes attribute, size_t lastDocIndex){
+void WordPostingList::appendToList(Location loc_, size_t attribute, size_t lastDocIndex){
     loc_ += lastDocIndex;
-    posts.push_back(new WordPost(loc_, attribute.attribute));
+    posts.push_back(new WordPost(loc_, attribute));
 }
 
 size_t WordPostingList::bytesRequired(const APESEARCH::string &key) {
@@ -36,18 +36,21 @@ size_t WordPostingList::bytesRequired(const APESEARCH::string &key) {
 
 
     for(size_t i = 0; i < posts.size(); ++i) {
-        Location temp = absoluteLocation;
-        absoluteLocation = posts[i]->loc;
-        APESEARCH::vector<uint8_t> bytes = encodeDelta(posts[i]->loc - temp);
+        WordPost* wp = (WordPost * ) posts[i];
 
-        numBytes += bytes.size() + 1;
+        Location temp = absoluteLocation;
+        absoluteLocation = wp->loc;
+        APESEARCH::vector<uint8_t> bytes = encodeDelta(wp->loc - temp);
 
         for(size_t byte = 0; byte < bytes.size(); ++byte)
             deltas.push_back(bytes[byte]);
-        
-        std::cout << posts[i]->attribute.urlIndex << std::endl;
-        deltas.push_back(posts[i]->attribute.attribute);
+
+        //std::cout << decodeDelta(bytes) << std::endl;
+
+        deltas.push_back(static_cast<uint8_t>(wp->tData));
     }
+
+    numBytes += deltas.size();
 
     bytesList = numBytes;
 
@@ -61,18 +64,22 @@ size_t DocEndPostingList::bytesRequired(const APESEARCH::string &key) { //implem
     numBytes += sizeof( SerializedPostingList );
 
     for(size_t i = 0; i < posts.size(); ++i) {
-        Location temp = absoluteLocation;
-        absoluteLocation = posts[i]->loc;
-        APESEARCH::vector<uint8_t> bytes = encodeDelta(posts[i]->loc - temp);
+        EODPost* docEndp = (EODPost * ) posts[i];
 
-        numBytes += bytes.size() + 1;
+        Location temp = absoluteLocation;
+        absoluteLocation = docEndp->loc;
+        APESEARCH::vector<uint8_t> bytes = encodeDelta(docEndp->loc - temp);
 
         for(size_t byte = 0; byte < bytes.size(); ++byte)
             deltas.push_back(bytes[byte]);
         
-        deltas.push_back(posts[i]->attribute.urlIndex);
+        bytes = encodeDelta(docEndp->tData);
+
+        for(size_t byte = 0; byte < bytes.size(); ++byte)
+            deltas.push_back(bytes[byte]);
     }
 
+    numBytes += deltas.size();
     bytesList = numBytes;
 
     return numBytes;
@@ -100,7 +107,9 @@ void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<IndexEntry> &text,
     LocationsInIndex = text.size() + 1; //Add 1 for end doc location + number of tokens in doc
     numDocs++; //Keeps track of the number of documents
 
-    entry->value->appendToList(endDocLoc, urls.size() - 1, lastDocIndex);
+    DocEndPostingList * docEndList = (DocEndPostingList *) entry->value;
+
+    docEndList->appendToList(endDocLoc, url.size() - 1, lastDocIndex);
 
     for(Location indexLoc = 0; indexLoc < text.size(); ++indexLoc) {
         APESEARCH::string word = text[indexLoc].word;
@@ -123,7 +132,8 @@ void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<IndexEntry> &text,
         if(!entry)
             entry = dict.Find(word, new WordPostingList());
 
-        entry->value->appendToList(indexLoc, text[indexLoc].attribute, lastDocIndex);
+        WordPostingList * wordList = (WordPostingList *) entry->value;
+        wordList->appendToList(indexLoc, static_cast<size_t>(text[indexLoc].attribute), lastDocIndex);
     }
 }
 
@@ -149,6 +159,7 @@ ISREndDoc* IndexHT::getEndDocISR ( ) {
 
 size_t IndexHT::BytesRequired() {
     size_t bytesRequired = sizeof( IndexBlob );
+    bytesRequired += sizeof( size_t ) * dict.table_size( );
 
     APESEARCH::vector< APESEARCH::vector< hash::Bucket< APESEARCH::string, PostingList*> *> > vec = dict.vectorOfBuckets();
 
@@ -163,8 +174,6 @@ size_t IndexHT::BytesRequired() {
     // Bytes for the url vector
     for(size_t i = 0; i < urls.size(); ++i)
         bytesRequired += urls[i].size() + 1;
-    
-    //add in bytes for endDocPostingList
 
 
     return bytesRequired;

@@ -14,6 +14,9 @@
 
 #define SYNCTABLESIZE 64
 
+using std::size_t;
+
+
 struct SyncEntry
    {
     size_t absoluteLoc;
@@ -42,15 +45,16 @@ class SerializedPostingList
         char Key[ Unknown ];
 
         static SerializedPostingList * initSerializedPostingList(char* buffer, 
-        const Bucket<APESEARCH::string, PostingList *> * b, size_t length) {
-            SerializedPostingList *serialTuple = reinterpret_cast< SerializedPostingList * >( buffer ); 
+        const hash::Bucket<APESEARCH::string, PostingList *> * b, size_t length) {
+            SerializedPostingList *serialTuple = reinterpret_cast< SerializedPostingList * >( buffer );
 
             serialTuple->bytesOfPostingList = length;
-
-            char *ptrAfterKey = strcpy( serialTuple->Key, b->tuple.key.cstr() ) + strlen( b->tuple.key.cstr() ) + 1;
+            strcpy( serialTuple->Key, b->tuple.key.cstr() );
             
+            char *ptrAfterKey = serialTuple->Key + b->tuple.key.size( ) + 1;
 
             PostingList* pl = b->tuple.value;
+
             memset(serialTuple->syncTable, 0, SYNCTABLESIZE * sizeof(size_t) * 2);
             
             serialTuple->syncTable[0] = SyncEntry{ pl->posts[0]->loc, 0 };
@@ -66,21 +70,28 @@ class SerializedPostingList
                 while(highBit >= nextHighBit)
                     serialTuple->syncTable[nextHighBit++] = SyncEntry{ absoluteLocation, currentPost };
             }
-            
-            APESEARCH::copy( b->tuple.value->deltas.begin(), b->tuple.value->deltas.end(), ( uint8_t * ) ptrAfterKey );
-            
+
+            return ( SerializedPostingList * ) APESEARCH::copy( b->tuple.value->deltas.begin(), b->tuple.value->deltas.end(), ( uint8_t * ) ptrAfterKey );
+            //return  SerializedPostingList * ( endOfPostingList );
+
         }
 
         static char * Write(char *buffer, char const * const bufferEnd,
-            const Bucket<APESEARCH::string, PostingList *> *b){
-                SerializedPostingList * serialList = initSerializedPostingList(buffer, b, b->tuple.value->bytesList);
+            const hash::Bucket<APESEARCH::string, PostingList *> *b){
 
-                return buffer + b->tuple.value->bytesList;
+                SerializedPostingList * serialList = initSerializedPostingList(buffer, b, b->tuple.value->bytesList);
+                char *end = buffer + b->tuple.value->bytesList;
+                assert( end == ( char * ) serialList );
+
+                return buffer + b->tuple.value->bytesList; //buffer + numOfBytes of Posting List
         }
 
         //should include other metadata
         // Pure bit manipulation..
    };
+
+
+
 
 class IndexBlob
     {
@@ -103,11 +114,14 @@ class IndexBlob
                 ib->Version = IndexBlob::version;
 
                 ib->BlobSize = bytes;
-                ib->NumberOfBuckets = indexHT->dict.table_size();
-                ib->NumOfDocs = indexHT->dict.numOfLinkedLists();
+                ib->NumberOfBuckets = indexHT->dict.table_size( );
+                ib->MaxAbsolLoc = indexHT->MaximumLocation;
 
+                hash::Tuple<APESEARCH::string, PostingList *> * entry = indexHT->dict.Find(APESEARCH::string("%"));
+                ib->NumOfDocs = entry->value->posts.size();
+                
                 memset( ib->Buckets, 0, sizeof( size_t ) * ib->NumberOfBuckets );
-
+                
                 ib->VectorStart = reinterpret_cast< IndexBlob * >( ib->Buckets ) - ib;
 
                 //points to beginning of posting lists
@@ -115,24 +129,76 @@ class IndexBlob
                 char *end = reinterpret_cast< char *>( ib ) + bytes;
 
                 APESEARCH::vector< APESEARCH::vector< hash::Bucket< APESEARCH::string, PostingList*> *> > buckets = indexHT->dict.vectorOfBuckets();
-
-                for(size_t i = 0; i < buckets.size(); ++i){
-                    for(size_t sameChain = 0; sameChain < buckets[i].size(); ++sameChain){
+                
+                for(size_t i = 0; i < buckets.size(); ++i) {
+                    for(size_t sameChain = 0; sameChain < buckets[i].size(); ++sameChain) {
                         hash::Bucket<APESEARCH::string, PostingList*> * bucket = buckets[i][sameChain];
+                        serialPtr = SerializedPostingList::Write( serialPtr, end, bucket );
                     }
+                    *reinterpret_cast< std::size_t *>( serialPtr ) = 0;
+                    serialPtr += sizeof( size_t ); // Signify end of a chain
                 }
 
+                for ( size_t i = 0; i < indexHT->urls.size(); ++i )
+                    serialPtr = strcpy( serialPtr, indexHT->urls[ i ].cstr( ) ) + indexHT->urls[ i ].size( ) + 1;
+                    
+
+            std::cout << (char * ) ib + bytes - serialPtr << std::endl;
+            assert( serialPtr == end );
             }
 
     static IndexBlob * Create(IndexHT *indexHT) {
         const size_t bytesReq = indexHT->BytesRequired();
-
+        
         char *buffer = ( char * ) malloc( bytesReq );
         memset( buffer, 0, bytesReq );
 
         return Write(reinterpret_cast<IndexBlob *>( buffer ), bytesReq, indexHT);
         }
     };
+
+
+class IndexFile{
+    private:
+        unique_mmap blob;
+        File file;
+        bool good = false;
+
+        size_t FileSize( int f )
+            {
+            struct stat fileInfo;
+            fstat( f, &fileInfo );
+            return ( size_t )fileInfo.st_size;
+            }
+
+    public:
+        IndexFile(const char *filename, IndexHT *index)
+            : file( filename, O_RDWR | O_CREAT | O_TRUNC, (mode_t)0600 )
+            {
+                int fd = file.getFD();
+                const std::size_t bytesReq = index->BytesRequired();
+                ssize_t result = lseek( fd, off_t( bytesReq - 1 ), SEEK_SET );
+                if ( result == -1 )
+                    {
+                    perror( "Issue with lseek while trying to stretch file" );
+                    return;
+                    } // end if
+                
+                result = write( fd, "", 1 );
+
+                if ( result == -1 )
+                    {
+                    perror( "Error writing bytes to file" );
+                    return;
+                    }
+                
+                blob = unique_mmap( 0, bytesReq, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0 );
+                IndexBlob *indexBlob = reinterpret_cast< IndexBlob *> ( blob.get() );
+                IndexBlob::Write( indexBlob, bytesReq, index);
+                good = true;
+            }
+
+};
 
 
 class Index {
