@@ -7,20 +7,20 @@
 int main() 
     {
         APESEARCH::vector<IndexEntry> words = {
-            {"the", WordAttributeNormal},
-            {"cow", WordAttributeNormal},
-            {"the", WordAttributeNormal},
-            {"pig", WordAttributeNormal},
-            {"and", WordAttributeNormal},
-            {"all", WordAttributeNormal},
-            { "of", WordAttributeNormal},
-            {"the", WordAttributeNormal},
-            {"animals", WordAttributeNormal},
+            {"the", WordAttributeNormal, BodyText},
+            {"cow", WordAttributeNormal, BodyText},
+            {"the", WordAttributeNormal, BodyText},
+            {"pig", WordAttributeNormal, BodyText},
+            {"and", WordAttributeNormal, BodyText},
+            {"all", WordAttributeNormal, BodyText},
+            { "of", WordAttributeNormal, BodyText},
+            {"the", WordAttributeNormal, BodyText},
+            {"animals", WordAttributeNormal, BodyText},
         };
 
         IndexHT *index = new IndexHT();
         index->addDoc("https://eecs440.com", words, 9);
-        index->addDoc("https://eecs441.com", words, 19); //change
+        index->addDoc("https://eecs441.com", words, 9);
 
         APESEARCH::string strToFind = "the";
 
@@ -41,6 +41,4 @@ int main()
         }
 
         delete index;
-
-        return 0;
     }

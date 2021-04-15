@@ -18,7 +18,7 @@ IndexHT::~IndexHT(){
 
 void DocEndPostingList::appendToList(Location loc_, Attributes attribute, size_t lastDocIndex){
     if(posts.size())
-        loc_ += (posts.back()->loc + 1);
+        loc_ += lastDocIndex;
     posts.push_back(new EODPost(loc_, attribute.urlIndex));
 
 }
@@ -45,6 +45,7 @@ size_t WordPostingList::bytesRequired(const APESEARCH::string &key) {
         for(size_t byte = 0; byte < bytes.size(); ++byte)
             deltas.push_back(bytes[byte]);
         
+        std::cout << posts[i]->attribute.urlIndex << std::endl;
         deltas.push_back(posts[i]->attribute.attribute);
     }
 
@@ -55,7 +56,26 @@ size_t WordPostingList::bytesRequired(const APESEARCH::string &key) {
 
 
 size_t DocEndPostingList::bytesRequired(const APESEARCH::string &key) { //implement
-    
+    size_t numBytes = key.size() + 1;
+    Location absoluteLocation = 0;
+    numBytes += sizeof( SerializedPostingList );
+
+    for(size_t i = 0; i < posts.size(); ++i) {
+        Location temp = absoluteLocation;
+        absoluteLocation = posts[i]->loc;
+        APESEARCH::vector<uint8_t> bytes = encodeDelta(posts[i]->loc - temp);
+
+        numBytes += bytes.size() + 1;
+
+        for(size_t byte = 0; byte < bytes.size(); ++byte)
+            deltas.push_back(bytes[byte]);
+        
+        deltas.push_back(posts[i]->attribute.urlIndex);
+    }
+
+    bytesList = numBytes;
+
+    return numBytes;
 } 
 
 void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<IndexEntry> &text, 
@@ -80,7 +100,7 @@ void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<IndexEntry> &text,
     LocationsInIndex = text.size() + 1; //Add 1 for end doc location + number of tokens in doc
     numDocs++; //Keeps track of the number of documents
 
-    entry->value->appendToList(endDocLoc, urls.size() - 1);
+    entry->value->appendToList(endDocLoc, urls.size() - 1, lastDocIndex);
 
     for(Location indexLoc = 0; indexLoc < text.size(); ++indexLoc) {
         APESEARCH::string word = text[indexLoc].word;
@@ -97,6 +117,7 @@ void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<IndexEntry> &text,
             default:
                 break;
         }
+
         entry = dict.Find(word);
 
         if(!entry)

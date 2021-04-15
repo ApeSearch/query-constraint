@@ -33,7 +33,7 @@ class IndexBlob;
 typedef size_t Location; // The numbering of a token
 typedef size_t FileOffset; 
 
-enum WordAttributes : uint8_t
+enum WordAttributes
     {
         WordAttributeNormal, WordAttributeBold, WordAttributeHeading
     };

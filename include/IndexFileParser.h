@@ -12,12 +12,14 @@ class IndexFileParser
     {
         public:
             IndexFileParser(){}
-            IndexFileParser(const char * fileName): file(fileName, O_RDONLY){
+            IndexFileParser(const char * fileName): file(fileName, O_RDONLY), index(new IndexHT()){
                 parseFile();
             }
+
+            ~IndexFileParser(){ delete index; }
             
             //given a char buffer of beg and 1 past the end of the last number, returns the actual number
-            size_t indexOffBuffer(const char * beg, const char * pastEnd){
+            size_t indexOffBuffer(const char * beg, const char * pastEnd) const{
                 char buffer[32];
 
                 strncpy(buffer, beg, pastEnd - beg);
@@ -26,21 +28,21 @@ class IndexFileParser
                 return static_cast<size_t>(atoi(buffer));
             }
 
-
+            IndexHT* index;
             APESEARCH::File file;
-            APESEARCH::vector<APESEARCH::vector<IndexEntry> > entries;
-            APESEARCH::vector<APESEARCH::string> urls;
+            APESEARCH::vector<IndexEntry> entries;
+            APESEARCH::string url;
 
 
             private:
-                char* parseBodyText(char * cur, size_t curDoc){
+                char* parseBodyText(char * cur){
                     char* beg = cur;
                     while(*cur != '\n'){
                         while(*cur++ != ' ');
 
-                        entries[curDoc].push_back(IndexEntry{ APESEARCH::string(beg, 0, cur - beg - 1), WordAttributeNormal, BodyText});
+                        entries.push_back(IndexEntry{ APESEARCH::string(beg, 0, cur - beg - 1), WordAttributeNormal, BodyText});
 
-                        while(*cur == ' ') //TODO: Supposed to get rid of just space characters, doesn't work
+                        while(*cur == ' ') //TODO: Supposed to get rid of just space characters
                             ++cur;
                         
                         beg = cur;
@@ -49,7 +51,7 @@ class IndexFileParser
                     return cur + 1;
                 }
 
-                char* parseTitleIndicies(char * cur, size_t curDoc){
+                char* parseTitleIndicies(char * cur){
                     char* beg = cur;
 
                     while(*cur != '\n'){
@@ -59,14 +61,14 @@ class IndexFileParser
 
                         size_t index = indexOffBuffer(beg, cur - 1);
 
-                        entries[curDoc][index].plType = TitleText;
+                        entries[index].plType = TitleText;
                         beg = cur;
                     }
 
                     return cur + 1;
                 }
 
-                char* parseAttributeIndicies(char * cur, size_t curDoc, WordAttributes attribute){
+                char* parseAttributeIndicies(char * cur, WordAttributes attribute){
                     char* beg = cur;
 
                     while(*cur != '\n'){
@@ -76,7 +78,7 @@ class IndexFileParser
 
                         size_t index = indexOffBuffer(beg, cur - 1);
 
-                        entries[curDoc][index].attribute = attribute;
+                        entries[index].attribute = attribute;
                         beg = cur;
                     }
 
@@ -92,24 +94,15 @@ class IndexFileParser
                     char* beg = map;
                     char* cur = beg;
 
-                    size_t curDoc = 0;
                     while(cur < end){
-                        entries.push_back(APESEARCH::vector<IndexEntry>());
                         while(*cur++ != '\n' && cur < end);
 
-                        APESEARCH::string url = APESEARCH::string(beg, 0, cur - beg - 1);
-                        urls.push_back(url);
+                        url = APESEARCH::string(beg, 0, cur - beg - 1);
 
-                        size_t dot1 = url.find('.');
-                        size_t dot2 = url.find('.', dot1 + 1);
-
-                        APESEARCH::string urlString = APESEARCH::string(url, dot1 + 1, dot2 - dot1 - 1);
-                        entries[curDoc].push_back( IndexEntry{urlString, WordAttributeNormal, URL});
-
-                        cur = parseBodyText(cur, curDoc);
-                        cur = parseTitleIndicies(cur, curDoc);
-                        cur = parseAttributeIndicies(cur, curDoc, WordAttributeHeading);
-                        cur = parseAttributeIndicies(cur, curDoc, WordAttributeBold);
+                        cur = parseBodyText(cur);
+                        cur = parseTitleIndicies(cur);
+                        cur = parseAttributeIndicies(cur, WordAttributeHeading);
+                        cur = parseAttributeIndicies(cur, WordAttributeBold);
 
                         while(*cur++ != '\n'); //skip base
 
@@ -125,9 +118,30 @@ class IndexFileParser
                         while(*cur++ != '\n');
                         size_t numSentences = indexOffBuffer(beg, cur - 1);
 
-                        std::cout << numParagraphs << ' ' << numHeadings << ' ' << numSentences << std::endl;
 
-                        ++curDoc;
+                        /**** Debugging Purposes ****
+                        for(int i = 0; i < entries.size(); ++i){
+                            APESEARCH::string attribute = "Bold";
+
+                            if(entries[i].attribute == WordAttributeNormal)
+                                attribute = "Normal";
+                            else if(entries[i].attribute == WordAttributeHeading)
+                                attribute = "Heading";
+
+                            std::cout << entries[i].word << ' ' << entries[i].plType << ' ' << attribute << ' ' << entries[i].word.size() << std::endl;
+                        }
+                        */
+
+                        size_t dot1 = url.find('.');
+                        size_t dot2 = url.find('.', dot1 + 1);
+                        APESEARCH::string urlString = APESEARCH::string(url, dot1 + 1, dot2 - dot1 - 1);
+                        entries.push_back(IndexEntry{urlString, WordAttributeNormal, URL});
+
+                        index->addDoc(url, entries, entries.size());
+                        
+                        APESEARCH::vector<IndexEntry> temp;
+                        entries = temp;
+                        
                         assert(*cur++ == '\0');
                     }
 
