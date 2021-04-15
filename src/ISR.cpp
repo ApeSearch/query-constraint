@@ -104,4 +104,4 @@ ISRAnd::ISRAnd(IndexHT *_indexPtr) : ISR(_indexPtr), terms(nullptr), numTerms(0)
 ISRPhrase::ISRPhrase(IndexHT *_indexPtr) : ISR(_indexPtr), terms(nullptr), numTerms(0), nearestTerm(0), farthestTerm(0), DocumentEnd(indexPtr->getEndDocISR()) {}
 
 ISRContainer::ISRContainer(IndexHT *_indexPtr) : ISR(_indexPtr), contained(nullptr), excluded(nullptr), endDoc(nullptr), 
-    countContained(0), countExcluded(0) {} 
+    countContained(0), countExcluded(0), DocumentEnd(indexPtr->getEndDocISR()) {} 
