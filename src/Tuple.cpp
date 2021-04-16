@@ -62,14 +62,12 @@ NestedConstraint::~NestedConstraint() {}
 ISR* NestedConstraint::Compile(IndexHT *indexPtr) {
     ISRContainer* containerISR = new ISRContainer(indexPtr);
 
-    ISRAnd *compiled = (ISRAnd *) constraint->Compile(indexPtr);
+    
+    containerISR->contained = new ISR*;
+    *containerISR->contained = constraint->Compile(indexPtr);
+    ++containerISR->countContained;
+
     delete constraint;
-
-    containerISR->countContained = compiled->numTerms;
-    containerISR->contained = new ISR*[compiled->numTerms];
-
-    for (int i = 0; i < containerISR->countContained; ++i)
-        containerISR->contained[i] = compiled->terms[i];
         
     return containerISR;
 }

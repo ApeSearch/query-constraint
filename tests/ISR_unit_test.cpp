@@ -121,24 +121,26 @@ void checkDocuments(APESEARCH::vector<ISR *> &trees, APESEARCH::vector<APESEARCH
 }
 
 TEST(ISRword) {
-    APESEARCH::unique_ptr<IndexHT> index = buildIndex(false);
+    APESEARCH::unique_ptr<IndexHT> index = buildIndex(true);
 
-    APESEARCH::unique_ptr<ISR> tree = buildISR("and this the animals", index.get());
+    APESEARCH::unique_ptr<ISR> tree = buildISR("(this is a test)", index.get());
 
     APESEARCH::unique_ptr<ISREndDoc> docEnd = APESEARCH::unique_ptr<ISREndDoc>(index->getEndDocISR());
 
     Post *post;
-    Location docStartLoc;
-    Location docEndLoc;
+    Location docStartLoc = docEnd->GetStartLocation();
+    Location docEndLoc   = docEnd->GetEndLocation();
     while (docStartLoc != docEndLoc) {
         docStartLoc = docEnd->GetStartLocation();
-        docEndLoc = docEnd->GetEndLocation();
+        docEndLoc =   docEnd->GetEndLocation();
 
+        // Is the next post a match for this query?
         post = tree->NextDocument( docStartLoc, docEndLoc);
         if (post != nullptr) {
+            // Seek back to beginning to begin ranking
             tree->Seek(docStartLoc, docEndLoc);
             while (post) {
-                cout << post->loc << endl;
+                cout << post->loc << " " << tree->GetNearestWord() << endl;
                 post = tree->Next(docEndLoc);
             }
         }

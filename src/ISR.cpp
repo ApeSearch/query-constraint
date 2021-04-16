@@ -73,15 +73,9 @@ Location ISRWord::GetEndLocation( ) {
 }
 
 Post* ISRWord::NextDocument( Location docStartLoc, Location docEndLoc ) {
-    // ISREndDoc* DocumentEnd = indexPtr->getEndDocISR();
-
-    // if (docStartLocation != 0)
-    //     DocumentEnd->Seek(docStartLocation + 1);
 
     Post *seeked = Seek(docStartLoc, docEndLoc);
     
-    // delete DocumentEnd;
-
     return (seeked && (seeked->loc < docStartLoc)) ? seeked : nullptr;
 }
 

@@ -29,6 +29,8 @@ class ISR //fix inheritance to be logical, remove duplicate code and member vari
         virtual Location GetStartLocation( ) = 0;
         virtual Location GetEndLocation( ) = 0;
 
+        virtual APESEARCH::string GetNearestWord() = 0;
+
         IndexHT *indexPtr;
     };
 
@@ -54,6 +56,8 @@ class ISRWord : public ISR
 
         Post *NextDocument( Location docStartLoc, Location docEndLoc  ) override;
 
+        APESEARCH::string GetNearestWord() override {return word;}
+
     // private:
         APESEARCH::string word;
         PostingList* posts;
@@ -70,6 +74,8 @@ class ISREndDoc : public ISRWord
         unsigned GetDocumentLength( );
         unsigned GetTitleLength( );
         unsigned GetUrlLength( );
+
+        APESEARCH::string GetNearestWord() override {return word;}
 
         Post *Next( Location endDocLoc ) override;
         Post *Seek( Location target, Location endDocLoc ) override;
@@ -170,6 +176,8 @@ class ISROr : public ISR
                 // the end of this document.
                 return Seek( docStartLoc, docEndLoc );
                 }
+
+            APESEARCH::string GetNearestWord() override {return terms[nearestTerm]->GetNearestWord();}
         
         private:
             Post * post;
@@ -197,6 +205,17 @@ class ISRAnd : public ISR
                 {
                 // 1. Seek all the ISRs to the first occurrence beginning at
                 //    the target location.
+
+                // 2. Move the document end ISR to just past the furthest
+                //    word, then calculate the document begin location.
+
+                // 3. Seek all the other terms to past the document begin.
+
+                // 4. If any term is past the document end, return to
+                //    step 2.
+
+                // 5. If any ISR reaches the end, there is no match.
+
                 nearestStartLocation = endDocLoc;
                 nearestEndLocation = target;
                 for (int i = 0; i < numTerms; ++i) {\
@@ -219,16 +238,6 @@ class ISRAnd : public ISR
                 }
 
                 return post;
-
-                // 2. Move the document end ISR to just past the furthest
-                //    word, then calculate the document begin location.
-
-                // 3. Seek all the other terms to past the document begin.
-
-                // 4. If any term is past the document end, return to
-                //    step 2.
-
-                // 5. If any ISR reaches the end, there is no match.
                 }
 
             Post * Next( Location endDocLoc ) override
@@ -276,6 +285,8 @@ class ISRAnd : public ISR
                 {
                 return nearestEndLocation;
                 }
+
+            APESEARCH::string GetNearestWord() override {return terms[nearestTerm]->GetNearestWord();}
 
         private: 
             Post *post;
@@ -389,6 +400,8 @@ class ISRPhrase : public ISR
             {
             return Seek( nearestStartLocation + 1, endDocLoc );
             }
+
+        APESEARCH::string GetNearestWord() override {return terms[nearestTerm]->GetNearestWord();}
     private: 
         Post * post;
 
@@ -401,6 +414,12 @@ class ISRContainer : public ISR
     public:
         ISRContainer();
         ISRContainer(IndexHT *_indexPtr);
+        ~ISRContainer() {
+            for (int i = 0; i < countContained; ++i) {
+                delete contained[i];
+            }
+            delete contained;
+        }
 
         ISR **contained; //List of ISRs to include
         ISR *excluded; //ISR to exclude
@@ -429,7 +448,7 @@ class ISRContainer : public ISR
                 if (contained[i] == nullptr) return nullptr;
 
                 Post* foundPost = contained[i]->Seek(target, endDocLoc);
-                if (!foundPost || foundPost->loc > endDocLoc) return nullptr;
+                if ((!foundPost) || foundPost->loc > endDocLoc) return nullptr;
                 if (foundPost->loc >= nearestEndLocation)
                     {
                     nearestEndLocation = foundPost->loc;
@@ -458,10 +477,32 @@ class ISRContainer : public ISR
             return post;
             }
 
-        Post *Next( Location endDocLoc ) override
-            {
-            Seek( contained[ nearestContained ]->GetStartLocation( ) + 1, endDocLoc );
-            }
+        Post * Next( Location endDocLoc ) override
+                {
+                Post* nearestNextPost = contained[nearestTerm]->Next(endDocLoc);
+                
+                Location minLocation = endDocLoc;
+                // Return the new nearest match.
+                for (int i = 0; i < countContained; ++i) {
+                    if (!contained[i]) continue;
+                    Location currentLoc = contained[i]->GetStartLocation();
+
+                    if (currentLoc < minLocation ) {
+                        nearestTerm = i;
+                        nearestStartLocation = currentLoc;
+                        minLocation = currentLoc;
+                    }  
+                }
+
+                Post *newNearest = contained[nearestTerm]->Seek(minLocation, endDocLoc);
+                if (!newNearest) nearestStartLocation = endDocLoc;
+                else if (newNearest->loc > endDocLoc) {
+                    nearestStartLocation = endDocLoc;
+                    return nullptr;
+                }
+                
+                return newNearest;
+                }
 
         Location GetStartLocation() override
             {
@@ -479,6 +520,8 @@ class ISRContainer : public ISR
             // the end of this document.
             return Seek( docStartLoc, docEndLoc);
             }
+
+        APESEARCH::string GetNearestWord() override {return contained[nearestContained]->GetNearestWord();}
 
     private:
         Post * post;
