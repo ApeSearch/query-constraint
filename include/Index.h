@@ -36,7 +36,6 @@ class SerializedPostingList
    {
     public:
         size_t bytesOfPostingList;
-        //size_t absoluteLoc;
 
         SyncEntry syncTable[ SYNCTABLESIZE ];
 
@@ -108,44 +107,79 @@ class IndexBlob
         NumberOfBuckets,
         Buckets[ Unknown ];
 
+        //SerialPostingLists follow after
+
+    template<class HashFunc = hash::FNV> 
+    const SerializedPostingList* Find(const APESEARCH::string &key) const {
+        static HashFunc func;
+
+        uint8_t const *byteAddr = reinterpret_cast< uint8_t const * > ( &MagicNumber );
+
+        uint32_t hashVal = ( uint32_t )func( key );
+        size_t bucketInd = hashVal & ( NumberOfBuckets - 1 );
+        size_t offset = Buckets[ bucketInd ];
+
+        if(offset){
+            byteAddr += offset;
+            SerializedPostingList const *pl = reinterpret_cast<SerializedPostingList const *>( byteAddr );
+
+            while(pl->bytesOfPostingList){
+                if(!strcmp(key.cstr(), pl->Key))
+                    return pl;
+
+                byteAddr += pl->bytesOfPostingList;
+                pl = reinterpret_cast<SerializedPostingList const *>( byteAddr );
+            }
+
+        }
+
+        return nullptr;
+    }
+    
+
     static IndexBlob *Write( IndexBlob *ib, size_t bytes,
             const IndexHT *indexHT ) {
-                ib->MagicNumber = IndexBlob::decidedMagicNum;
-                ib->Version = IndexBlob::version;
+            ib->MagicNumber = IndexBlob::decidedMagicNum;
+            ib->Version = IndexBlob::version;
 
-                ib->BlobSize = bytes;
-                ib->NumberOfBuckets = indexHT->dict.table_size( );
-                ib->MaxAbsolLoc = indexHT->MaximumLocation;
+            ib->BlobSize = bytes;
+            ib->NumberOfBuckets = indexHT->dict.table_size( );
+            ib->MaxAbsolLoc = indexHT->MaximumLocation;
 
-                hash::Tuple<APESEARCH::string, PostingList *> * entry = indexHT->dict.Find(APESEARCH::string("%"));
-                ib->NumOfDocs = entry->value->posts.size();
-                
-                memset( ib->Buckets, 0, sizeof( size_t ) * ib->NumberOfBuckets );
-                
-                ib->VectorStart = reinterpret_cast< IndexBlob * >( ib->Buckets ) - ib;
+            hash::Tuple<APESEARCH::string, PostingList *> * entry = indexHT->dict.Find(APESEARCH::string("%"));
+            ib->NumOfDocs = entry->value->posts.size();
+            
+            memset( ib->Buckets, 0, sizeof( size_t ) * ib->NumberOfBuckets );
+            
+            ib->VectorStart = reinterpret_cast< IndexBlob * >( ib->Buckets ) - ib;
 
-                //points to beginning of posting lists
-                char *serialPtr =reinterpret_cast< char *>( ib->Buckets + indexHT->dict.table_size() );
-                char *end = reinterpret_cast< char *>( ib ) + bytes;
+            //points to beginning of posting lists
+            char *serialPtr =reinterpret_cast< char *>( ib->Buckets + indexHT->dict.table_size() );
+            char *end = reinterpret_cast< char *>( ib ) + bytes;
 
-                APESEARCH::vector< APESEARCH::vector< hash::Bucket< APESEARCH::string, PostingList*> *> > buckets = indexHT->dict.vectorOfBuckets();
-                
-                for(size_t i = 0; i < buckets.size(); ++i) {
-                    for(size_t sameChain = 0; sameChain < buckets[i].size(); ++sameChain) {
-                        hash::Bucket<APESEARCH::string, PostingList*> * bucket = buckets[i][sameChain];
-                        serialPtr = SerializedPostingList::Write( serialPtr, end, bucket );
-                    }
-                    *reinterpret_cast< std::size_t *>( serialPtr ) = 0;
-                    serialPtr += sizeof( size_t ); // Signify end of a chain
+            APESEARCH::vector< APESEARCH::vector< hash::Bucket< APESEARCH::string, PostingList*> *> > buckets = indexHT->dict.vectorOfBuckets();
+            
+            for(size_t i = 0; i < buckets.size(); ++i) {
+                //Write Offsets
+                size_t bucketInd = buckets[i].front()->hashValue & ( indexHT->dict.table_size() - 1 );
+                ib->Buckets[ bucketInd ] = size_t( serialPtr - reinterpret_cast< char * >( ib ) );
+
+
+                for(size_t sameChain = 0; sameChain < buckets[i].size(); ++sameChain) {
+                    hash::Bucket<APESEARCH::string, PostingList*> * bucket = buckets[i][sameChain];
+                    serialPtr = SerializedPostingList::Write( serialPtr, end, bucket );
                 }
-
-                for ( size_t i = 0; i < indexHT->urls.size(); ++i )
-                    serialPtr = strcpy( serialPtr, indexHT->urls[ i ].cstr( ) ) + indexHT->urls[ i ].size( ) + 1;
-                    
-
-            std::cout << (char * ) ib + bytes - serialPtr << std::endl;
-            assert( serialPtr == end );
+                *reinterpret_cast< std::size_t *>( serialPtr ) = 0;
+                serialPtr += sizeof( size_t ); // Signify end of a chain
             }
+
+            for ( size_t i = 0; i < indexHT->urls.size(); ++i )
+                serialPtr = strcpy( serialPtr, indexHT->urls[ i ].cstr( ) ) + indexHT->urls[ i ].size( ) + 1;
+                
+
+        std::cout << (char * ) ib + bytes - serialPtr << std::endl;
+        assert( serialPtr == end );
+    }
 
     static IndexBlob * Create(IndexHT *indexHT) {
         const size_t bytesReq = indexHT->BytesRequired();
@@ -155,6 +189,12 @@ class IndexBlob
 
         return Write(reinterpret_cast<IndexBlob *>( buffer ), bytesReq, indexHT);
         }
+
+    bool verifyIndexBlob() const
+         {
+         return MagicNumber == IndexBlob::decidedMagicNum &&
+               Version == IndexBlob::version;
+         }
     };
 
 
@@ -172,6 +212,10 @@ class IndexFile{
             }
 
     public:
+        const IndexBlob *Blob( )
+            {
+            return reinterpret_cast< const IndexBlob *> ( blob.get() );
+            }
         IndexFile(const char *filename, IndexHT *index)
             : file( filename, O_RDWR | O_CREAT | O_TRUNC, (mode_t)0600 )
             {
@@ -196,6 +240,15 @@ class IndexFile{
                 IndexBlob *indexBlob = reinterpret_cast< IndexBlob *> ( blob.get() );
                 IndexBlob::Write( indexBlob, bytesReq, index);
                 good = true;
+            }
+
+        IndexFile( const char *filename ) : file( filename, O_RDONLY )
+            {
+            int fd = open( filename, O_RDONLY );
+
+            blob = unique_mmap( 0, FileSize( fd ), PROT_READ, MAP_SHARED, fd, 0 );
+
+            good = Blob()->verifyIndexBlob();
             }
 
 };

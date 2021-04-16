@@ -122,9 +122,9 @@ TEST(basic_encode_deltas_bytes){
 
     WordPostingList* theList = (WordPostingList *) entry->value;
 
-    /*for(auto byte : theList->deltas){
+    for(auto byte : theList->deltas){
         printf("%d ", byte);
-    }*/
+    }
 
     assert(theList->deltas[1] == 0); //WordAttributeNormal
     assert(theList->deltas[3] == 1); //WordAttributeBold
@@ -136,8 +136,8 @@ TEST(basic_encode_deltas_bytes){
 
     assert(entry->value->bytesList == 1048);
 }
-
-TEST(basic_index_file_test){
+/*
+TEST(basic_index_file_write_test){
      APESEARCH::vector<IndexEntry> words = {
         {"the", WordAttributeNormal, BodyText},
         {"cow", WordAttributeNormal, BodyText},
@@ -156,6 +156,80 @@ TEST(basic_index_file_test){
 
     char const *filename = "./tests/testIndexBlobFile.txt";
     IndexFile hashFile( filename, index );
+
+}
+*/
+
+TEST(basic_index_file_read_test){
+    char const *filename = "./tests/testIndexBlobFile.txt";
+
+    IndexFile hashFile (filename);
+
+    const IndexBlob* blob = hashFile.Blob();
+
+    const SerializedPostingList* pl = blob->Find(s);
+
+    std::cout << pl->Key << std::endl;
+
+    uint8_t * ptr = (uint8_t * ) &pl->Key;
+    ptr += strlen(pl->Key) + 1;
+
+
+    while(ptr < (uint8_t * ) pl + pl->bytesOfPostingList)
+        printf("%d ", *ptr++);
+
+    std::cout << std::endl;
+
+}
+
+
+
+TEST(sync_table){
+    APESEARCH::vector<IndexEntry> words = {
+        {"the", WordAttributeNormal, BodyText},
+        {"cow", WordAttributeNormal, BodyText},
+        {"the", WordAttributeBold, BodyText},
+        {"pig", WordAttributeNormal, BodyText},
+        {"and", WordAttributeNormal, BodyText},
+        {"all", WordAttributeNormal, BodyText},
+        { "of", WordAttributeNormal, BodyText},
+        {"the", WordAttributeHeading, BodyText},
+        {"animals", WordAttributeNormal, BodyText},
+    };
+
+    IndexHT *index = new IndexHT();
+    index->addDoc("https://eecs440.com", words, 9);
+    index->addDoc("https://eecs441.com", words, 9);
+
+    APESEARCH::string strToFind = "the";
+    hash::Tuple<APESEARCH::string, PostingList *> * entry = index->dict.Find(strToFind);
+    WordPostingList* theList = (WordPostingList *) entry->value;
+
+    theList->appendToList(1000000, WordAttributeNormal, 19);
+    theList->appendToList(1300000, WordAttributeNormal, 19);
+
+
+
+    char const *filename = "./tests/syncTableBlob1.txt";
+
+    IndexFile hashFile (filename);
+
+    const IndexBlob* blob = hashFile.Blob();
+
+    APESEARCH::string s("the");
+
+    const SerializedPostingList* pl = blob->Find(s);
+
+    std::cout << pl->Key << std::endl;
+
+    uint8_t * ptr = (uint8_t * ) &pl->Key;
+    ptr += strlen(pl->Key) + 1;
+
+
+    while(ptr < (uint8_t * ) pl + pl->bytesOfPostingList)
+        printf("%d ", *ptr++);
+
+    std::cout << std::endl;
 
 }
 

@@ -10,24 +10,24 @@ using std::cout; using std::endl;
 #include "../libraries/unit_test_framework/include/unit_test_framework/unit_test_framework.h"
 
 APESEARCH::vector<IndexEntry> document1 = {
-    {"pig", WordAttributeNormal}, 
-    {"the", WordAttributeNormal}, 
-    {"cow", WordAttributeNormal}, 
-    {"the", WordAttributeNormal}, 
-    {"pig", WordAttributeNormal}, 
-    {"and", WordAttributeNormal}, 
-    {"all", WordAttributeNormal}, 
-    {"of", WordAttributeNormal}, 
-    {"the", WordAttributeNormal}, 
-    {"animals", WordAttributeNormal},
+    {"the", WordAttributeNormal, BodyText}, 
+    {"pig", WordAttributeNormal, BodyText}, 
+    {"cow", WordAttributeNormal, BodyText}, 
+    {"pig", WordAttributeNormal, BodyText}, 
+    {"the", WordAttributeNormal, BodyText}, 
+    {"and", WordAttributeNormal, BodyText}, 
+    {"all", WordAttributeNormal, BodyText}, 
+    {"of", WordAttributeNormal, BodyText}, 
+    {"the", WordAttributeNormal, BodyText}, 
+    {"animals", WordAttributeNormal, BodyText},
 };
 
 APESEARCH::vector<IndexEntry> document2 = {
-    {"this", WordAttributeNormal}, 
-    {"is", WordAttributeNormal}, 
-    {"a", WordAttributeNormal}, 
-    {"and", WordAttributeNormal}, 
-    {"test", WordAttributeNormal}
+    {"this", WordAttributeNormal, BodyText}, 
+    {"is", WordAttributeNormal, BodyText}, 
+    {"a", WordAttributeNormal, BodyText}, 
+    {"and", WordAttributeNormal, BodyText}, 
+    {"test", WordAttributeNormal, BodyText}
 };
 
 void printIndex(IndexHT* index) {
