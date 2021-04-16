@@ -1,4 +1,5 @@
 #include "../include/IndexHT.h"
+#include "../include/Index.h"
 #include "../include/IndexFileParser.h"
 #include <iostream>
 
@@ -50,10 +51,12 @@ TEST(build_with_file){
     APESEARCH::string s1 = "continue";
     APESEARCH::string s2 = "%the";
     APESEARCH::string s3 = "newsletter";
+    APESEARCH::string s4 = "the";
 
     hash::Tuple<APESEARCH::string, PostingList *> * entry1 = parser.index->dict.Find(s1);
     hash::Tuple<APESEARCH::string, PostingList *> * entry2 = parser.index->dict.Find(s2);
     hash::Tuple<APESEARCH::string, PostingList *> * entry3 = parser.index->dict.Find(s3);
+    hash::Tuple<APESEARCH::string, PostingList *> * entry4 = parser.index->dict.Find(s4);
     hash::HashTable<APESEARCH::string, PostingList *>::iterator itr = parser.index->dict.begin();
 
     assert(entry1->value->posts[0]->loc == 12);
@@ -73,19 +76,32 @@ TEST(build_with_file){
         itr++;
     }*/
 
+    size_t bytesRequired = parser.index->BytesRequired();
+
+    entry4->value->posts.push_back(new WordPost(1000000, WordAttributeNormal));
+    size_t bytes = entry4->value->bytesRequired("the");
+
+    WordPostingList * theList = (WordPostingList * )entry4->value;
+
+    std::cout << std::endl;
+
+    char const *filenameo = "./tests/testIndexBlobLarge.txt";
+    IndexFile hashFile( filenameo, parser.index );
 }
+
+
 
 
 TEST(basic_encode_deltas_bytes){
      APESEARCH::vector<IndexEntry> words = {
         {"the", WordAttributeNormal, BodyText},
         {"cow", WordAttributeNormal, BodyText},
-        {"the", WordAttributeNormal, BodyText},
+        {"the", WordAttributeBold, BodyText},
         {"pig", WordAttributeNormal, BodyText},
         {"and", WordAttributeNormal, BodyText},
         {"all", WordAttributeNormal, BodyText},
         { "of", WordAttributeNormal, BodyText},
-        {"the", WordAttributeNormal, BodyText},
+        {"the", WordAttributeHeading, BodyText},
         {"animals", WordAttributeNormal, BodyText},
     };
 
@@ -104,13 +120,118 @@ TEST(basic_encode_deltas_bytes){
     char buffer [17];
     buffer[16] = 0;
 
-    for(auto byte : entry->value->deltas){
+    WordPostingList* theList = (WordPostingList *) entry->value;
+
+    for(auto byte : theList->deltas){
         printf("%d ", byte);
     }
 
+    assert(theList->deltas[1] == 0); //WordAttributeNormal
+    assert(theList->deltas[3] == 1); //WordAttributeBold
+    assert(theList->deltas[5] == 2); //WordAttributeHeading
+
+    assert(theList->deltas[0] + theList->deltas[2] + theList->deltas[4] == 7); //added up deltas = abs location of 3rd the
+
     std::cout << std::endl;
 
-    printf("AttributeNormal: %d", WordAttributeNormal);
+    assert(entry->value->bytesList == 1048);
 }
+/*
+TEST(basic_index_file_write_test){
+     APESEARCH::vector<IndexEntry> words = {
+        {"the", WordAttributeNormal, BodyText},
+        {"cow", WordAttributeNormal, BodyText},
+        {"the", WordAttributeBold, BodyText},
+        {"pig", WordAttributeNormal, BodyText},
+        {"and", WordAttributeNormal, BodyText},
+        {"all", WordAttributeNormal, BodyText},
+        { "of", WordAttributeNormal, BodyText},
+        {"the", WordAttributeHeading, BodyText},
+        {"animals", WordAttributeNormal, BodyText},
+    };
+
+    IndexHT *index = new IndexHT();
+    index->addDoc("https://eecs440.com", words, 9);
+    index->addDoc("https://eecs441.com", words, 9);
+
+    char const *filename = "./tests/testIndexBlobFile.txt";
+    IndexFile hashFile( filename, index );
+
+}
+*/
+
+TEST(basic_index_file_read_test){
+    char const *filename = "./tests/testIndexBlobFile.txt";
+
+    IndexFile hashFile (filename);
+
+    const IndexBlob* blob = hashFile.Blob();
+
+    const SerializedPostingList* pl = blob->Find(s);
+
+    std::cout << pl->Key << std::endl;
+
+    uint8_t * ptr = (uint8_t * ) &pl->Key;
+    ptr += strlen(pl->Key) + 1;
+
+
+    while(ptr < (uint8_t * ) pl + pl->bytesOfPostingList)
+        printf("%d ", *ptr++);
+
+    std::cout << std::endl;
+
+}
+
+
+
+TEST(sync_table){
+    APESEARCH::vector<IndexEntry> words = {
+        {"the", WordAttributeNormal, BodyText},
+        {"cow", WordAttributeNormal, BodyText},
+        {"the", WordAttributeBold, BodyText},
+        {"pig", WordAttributeNormal, BodyText},
+        {"and", WordAttributeNormal, BodyText},
+        {"all", WordAttributeNormal, BodyText},
+        { "of", WordAttributeNormal, BodyText},
+        {"the", WordAttributeHeading, BodyText},
+        {"animals", WordAttributeNormal, BodyText},
+    };
+
+    IndexHT *index = new IndexHT();
+    index->addDoc("https://eecs440.com", words, 9);
+    index->addDoc("https://eecs441.com", words, 9);
+
+    APESEARCH::string strToFind = "the";
+    hash::Tuple<APESEARCH::string, PostingList *> * entry = index->dict.Find(strToFind);
+    WordPostingList* theList = (WordPostingList *) entry->value;
+
+    theList->appendToList(1000000, WordAttributeNormal, 19);
+    theList->appendToList(1300000, WordAttributeNormal, 19);
+
+
+
+    char const *filename = "./tests/syncTableBlob1.txt";
+
+    IndexFile hashFile (filename);
+
+    const IndexBlob* blob = hashFile.Blob();
+
+    APESEARCH::string s("the");
+
+    const SerializedPostingList* pl = blob->Find(s);
+
+    std::cout << pl->Key << std::endl;
+
+    uint8_t * ptr = (uint8_t * ) &pl->Key;
+    ptr += strlen(pl->Key) + 1;
+
+
+    while(ptr < (uint8_t * ) pl + pl->bytesOfPostingList)
+        printf("%d ", *ptr++);
+
+    std::cout << std::endl;
+
+}
+
 
 TEST_MAIN();

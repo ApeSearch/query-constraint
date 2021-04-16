@@ -33,6 +33,8 @@ class IndexBlob;
 typedef size_t Location; // The numbering of a token
 typedef size_t FileOffset; 
 
+using std::size_t;
+
 enum WordAttributes
     {
         WordAttributeNormal, WordAttributeBold, WordAttributeHeading
@@ -44,15 +46,6 @@ enum PostingListType
         BodyText, TitleText, AnchorText, URL
     };
 
-typedef union Attributes //attributes for all kinds of posting lists, only one value will be used
-    {
-        Attributes(WordAttributes attribute_) : attribute(attribute) {}
-        Attributes(size_t urlIndex_) : urlIndex(urlIndex_) {}
-        //Is a destructor needed here?
-
-        WordAttributes attribute;
-        size_t urlIndex;
-    };
 
 struct IndexEntry {
     APESEARCH::string word;
@@ -63,18 +56,18 @@ struct IndexEntry {
 class Post
     { //in memory version of post, will replace loc with deltaPrev once written to disk
     public:
-        Post() : loc(), attribute(WordAttributeNormal){}
-        Post(Location loc_, Attributes attribute_) : loc(loc_), attribute(attribute_) {}
+        Post() : loc(), tData(WordAttributeNormal){}
+        Post(Location loc_, size_t tData_) : loc(loc_), tData(tData_) {}
 
         Location loc;
-        Attributes attribute;
+        size_t tData;
     };
 
 class WordPost: public Post
     {
     public:
         WordPost(): Post() {}
-        WordPost(FileOffset loc_, WordAttributes attribute_) : Post(loc_, attribute_) {}
+        WordPost(Location loc_, size_t attribute_) : Post(loc_, attribute_) {}
 
     };
 
@@ -104,7 +97,7 @@ class PostingList
 
         //pure virtual function to handle appending a new post to list. lastDocIndex is for 
         //word/token posts to determine absolute location based on location of last document
-        virtual void appendToList(Location loc_, Attributes attribute, size_t lastDocIndex = 0) = 0;
+        virtual void appendToList(Location loc_, size_t tData, size_t lastDocIndex = 0) = 0;
         virtual size_t bytesRequired( const APESEARCH::string &key ) = 0;
 
 
@@ -120,7 +113,7 @@ class WordPostingList : public PostingList
 
         size_t bytesRequired( const APESEARCH::string &key );
 
-        void appendToList(Location loc_, Attributes attribute, size_t lastDocIndex = 0) override;
+        void appendToList(Location loc_, size_t attribute, size_t lastDocIndex = 0) override;
 
         
     };
@@ -134,7 +127,7 @@ class DocEndPostingList : public PostingList
 
         size_t bytesRequired( const APESEARCH::string &key );
 
-        void appendToList(Location loc_, Attributes attribute, size_t lastDocIndex = 0) override; 
+        void appendToList(Location loc_, size_t urlIndex, size_t lastDocIndex = 0) override; 
     };
 
 class IndexHT
