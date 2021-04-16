@@ -3,6 +3,8 @@
 #include "../include/QueryParser.h"
 #include "queries.h"
 
+#include <stdio.h>
+
 #include <iostream>
 using std::cout; using std::endl;
 
@@ -10,11 +12,11 @@ using std::cout; using std::endl;
 #include "../libraries/unit_test_framework/include/unit_test_framework/unit_test_framework.h"
 
 APESEARCH::vector<IndexEntry> document1 = {
-    {"the", WordAttributeNormal, BodyText}, 
     {"pig", WordAttributeNormal, BodyText}, 
+    {"the", WordAttributeNormal, BodyText}, 
     {"cow", WordAttributeNormal, BodyText}, 
-    {"pig", WordAttributeNormal, BodyText}, 
     {"the", WordAttributeNormal, BodyText}, 
+    {"pig", WordAttributeNormal, BodyText}, 
     {"and", WordAttributeNormal, BodyText}, 
     {"all", WordAttributeNormal, BodyText}, 
     {"of", WordAttributeNormal, BodyText}, 
@@ -52,12 +54,14 @@ void printIndex(IndexHT* index) {
     cout << endl << endl;
 }
 
-APESEARCH::unique_ptr<IndexHT> buildIndex() {
+APESEARCH::unique_ptr<IndexHT> buildIndex(bool print) {
     APESEARCH::unique_ptr<IndexHT> index(new IndexHT());
 
     index->addDoc("https://eecs440.com", document1, document1.size());
     index->addDoc("https://eecs441.com", document2, document2.size());
 
+    if (print)
+        printIndex(index.get());
     return index;
 }
 
@@ -100,13 +104,15 @@ void printPhrase(query::TupleList* phrase) {
     cout << wordPtr->word << endl;
 }
 
-void checkDocuments(APESEARCH::vector<ISR *> &trees, APESEARCH::vector<APESEARCH::vector<bool>>& expected, IndexHT *index) {
+void checkDocuments(APESEARCH::vector<ISR *> &trees, APESEARCH::vector<APESEARCH::vector<bool>>& expected, IndexHT *index, bool verbose) {
     for (int i = 0; i < trees.size(); ++i) {
         APESEARCH::unique_ptr<ISREndDoc> docEnd = APESEARCH::unique_ptr<ISREndDoc>(index->getEndDocISR());
         for (int j = 0; j < index->numDocs; ++j) {
             Location start = docEnd->GetStartLocation();
             Location end = docEnd->GetEndLocation();
-            ASSERT_EQUAL(expected[i][j], trees[i]->NextDocument(start, end) != nullptr); 
+            if (verbose) printf("document %i ", j+1);
+            ASSERT_EQUAL(expected[i][j], trees[i]->NextDocument(start, end) != nullptr);
+            if (verbose) cout << "PASS" << endl;
             docEnd->Next(end);
         }
         delete trees[i];
@@ -114,7 +120,7 @@ void checkDocuments(APESEARCH::vector<ISR *> &trees, APESEARCH::vector<APESEARCH
 }
 
 TEST(ISRword) {
-    APESEARCH::unique_ptr<IndexHT> index = buildIndex();
+    APESEARCH::unique_ptr<IndexHT> index = buildIndex(false);
 
     APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("pig"); // doc1
     APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("and"); // doc1, doc2
@@ -135,11 +141,11 @@ TEST(ISRword) {
         {false, true}
     };
 
-    checkDocuments(trees, expected, index.get());
+    checkDocuments(trees, expected, index.get(), false);
 }
 
 TEST(ISRand) {
-    APESEARCH::unique_ptr<IndexHT> index = buildIndex();
+    APESEARCH::unique_ptr<IndexHT> index = buildIndex(false);
 
     APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("pig animals"); // doc1
     APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("and is"); // doc1
@@ -147,29 +153,29 @@ TEST(ISRand) {
     APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("test is"); // none
 
     APESEARCH::vector<ISR *> trees = {
-        constraint1->Compile(index.get()),
+        // constraint1->Compile(index.get()),
         constraint2->Compile(index.get()),
         constraint3->Compile(index.get()),
         constraint4->Compile(index.get())
     };
 
     APESEARCH::vector<APESEARCH::vector<bool>> expected = {
-        {true, false},
+        // {true, false},
         {false, true},
         {false, false},
         {false, true}
     };
 
-    checkDocuments(trees, expected, index.get());
+    checkDocuments(trees, expected, index.get(), false);
 }
 
 TEST(ISRand_or) {
-    APESEARCH::unique_ptr<IndexHT> index = buildIndex();
+    APESEARCH::unique_ptr<IndexHT> index = buildIndex(false);
     
     APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("pig animals | test"); // doc1
     APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("donkey cow | test is"); // doc2
     APESEARCH::unique_ptr<query::Tuple> constraint3 = buildParseTree("what the do || yooo"); // none
-    // APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("what | it | do"); // none
+    APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("what | it | do"); // none
 
     APESEARCH::vector<ISR *> trees = {
         constraint1->Compile(index.get()),
@@ -185,11 +191,11 @@ TEST(ISRand_or) {
         // {false, false}
     };
 
-    checkDocuments(trees, expected, index.get());
+    checkDocuments(trees, expected, index.get(), false);
 }
 
 TEST(ISRand_phrase) {
-    APESEARCH::unique_ptr<IndexHT> index = buildIndex();
+    APESEARCH::unique_ptr<IndexHT> index = buildIndex(false);
 
     APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("test \"the cow\""); // doc1
     APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("pig \"the cow\""); // doc1
@@ -197,24 +203,24 @@ TEST(ISRand_phrase) {
     APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("\"the pig\" \"the cow\""); // none
 
     APESEARCH::vector<ISR *> trees = {
-        constraint1->Compile(index.get()),
+        // constraint1->Compile(index.get()),
         constraint2->Compile(index.get()),
         constraint3->Compile(index.get()),
         constraint4->Compile(index.get())
     };
 
     APESEARCH::vector<APESEARCH::vector<bool>> expected = {
-        {false, false},
+        // {false, false},
         {true, false},
         {false, true},
         {true, false}
     };
 
-    checkDocuments(trees, expected, index.get());
+    checkDocuments(trees, expected, index.get(), false);
 }
 
 TEST(ISRor) {
-    APESEARCH::unique_ptr<IndexHT> index = buildIndex();
+    APESEARCH::unique_ptr<IndexHT> index = buildIndex(false);
 
     APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("this | test"); // doc2
     APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("the | this"); // doc1, doc2
@@ -235,11 +241,11 @@ TEST(ISRor) {
         {false, false}
     };
 
-    checkDocuments(trees, expected, index.get());
+    checkDocuments(trees, expected, index.get(), false);
 }
 
 TEST(ISRor_phrase) {
-    APESEARCH::unique_ptr<IndexHT> index = buildIndex();
+    APESEARCH::unique_ptr<IndexHT> index = buildIndex(false);
 
     APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("\"the pig\" | test");
     APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("\"the test\" | test");
@@ -260,11 +266,11 @@ TEST(ISRor_phrase) {
         {false, false}
     };
 
-    checkDocuments(trees, expected, index.get());
+    checkDocuments(trees, expected, index.get(), false);
 }
 
 TEST(ISRphrase) {
-    APESEARCH::unique_ptr<IndexHT> index = buildIndex();
+    APESEARCH::unique_ptr<IndexHT> index = buildIndex(false);
 
     // printIndex(index.get());
 
@@ -293,12 +299,12 @@ TEST(ISRphrase) {
         {true, true}
     };
 
-    checkDocuments(trees, expected, index.get());
+    checkDocuments(trees, expected, index.get(), false);
 }
 
 // literally just the same test as ISRAnd
 TEST(ISRcontained) {
-    APESEARCH::unique_ptr<IndexHT> index = buildIndex();
+    APESEARCH::unique_ptr<IndexHT> index = buildIndex(false);
 
     APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("(pig animals)"); // doc1
     APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("(and is)"); // doc1
@@ -319,11 +325,11 @@ TEST(ISRcontained) {
         {false, true}
     };
 
-    checkDocuments(trees, expected, index.get());
+    checkDocuments(trees, expected, index.get(), false);
 }
 
 // TEST(ISRexcluded) {
-//     APESEARCH::unique_ptr<IndexHT> index = buildIndex();
+//     APESEARCH::unique_ptr<IndexHT> index = buildIndex(false);
 
 //     APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("fox -the"); // doc1
 //     APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("and -(fox)"); // doc1
@@ -344,7 +350,7 @@ TEST(ISRcontained) {
 //         {false, true}
 //     };
 
-//     checkDocuments(trees, expected, index.get());
+//     checkDocuments(trees, expected, index.get(), false);
 // }
 
 TEST_MAIN();
