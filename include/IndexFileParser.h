@@ -138,10 +138,8 @@ class IndexFileParser
                         entries.push_back(IndexEntry{urlString, WordAttributeNormal, URL});
 
                         index->addDoc(url, entries, entries.size());
-                        
                         APESEARCH::vector<IndexEntry> temp;
                         entries = temp;
-                        
                         assert(*cur++ == '\0');
                     }
 

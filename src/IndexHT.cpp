@@ -5,7 +5,7 @@
 #include <iostream>
 
 
-IndexHT::IndexHT() : dict(), urls(), LocationsInIndex(0), MaximumLocation(0), numDocs(0) {}
+IndexHT::IndexHT() : dict(), urls(), LocationsInIndex(0), MaximumLocation(0), numDocs(0), calcBytes(0), bytes(0){}
 
 IndexHT::~IndexHT(){
     hash::HashTable<APESEARCH::string, PostingList *>::iterator itr = dict.begin();
@@ -28,9 +28,12 @@ void WordPostingList::appendToList(Location loc_, size_t attribute, size_t lastD
     posts.push_back(new WordPost(loc_, attribute));
 }
 
-size_t WordPostingList::bytesRequired(const APESEARCH::string &key) {
+uint32_t WordPostingList::bytesRequired(const APESEARCH::string &key) {
 
-    size_t numBytes = key.size() + 1;
+    if(calcBytes)
+        return bytesList;
+
+    uint32_t numBytes = key.size() + 1;
     Location absoluteLocation = 0;
     numBytes += sizeof( SerializedPostingList );
 
@@ -51,15 +54,19 @@ size_t WordPostingList::bytesRequired(const APESEARCH::string &key) {
     }
 
     numBytes += deltas.size();
-
+    calcBytes = true;
     bytesList = numBytes;
 
     return numBytes;
 }
 
 
-size_t DocEndPostingList::bytesRequired(const APESEARCH::string &key) { //implement
-    size_t numBytes = key.size() + 1;
+uint32_t DocEndPostingList::bytesRequired(const APESEARCH::string &key) { //implement
+
+    if(calcBytes)
+        return bytesList;
+
+    uint32_t numBytes = key.size() + 1;
     Location absoluteLocation = 0;
     numBytes += sizeof( SerializedPostingList );
 
@@ -80,6 +87,7 @@ size_t DocEndPostingList::bytesRequired(const APESEARCH::string &key) { //implem
     }
 
     numBytes += deltas.size();
+    calcBytes = true;
     bytesList = numBytes;
 
     return numBytes;
@@ -157,9 +165,13 @@ ISREndDoc* IndexHT::getEndDocISR ( ) {
     return new ISREndDoc(entry->value, this);
 }
 
-size_t IndexHT::BytesRequired() {
-    size_t bytesRequired = sizeof( IndexBlob );
-    bytesRequired += sizeof( size_t ) * dict.table_size( );
+uint32_t IndexHT::BytesRequired() {
+
+    if(calcBytes)
+        return bytes;
+
+    uint32_t bytesRequired = sizeof( IndexBlob );
+    bytesRequired += sizeof( uint32_t ) * dict.table_size( );
 
     APESEARCH::vector< APESEARCH::vector< hash::Bucket< APESEARCH::string, PostingList*> *> > vec = dict.vectorOfBuckets();
 
@@ -168,14 +180,15 @@ size_t IndexHT::BytesRequired() {
             hash::Bucket<APESEARCH::string, PostingList*> * bucket = vec[index][sameChain];
             bytesRequired += bucket->tuple.value->bytesRequired(bucket->tuple.key);
         }
-        bytesRequired += sizeof( size_t ); // Signifies end of the chained posting lists...
+        bytesRequired += sizeof( uint32_t ); // Signifies end of the chained posting lists...
     }
 
     // Bytes for the url vector
     for(size_t i = 0; i < urls.size(); ++i)
         bytesRequired += urls[i].size() + 1;
 
-
+    calcBytes = true;
+    bytes = bytesRequired;
     return bytesRequired;
 }
 

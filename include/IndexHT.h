@@ -82,7 +82,7 @@ class PostingList
     {
     public:
 
-        PostingList(): posts(), deltas(), bytesList(0) {}
+        PostingList(): posts(), deltas(), bytesList(0), calcBytes(false) {}
         ~PostingList() {
             for(size_t i = 0; i < posts.size(); ++i)
                 delete posts[i];
@@ -90,7 +90,8 @@ class PostingList
 
         APESEARCH::vector<Post *> posts; //pointers to individual posts
         APESEARCH::vector<uint8_t> deltas;
-        size_t bytesList;
+        uint32_t bytesList;
+        bool calcBytes;
 
         
         Post *Seek( Location l );
@@ -98,7 +99,7 @@ class PostingList
         //pure virtual function to handle appending a new post to list. lastDocIndex is for 
         //word/token posts to determine absolute location based on location of last document
         virtual void appendToList(Location loc_, size_t tData, size_t lastDocIndex = 0) = 0;
-        virtual size_t bytesRequired( const APESEARCH::string &key ) = 0;
+        virtual uint32_t bytesRequired( const APESEARCH::string &key ) = 0;
 
 
         //virtual char *GetPostingList( );
@@ -111,7 +112,7 @@ class WordPostingList : public PostingList
 
         WordPostingList(): PostingList() {}
 
-        size_t bytesRequired( const APESEARCH::string &key );
+        uint32_t bytesRequired( const APESEARCH::string &key );
 
         void appendToList(Location loc_, size_t attribute, size_t lastDocIndex = 0) override;
 
@@ -125,7 +126,7 @@ class DocEndPostingList : public PostingList
 
         DocEndPostingList(): PostingList() {}
 
-        size_t bytesRequired( const APESEARCH::string &key );
+        uint32_t bytesRequired( const APESEARCH::string &key );
 
         void appendToList(Location loc_, size_t urlIndex, size_t lastDocIndex = 0) override; 
     };
@@ -141,7 +142,7 @@ class IndexHT
         void addDoc(APESEARCH::string url, APESEARCH::vector<IndexEntry> &text, size_t endDocLoc);
         Post *goToNext( Location location ); // May need to inherit here...
 
-        size_t BytesRequired();
+        uint32_t BytesRequired();
 
         ISRWord *getWordISR ( APESEARCH::string word );
         ISREndDoc *getEndDocISR ( );
@@ -149,5 +150,7 @@ class IndexHT
         hash::HashTable<APESEARCH::string, PostingList *> dict;
         APESEARCH::vector<APESEARCH::string> urls;
         size_t LocationsInIndex, MaximumLocation, numDocs;
+        size_t bytes;
+        bool calcBytes;
 
     };

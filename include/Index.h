@@ -13,15 +13,15 @@
 //2. Attribute
 //3. Sync table
 
-#define SYNCTABLESIZE 64
+#define SYNCTABLESIZE 24
 
 using std::size_t;
 
 
 struct SyncEntry
    {
-    size_t absoluteLoc;
-    size_t seekOffset;
+    uint32_t absoluteLoc;
+    uint32_t seekOffset;
    };
 
 
@@ -33,19 +33,43 @@ struct SyncEntry
 
 //< deltas >
 
+class ListIterator;
+
 class SerializedPostingList
    {
+    friend class ListIterator;
+
     public:
-        size_t bytesOfPostingList;
+    
+        uint32_t bytesOfPostingList;
 
         SyncEntry syncTable[ SYNCTABLESIZE ];
 
-        static constexpr size_t sizeOfNullSentinel = sizeof( size_t ); // Just needs to be a Length
+        static constexpr uint32_t sizeOfNullSentinel = sizeof( uint32_t ); // Just needs to be a Length
 
         char Key[ Unknown ];
 
+
+        static size_t decodeDeltaIndex(uint8_t* deltas){
+            size_t addedDeltas = 0, index = 0;
+
+            int mask = 0x7F;
+
+            int shift = 0;
+
+            while(true) {
+                uint8_t byte = deltas[index++];
+                addedDeltas |= (byte & mask) << shift;
+                if(!(~mask & byte))
+                    break;
+                shift += 7;
+            }
+
+            return index;
+        }
+
         static SerializedPostingList * initSerializedPostingList(char* buffer, 
-        const hash::Bucket<APESEARCH::string, PostingList *> * b, size_t length) {
+        const hash::Bucket<APESEARCH::string, PostingList *> * b, uint32_t length) {
             SerializedPostingList *serialTuple = reinterpret_cast< SerializedPostingList * >( buffer );
 
             serialTuple->bytesOfPostingList = length;
@@ -55,30 +79,43 @@ class SerializedPostingList
 
             PostingList* pl = b->tuple.value;
 
-            memset(serialTuple->syncTable, 0, SYNCTABLESIZE * sizeof(size_t) * 2);
+
+            SerializedPostingList * returnPtr = ( SerializedPostingList * ) 
+                APESEARCH::copy( b->tuple.value->deltas.begin(), b->tuple.value->deltas.end(), ( uint8_t * ) ptrAfterKey );
+
+
+            memset(serialTuple->syncTable, 0, SYNCTABLESIZE * sizeof(uint32_t) * 2);
             
-            serialTuple->syncTable[0] = SyncEntry{ pl->posts[0]->loc, 0 };
+            serialTuple->syncTable[0] = SyncEntry{ static_cast<uint32_t>(pl->posts[0]->loc), 0 };
             
-            size_t absoluteLocation = pl->posts[0]->loc, currentPost = 1;
+            uint32_t absoluteLocation = 0, currentPost = 0;
             uint8_t nextHighBit = 1;
 
-            for(; currentPost < pl->posts.size(); ++currentPost){
-                absoluteLocation += pl->posts[currentPost]->loc;
+            for(uint32_t i = 0; i < pl->deltas.size();){ //i keeps track of byte offset from beg of posts
 
-                uint8_t highBit = absoluteLocation >> 24;
+                assert(currentPost < pl->posts.size());
+                absoluteLocation = pl->posts[currentPost++]->loc;
+                uint32_t prevOffset = i;
+                i += decodeDeltaIndex((uint8_t *) ptrAfterKey + i);
+
+                uint8_t leadingZeros = __builtin_clz(absoluteLocation >> 8); //Calculate highest bit, chop off last byte
+                assert(leadingZeros >= 8 );
+
+                uint8_t highBit = 31 - leadingZeros;
 
                 while(highBit >= nextHighBit)
-                    serialTuple->syncTable[nextHighBit++] = SyncEntry{ absoluteLocation, currentPost };
+                    serialTuple->syncTable[nextHighBit++] = SyncEntry{ absoluteLocation, prevOffset };
+                
+                i += decodeDeltaIndex((uint8_t *) ptrAfterKey + i); //accounts for attributes
             }
 
-            return ( SerializedPostingList * ) APESEARCH::copy( b->tuple.value->deltas.begin(), b->tuple.value->deltas.end(), ( uint8_t * ) ptrAfterKey );
-            //return  SerializedPostingList * ( endOfPostingList );
+            return returnPtr;
 
         }
 
         static char * Write(char *buffer, char const * const bufferEnd,
             const hash::Bucket<APESEARCH::string, PostingList *> *b){
-
+                
                 SerializedPostingList * serialList = initSerializedPostingList(buffer, b, b->tuple.value->bytesList);
                 char *end = buffer + b->tuple.value->bytesList;
                 assert( end == ( char * ) serialList );
@@ -91,15 +128,76 @@ class SerializedPostingList
    };
 
 
+class ListIterator {
+    public:
+        ListIterator(const SerializedPostingList * pl_): pl(pl_), absoluteLocation(0), offset(0){
+            startOfDeltas = (uint8_t * ) &pl->Key + strlen(pl->Key) + 1;
+        }
+
+        Post Seek(Location l){
+            assert(absoluteLocation < l);
+
+            Post p;
+
+            while(absoluteLocation < l){
+                p = Next();
+            }
+
+            return p;
+        }
+
+        Post Next(){
+            uint8_t * cur = startOfDeltas + offset;
+            Location loc = decodeDelta(cur);
+            size_t tData = decodeDelta(cur);
+
+            offset = (cur + 1) - startOfDeltas;
+            absoluteLocation += loc;
+
+            return Post(loc, tData);
+
+        }
+
+        const SerializedPostingList * pl;
+
+        uint8_t* startOfDeltas;
+
+        Location absoluteLocation;
+        Location offset;
+
+    private:
+        size_t decodeDelta(uint8_t * &deltas){
+            size_t addedDeltas = 0, index = 0;
+
+            int mask = 0x7F;
+
+            int shift = 0;
+
+            while(true) {
+                uint8_t byte = *deltas++;
+
+                assert(deltas < (uint8_t *) pl + pl->bytesOfPostingList);
+
+                addedDeltas |= (byte & mask) << shift;
+                if(!(~mask & byte))
+                    break;
+                shift += 7;
+            }
+
+            return addedDeltas;
+        }
+};
+
+
 
 
 class IndexBlob
     {
     public: 
-        static constexpr size_t decidedMagicNum = 69;
-        static constexpr size_t version = 1;
+        static constexpr uint32_t decidedMagicNum = 69;
+        static constexpr uint32_t version = 1;
 
-    size_t MagicNumber,
+    uint32_t MagicNumber,
         Version,
         BlobSize,
         NumOfDocs,
@@ -117,8 +215,8 @@ class IndexBlob
         uint8_t const *byteAddr = reinterpret_cast< uint8_t const * > ( &MagicNumber );
 
         uint32_t hashVal = ( uint32_t )func( key );
-        size_t bucketInd = hashVal & ( NumberOfBuckets - 1 );
-        size_t offset = Buckets[ bucketInd ];
+        uint32_t bucketInd = hashVal & ( NumberOfBuckets - 1 );
+        uint32_t offset = Buckets[ bucketInd ];
 
         if(offset){
             byteAddr += offset;
@@ -138,7 +236,7 @@ class IndexBlob
     }
     
 
-    static IndexBlob *Write( IndexBlob *ib, size_t bytes,
+    static IndexBlob *Write( IndexBlob *ib, uint32_t bytes,
             const IndexHT *indexHT ) {
             ib->MagicNumber = IndexBlob::decidedMagicNum;
             ib->Version = IndexBlob::version;
@@ -150,7 +248,7 @@ class IndexBlob
             hash::Tuple<APESEARCH::string, PostingList *> * entry = indexHT->dict.Find(APESEARCH::string("%"));
             ib->NumOfDocs = entry->value->posts.size();
             
-            memset( ib->Buckets, 0, sizeof( size_t ) * ib->NumberOfBuckets );
+            memset( ib->Buckets, 0, sizeof( uint32_t ) * ib->NumberOfBuckets );
             
             ib->VectorStart = reinterpret_cast< IndexBlob * >( ib->Buckets ) - ib;
 
@@ -162,28 +260,25 @@ class IndexBlob
             
             for(size_t i = 0; i < buckets.size(); ++i) {
                 //Write Offsets
-                size_t bucketInd = buckets[i].front()->hashValue & ( indexHT->dict.table_size() - 1 );
-                ib->Buckets[ bucketInd ] = size_t( serialPtr - reinterpret_cast< char * >( ib ) );
-
+                uint32_t bucketInd = buckets[i].front()->hashValue & ( indexHT->dict.table_size() - 1 );
+                ib->Buckets[ bucketInd ] = uint32_t( serialPtr - reinterpret_cast< char * >( ib ) );
 
                 for(size_t sameChain = 0; sameChain < buckets[i].size(); ++sameChain) {
                     hash::Bucket<APESEARCH::string, PostingList*> * bucket = buckets[i][sameChain];
                     serialPtr = SerializedPostingList::Write( serialPtr, end, bucket );
                 }
-                *reinterpret_cast< std::size_t *>( serialPtr ) = 0;
-                serialPtr += sizeof( size_t ); // Signify end of a chain
+                *reinterpret_cast< uint32_t *>( serialPtr ) = 0;
+                serialPtr += sizeof( uint32_t ); // Signify end of a chain
             }
 
             for ( size_t i = 0; i < indexHT->urls.size(); ++i )
                 serialPtr = strcpy( serialPtr, indexHT->urls[ i ].cstr( ) ) + indexHT->urls[ i ].size( ) + 1;
                 
-
-        std::cout << (char * ) ib + bytes - serialPtr << std::endl;
         assert( serialPtr == end );
     }
 
     static IndexBlob * Create(IndexHT *indexHT) {
-        const size_t bytesReq = indexHT->BytesRequired();
+        const uint32_t bytesReq = indexHT->BytesRequired();
         
         char *buffer = ( char * ) malloc( bytesReq );
         memset( buffer, 0, bytesReq );
@@ -221,7 +316,7 @@ class IndexFile{
             : file( filename, O_RDWR | O_CREAT | O_TRUNC, (mode_t)0600 )
             {
                 int fd = file.getFD();
-                const std::size_t bytesReq = index->BytesRequired();
+                const uint32_t bytesReq = index->BytesRequired();
                 ssize_t result = lseek( fd, off_t( bytesReq - 1 ), SEEK_SET );
                 if ( result == -1 )
                     {
