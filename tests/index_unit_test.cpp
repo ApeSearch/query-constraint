@@ -36,7 +36,7 @@ TEST(postingList_seek)
     ASSERT_EQUAL(notFound, nullptr);
     }
 
-/*
+
 TEST(build_with_file){
     const char *filename = "./tests/indexFiles/indexFile1.txt";
 
@@ -61,7 +61,7 @@ TEST(build_with_file){
     assert(entry3->value->posts[1]->loc == 716);
 
 
-
+    /*
     while(itr != parser.index->dict.end()){
         std::cout << itr->key << std::endl;
         for(size_t i = 0; i < itr->value->posts.size(); ++i) {
@@ -69,7 +69,7 @@ TEST(build_with_file){
         }
         std::cout << std::endl;
         itr++;
-    }
+    }*/
     
 
     size_t bytesRequired = parser.index->BytesRequired();
@@ -84,7 +84,7 @@ TEST(build_with_file){
 
     std::cout << "PASS" << std::endl;
 
-}*/
+}
 
 
 TEST(basic_encode_deltas_bytes){

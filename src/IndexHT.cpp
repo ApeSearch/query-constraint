@@ -12,9 +12,9 @@ IndexHT::~IndexHT(){
 
     while(itr != dict.end()) {
         delete itr->value;
-        itr++;
+        itr = itr++;
     }
-}
+} 
 
 void DocEndPostingList::appendToList(Location loc_, size_t urlIndex, size_t lastDocIndex){
     if(posts.size())

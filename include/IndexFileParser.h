@@ -16,7 +16,9 @@ class IndexFileParser
                 parseFile();
             }
 
-            ~IndexFileParser(){ delete index; }
+            ~IndexFileParser(){
+                delete index;
+            }
             
             //given a char buffer of beg and 1 past the end of the last number, returns the actual number
             size_t indexOffBuffer(const char * beg, const char * pastEnd) const{
