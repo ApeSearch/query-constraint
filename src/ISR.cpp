@@ -187,6 +187,7 @@ Post * ISRAnd::Seek( Location target, ISREndDoc* docEnd )
     }
 
     post = nullptr;
+    nearestStartLocation = (Location) - 1;
     while (true) 
         {
         // 2. Move the document end ISR to just past the furthest
@@ -202,7 +203,6 @@ Post * ISRAnd::Seek( Location target, ISREndDoc* docEnd )
             enddocPost = docEnd->Seek(0, docEnd);
             }
         docEnd->Next(docEnd);
-
         // 3. Seek all the other terms to past the document begin.
         bool found = true;
         for (int i = 0; i < numTerms; ++i) 
@@ -226,7 +226,7 @@ Post * ISRAnd::Seek( Location target, ISREndDoc* docEnd )
 
                 // 4. If any term is past the document end, return to
                 //    step 2.
-                if (foundPost->loc > docEnd->GetEndLocation()) 
+                if (foundPost->loc > docEnd->GetEndLocation() && (docEnd->GetStartLocation() != docEnd->GetEndLocation())) 
                     {
                     found = false;
                     break;
@@ -246,7 +246,7 @@ Post * ISRAnd::Seek( Location target, ISREndDoc* docEnd )
 
     
 
-    return post;
+    return nullptr;
     }
 
 Post * ISRAnd::Next( ISREndDoc* docEnd )
@@ -332,8 +332,8 @@ Post *ISRPhrase::Seek( Location target, ISREndDoc* docEnd )
                     expectedLoc = nearestEndLocation + farthestTerm + i;
                 }
                 else {
-                    continue;
-                };
+                    expectedLoc = nearestEndLocation;
+                }
                 if (found) 
                     {
                     post = terms[i]->Seek(expectedLoc, docEnd);
@@ -341,15 +341,16 @@ Post *ISRPhrase::Seek( Location target, ISREndDoc* docEnd )
                         return nullptr;
 
                     nearestEndLocation = (post->loc >= nearestEndLocation) ? terms[(farthestTerm = i)]->GetStartLocation() : nearestEndLocation;
-                    // nearestStartLocation = (post->loc <= nearestStartLocation) ? terms[(nearestTerm = i)]->GetStartLocation() : nearestStartLocation;
+                    nearestStartLocation = (post->loc <= nearestStartLocation) ? terms[(nearestTerm = i)]->GetStartLocation() : nearestStartLocation;
 
-                    if (post->loc <= nearestEndLocation)
+                    if (i == nearestTerm)
                         nearestPost = post;
                         
                     // 3. If any term is past the desired location, return
                     //    to step 2.
                     if (post->loc > expectedLoc) 
-                    {
+                        {
+                       
                         found = false;
                         break;
                         }

@@ -374,10 +374,11 @@ class Index {
 
                 // TODO: actually search the whole gd thing
                 // solve constraint on index chunk using ISR tree
-                // for each matching document 
-                    // rank = rankerClass->getRank(isrTree)
+                // for each matching document
+                    // isrTree.Seek(beginning of document) 
+                    // rank = rankerClass.getRank(isrTree)
                     // struct RankStruct = {double rank, string documentURL};
-                    // top10<RankStruct>->insert(rank, matching document)
+                    // top10<RankStruct>.insert(rank, matching document)
             }
         }
 
