@@ -130,31 +130,32 @@ class SerializedPostingList
 
 class ListIterator {
     public:
-        ListIterator(const SerializedPostingList * pl_): pl(pl_), absoluteLocation(0), offset(0){
+        ListIterator(const SerializedPostingList * pl_): pl(pl_), curPost(0), prevLoc(0), offset(0){
             startOfDeltas = (uint8_t * ) &pl->Key + strlen(pl->Key) + 1;
         }
 
-        Post Seek(Location l){
-            assert(absoluteLocation < l);
+        Post& Seek(Location l){
+            assert(curPost->loc < l);
 
-            Post p;
-
-            while(absoluteLocation < l){
-                p = Next();
+            while(curPost->loc < l){
+                Next();
             }
 
-            return p;
+            return curPost;
         }
 
-        Post Next(){
+        Post& Next(){
             uint8_t * cur = startOfDeltas + offset;
+            prevLoc = curPost->loc;
+
             Location loc = decodeDelta(cur);
             size_t tData = decodeDelta(cur);
 
-            offset = (cur + 1) - startOfDeltas;
-            absoluteLocation += loc;
+            curPost = Post(loc, tData);
 
-            return Post(loc, tData);
+            offset = (cur + 1) - startOfDeltas;
+
+            return curPost;
 
         }
 
@@ -162,8 +163,10 @@ class ListIterator {
 
         uint8_t* startOfDeltas;
 
-        Location absoluteLocation;
-        Location offset;
+        Post curPost;
+
+        Location prevLoc;
+        Location offset; //offset of next post to be read
 
     private:
         size_t decodeDelta(uint8_t * &deltas){
@@ -291,6 +294,8 @@ class IndexBlob
          return MagicNumber == IndexBlob::decidedMagicNum &&
                Version == IndexBlob::version;
          }
+
+    
     };
 
 

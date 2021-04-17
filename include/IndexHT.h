@@ -56,7 +56,7 @@ struct IndexEntry {
 class Post
     { //in memory version of post, will replace loc with deltaPrev once written to disk
     public:
-        Post() : loc(), tData(WordAttributeNormal){}
+        Post() : loc(0), tData(WordAttributeNormal){}
         Post(Location loc_, size_t tData_) : loc(loc_), tData(tData_) {}
 
         Location loc;
