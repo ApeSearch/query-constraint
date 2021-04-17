@@ -84,14 +84,14 @@ class PostingList
 
         PostingList(): posts(), deltas(), bytesList(0), calcBytes(false) {}
         ~PostingList() {
-            for(size_t i = 0; i < posts.size(); ++i)
+            for (int i = 0; i < posts.size(); ++i) 
                 delete posts[i];
         }
 
         APESEARCH::vector<Post *> posts; //pointers to individual posts
         APESEARCH::vector<uint8_t> deltas;
         uint32_t bytesList;
-        bool calcBytes;
+        bool calcBytes; //has the number of bytes already been calculated?
 
         
         Post *Seek( Location l );

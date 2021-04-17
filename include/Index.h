@@ -256,7 +256,7 @@ class IndexBlob
             char *serialPtr =reinterpret_cast< char *>( ib->Buckets + indexHT->dict.table_size() );
             char *end = reinterpret_cast< char *>( ib ) + bytes;
 
-            APESEARCH::vector< APESEARCH::vector< hash::Bucket< APESEARCH::string, PostingList*> *> > buckets = indexHT->dict.vectorOfBuckets();
+            auto buckets = indexHT->dict.vectorOfBuckets();
             
             for(size_t i = 0; i < buckets.size(); ++i) {
                 //Write Offsets

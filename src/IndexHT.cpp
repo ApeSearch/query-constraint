@@ -8,11 +8,12 @@
 IndexHT::IndexHT() : dict(), urls(), LocationsInIndex(0), MaximumLocation(0), numDocs(0), calcBytes(0), bytes(0){}
 
 IndexHT::~IndexHT(){
-    hash::HashTable<APESEARCH::string, PostingList *>::iterator itr = dict.begin();
+    auto vecOfBuckets = dict.vectorOfBuckets();
 
-    while(itr != dict.end()) {
-        delete itr->value;
-        itr = itr++;
+    for(size_t i = 0; i < vecOfBuckets.size(); ++i){
+        for(size_t sameChain = 0; sameChain < vecOfBuckets[i].size(); ++sameChain){
+            delete vecOfBuckets[i][sameChain]->tuple.value;
+        }
     }
 } 
 

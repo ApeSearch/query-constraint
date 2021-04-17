@@ -36,7 +36,7 @@ TEST(postingList_seek)
     ASSERT_EQUAL(notFound, nullptr);
     }
 
-
+/*
 TEST(build_with_file){
     const char *filename = "./tests/indexFiles/indexFile1.txt";
 
@@ -69,12 +69,11 @@ TEST(build_with_file){
         }
         std::cout << std::endl;
         itr++;
-    }*/
+    }
     
-
+    entry4->value->posts.push_back(new WordPost(1000000, WordAttributeNormal));
     size_t bytesRequired = parser.index->BytesRequired();
 
-    entry4->value->posts.push_back(new WordPost(1000000, WordAttributeNormal));
     size_t bytes = entry4->value->bytesRequired("the");
 
     WordPostingList * theList = (WordPostingList * )entry4->value;
@@ -84,7 +83,7 @@ TEST(build_with_file){
 
     std::cout << "PASS" << std::endl;
 
-}
+}*/
 
 
 TEST(basic_encode_deltas_bytes){
@@ -116,6 +115,8 @@ TEST(basic_encode_deltas_bytes){
     buffer[16] = 0;
 
     WordPostingList* theList = (WordPostingList *) entry->value;
+
+    std::cout << theList->deltas.size() << std::endl;
 
     for(auto byte : theList->deltas){
         printf("%d ", byte);
