@@ -365,11 +365,19 @@ class Index {
         ~Index() {}
 
         // Probably given an ISR, searches for matches in each index chunk we have
-        void searchIndexChunks() {
+        void searchIndexChunks(APESEARCH::string query) {
+            //build parse tree
+
             for (int i = 0; i < chunkFileNames.size(); ++i) {
                 loadIndexChunk(chunkFileNames[i]);
+                // parseTree.compile(indexchunk)
 
                 // TODO: actually search the whole gd thing
+                // solve constraint on index chunk using ISR tree
+                // for each matching document 
+                    // rank = rankerClass->getRank(isrTree)
+                    // struct RankStruct = {double rank, string documentURL};
+                    // top10<RankStruct>->insert(rank, matching document)
             }
         }
 
@@ -389,4 +397,6 @@ class Index {
 
             // blob = indexChunkFile.Blob();
             }
+        
+
 };
