@@ -98,7 +98,7 @@ TEST(basic_encode_deltas_bytes){
         {"animals", WordAttributeNormal, BodyText},
     };
 
-    IndexHT *index = new IndexHT();
+    APESEARCH::unique_ptr<IndexHT> index = APESEARCH::unique_ptr<IndexHT>(new IndexHT());
     index->addDoc("https://eecs440.com", words, 9);
     index->addDoc("https://eecs441.com", words, 9);
 
@@ -146,13 +146,14 @@ TEST(basic_index_file_write_test){
         {"the", WordAttributeHeading, BodyText},
         {"animals", WordAttributeNormal, BodyText},
     };
+    
+    APESEARCH::unique_ptr<IndexHT> index = APESEARCH::unique_ptr<IndexHT>(new IndexHT());
 
-    IndexHT *index = new IndexHT();
     index->addDoc("https://eecs440.com", words, 9);
     index->addDoc("https://eecs441.com", words, 9);
 
     char const *filename = "./tests/testIndexBlobFile.txt";
-    IndexFile hashFile( filename, index );
+    IndexFile hashFile( filename, index.get() );
 
 }
 
