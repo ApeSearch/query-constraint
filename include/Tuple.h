@@ -12,7 +12,7 @@ namespace query{
     class Tuple {
         public:
             Tuple* next; //next pointer in linked list
-            virtual ISR* Compile(IndexHT *indexPtr) = 0;
+            virtual ISR* Compile(const IndexBlob *indexPtr) = 0;
             Tuple();
             virtual ~Tuple(); //deallocate node from heap
     };
@@ -21,7 +21,7 @@ namespace query{
         public:
             SearchWord(APESEARCH::string _word);
             ~SearchWord();
-            ISR* Compile(IndexHT *indexPtr) override;
+            ISR* Compile(const IndexBlob *indexPtr) override;
 
             APESEARCH::string word;
     };
@@ -30,7 +30,7 @@ namespace query{
         public:
             UnarySimpleConstraint(Tuple* tup);
             ~UnarySimpleConstraint();
-            ISR* Compile(IndexHT *indexPtr) override;
+            ISR* Compile(const IndexBlob *indexPtr) override;
 
             TokenType op;
             Tuple* actualConstraint;
@@ -40,7 +40,7 @@ namespace query{
         public:
             NestedConstraint(Tuple* tup);
             ~NestedConstraint();
-            ISR* Compile(IndexHT *indexPtr) override;
+            ISR* Compile(const IndexBlob *indexPtr) override;
 
             Tuple* constraint;
     };

@@ -3,27 +3,20 @@
 
 ISR::ISR() {}
 
-ISR::ISR(IndexHT *_indexPtr) : indexPtr(_indexPtr) {}
+ISR::ISR(const IndexBlob *_indexPtr) : indexPtr(_indexPtr) {}
 
 ISRWord::ISRWord() : ISR() {}
 
-ISRWord::ISRWord(PostingList * _posts, IndexHT *_indexPtr, APESEARCH::string _word) : ISR(_indexPtr), posts(_posts), postIndex(0), startLocation(posts->posts[0]->loc),
-                                                            endLocation(posts->posts[0]->loc), word(_word) {}
-
-ISRWord::ISRWord(PostingList * _posts, IndexHT *_indexPtr, APESEARCH::string _word, Location _start) : ISRWord(_posts, _indexPtr, _word) {
-    startLocation = _start;
-}
-
-ISRWord::ISRWord(ListIterator * plIterator) : plItr(plIterator){}
+ISRWord::ISRWord(ListIterator *  _posts, const IndexBlob *_indexPtr, APESEARCH::string _word) : ISR(_indexPtr), posts(_posts), postIndex(0), word(_word) 
+    {
+    startLocation = posts->prevLoc;
+    endLocation = posts->prevLoc;
+    }
 
 ISREndDoc::ISREndDoc() : ISRWord() {}
 
-ISREndDoc::ISREndDoc(PostingList* _posts, IndexHT *_indexPtr) : ISRWord(_posts, _indexPtr, "%", 0) {
-    startLocation = endLocation = 0;
-}
-
-ISREndDoc::ISREndDoc(ListIterator * plIterator) : ISRWord(plIterator) {
-    startLocation = endLocation = 0;
+ISREndDoc::ISREndDoc(ListIterator *  _posts, const IndexBlob *_indexPtr) : ISRWord(_posts, _indexPtr, "%") {
+    startLocation = endLocation = posts->prevLoc;
 }
 
 // Return the number of documents that contain this word
@@ -36,24 +29,25 @@ Post *ISRWord::GetCurrentPost( ) {
 }
 
 Post * ISRWord::Next( ISREndDoc* docEnd ) {
-    if (++postIndex < posts->posts.size()) 
-        {
-        Post * next = posts->posts[postIndex];
-        startLocation = next->loc;
-        return next;
-        }
-    return nullptr;
+    // if (++postIndex < posts->posts.size()) 
+    //     {
+    //     Post * next = posts->posts[postIndex];
+    //     startLocation = next->loc;
+    //     return next;
+    //     }
+    return posts->Next();
 }
 
 Post * ISREndDoc::Next( ISREndDoc* docEnd ) {
-    startLocation = endLocation;
-    if (++postIndex < posts->posts.size()) 
-        {
-        Post * next = posts->posts[postIndex];
-        endLocation = next->loc;
-        return next;
-        }
-    return nullptr;
+
+    // startLocation = endLocation;
+    // if (++postIndex < posts->posts.size()) 
+    //     {
+    //     Post * next = posts->posts[postIndex];
+    //     endLocation = next->loc;
+    //     return next;
+    //     }
+    return posts->Next();
 }
 
 
@@ -110,7 +104,7 @@ ISROr
 */
 
 ISROr::ISROr() {} 
-ISROr::ISROr(IndexHT *_indexPtr) : ISR(_indexPtr), terms(nullptr), numTerms(0), nearestTerm(0) {} 
+ISROr::ISROr(const IndexBlob *_indexPtr) : ISR(_indexPtr), terms(nullptr), numTerms(0), nearestTerm(0) {} 
 
 Post * ISROr::Seek( Location target, ISREndDoc* docEnd )
     {
@@ -167,7 +161,7 @@ ISRAnd
 
 */
 
-ISRAnd::ISRAnd(IndexHT *_indexPtr) : ISR(_indexPtr), terms(nullptr), numTerms(0), nearestTerm(0), farthestTerm(0) {}
+ISRAnd::ISRAnd(const IndexBlob *_indexPtr) : ISR(_indexPtr), terms(nullptr), numTerms(0), nearestTerm(0), farthestTerm(0) {}
 
 Post * ISRAnd::Seek( Location target, ISREndDoc* docEnd ) 
     {
@@ -204,15 +198,7 @@ Post * ISRAnd::Seek( Location target, ISREndDoc* docEnd )
         //    word, then calculate the document begin location.
         Post * enddocPost = docEnd->Seek(nearestEndLocation, docEnd);
 
-        if (!enddocPost) return nullptr;
-        Location documentBegin = 0;
-        Location next = docEnd->Seek(0, docEnd)->loc;
-        while (next != enddocPost->loc) 
-            {
-            documentBegin = next;
-            enddocPost = docEnd->Seek(0, docEnd);
-            }
-        docEnd->Next(docEnd);
+        Location documentBegin = docEnd->posts->prevLoc;
         // 3. Seek all the other terms to past the document begin.
         bool found = true;
         for (int i = 0; i < numTerms; ++i) 
@@ -284,7 +270,7 @@ Post * ISRAnd::Next( ISREndDoc* docEnd )
     // return newNearest;
     }
 
-ISRPhrase::ISRPhrase(IndexHT *_indexPtr) : ISR(_indexPtr), terms(nullptr), numTerms(0), nearestTerm(0), farthestTerm(0) {}
+ISRPhrase::ISRPhrase(const IndexBlob *_indexPtr) : ISR(_indexPtr), terms(nullptr), numTerms(0), nearestTerm(0), farthestTerm(0) {}
 
 Post *ISRPhrase::Seek( Location target, ISREndDoc* docEnd )
     {
@@ -374,5 +360,5 @@ Post *ISRPhrase::Seek( Location target, ISREndDoc* docEnd )
         // 4. If any ISR reaches the end, there is no match.
     }
 
-ISRContainer::ISRContainer(IndexHT *_indexPtr) : ISR(_indexPtr), contained(nullptr), excluded(nullptr), 
+ISRContainer::ISRContainer(const IndexBlob *_indexPtr) : ISR(_indexPtr), contained(nullptr), excluded(nullptr), 
     countContained(0), countExcluded(0) {} 

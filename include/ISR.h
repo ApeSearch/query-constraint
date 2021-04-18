@@ -10,7 +10,7 @@
 #include <utility>
 #include <iostream>
 #include "../libraries/AS/include/AS/string.h"
-#include "IndexHT.h"
+#include "Index.h"
 
 class ListIterator;
 
@@ -19,7 +19,7 @@ class ISR //fix inheritance to be logical, remove duplicate code and member vari
 
     public:
         ISR();
-        ISR(IndexHT *_indexPtr);
+        ISR(const IndexBlob *_indexPtr);
         virtual ~ISR() {
         }
 
@@ -35,19 +35,17 @@ class ISR //fix inheritance to be logical, remove duplicate code and member vari
 
         virtual void Flatten(APESEARCH::vector<ISR *> &flattened) = 0;
 
-        IndexHT *indexPtr;
+        const IndexBlob *indexPtr;
     };
 
 class ISRWord : public ISR
     {
     public:
         ISRWord();
-        ISRWord(PostingList * _posts, IndexHT *indexPtr, APESEARCH::string word);
-        ISRWord(PostingList * _posts, IndexHT *_indexPtr, APESEARCH::string _word, Location _start);
-        ISRWord(ListIterator * plIterator);
+        ISRWord(ListIterator * plIterator, const IndexBlob *indexPtr, APESEARCH::string word);
 
         ~ISRWord() {
-
+            delete posts;
         }
 
         unsigned GetDocumentCount( );
@@ -73,9 +71,9 @@ class ISRWord : public ISR
             }
 
         APESEARCH::string word;
-        PostingList* posts;
+        ListIterator * posts;
         Location startLocation, endLocation;
-        ListIterator* plItr;
+
         unsigned postIndex;
     };
 
@@ -83,7 +81,7 @@ class ISREndDoc : public ISRWord
     {
     public:
         ISREndDoc();
-        ISREndDoc(PostingList* _posts, IndexHT *indexPtr);
+        ISREndDoc(ListIterator * _posts, const IndexBlob *indexPtr);
         ISREndDoc(ListIterator * plIterator);
 
         unsigned GetDocumentLength( );
@@ -107,7 +105,7 @@ class ISROr : public ISR
     {
         public:
             ISROr();
-            ISROr(IndexHT *_indexPtr);
+            ISROr(const IndexBlob *_indexPtr);
             ~ISROr() {
                 for (int i = 0; i < numTerms; ++i) {
                     delete terms[i];
@@ -170,7 +168,7 @@ class ISRAnd : public ISR
     {
         public:
             ISRAnd();
-            ISRAnd(IndexHT *_indexPtr);
+            ISRAnd(const IndexBlob *_indexPtr);
             ~ISRAnd() {
                 for (int i = 0; i < numTerms; ++i) {
                     delete terms[i];
@@ -233,7 +231,7 @@ class ISRPhrase : public ISR
     {
     public:
         ISRPhrase();
-        ISRPhrase(IndexHT *_indexPtr);
+        ISRPhrase(const IndexBlob *_indexPtr);
         ~ISRPhrase() {
             for (int i = 0; i < numTerms; ++i) {
                 delete terms[i];
@@ -301,7 +299,7 @@ class ISRContainer : public ISR
     {
     public:
         ISRContainer();
-        ISRContainer(IndexHT *_indexPtr);
+        ISRContainer(const IndexBlob *_indexPtr);
         ~ISRContainer() {
             for (int i = 0; i < countContained; ++i) {
                 delete contained[i];

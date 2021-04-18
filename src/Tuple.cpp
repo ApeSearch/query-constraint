@@ -17,9 +17,9 @@ SearchWord::SearchWord(APESEARCH::string _word) : Tuple(), word(_word) {}
 
 SearchWord::~SearchWord() {}
 
-ISR* SearchWord::Compile(IndexHT *indexPtr) {
+ISR* SearchWord::Compile(const IndexBlob *indexPtr) {
     // TODO: Get SearchWord ISR from index
-    return indexPtr->getWordISR(word); 
+    return indexPtr->getWordISR(indexPtr, word); 
 }
 
 // End SearchWord
@@ -28,7 +28,7 @@ UnarySimpleConstraint::UnarySimpleConstraint(Tuple* tup) : Tuple(), op(), actual
 
 UnarySimpleConstraint::~UnarySimpleConstraint() {}
 
-ISR* UnarySimpleConstraint::Compile(IndexHT *indexPtr) {
+ISR* UnarySimpleConstraint::Compile(const IndexBlob *indexPtr) {
     ISRContainer* containerISR = new ISRContainer(indexPtr);
 
     ISROr *compiled = (ISROr *) actualConstraint->Compile(indexPtr);
@@ -59,7 +59,7 @@ NestedConstraint::NestedConstraint(Tuple* tup): Tuple(), constraint(tup) {}
 
 NestedConstraint::~NestedConstraint() {}
 
-ISR* NestedConstraint::Compile(IndexHT *indexPtr) {
+ISR* NestedConstraint::Compile(const IndexBlob *indexPtr) {
     ISRContainer* containerISR = new ISRContainer(indexPtr);
 
     

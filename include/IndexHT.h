@@ -144,8 +144,8 @@ class IndexHT
 
         uint32_t BytesRequired();
 
-        ISRWord *getWordISR ( APESEARCH::string word );
-        ISREndDoc *getEndDocISR ( );
+        // ISRWord *getWordISR ( APESEARCH::string word );
+        // ISREndDoc *getEndDocISR ( );
         
         hash::HashTable<APESEARCH::string, PostingList *> dict;
         APESEARCH::vector<APESEARCH::string> urls;

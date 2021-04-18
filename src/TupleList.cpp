@@ -4,7 +4,7 @@
 
 using namespace query;
 
-ISR* compileHelper(ISRAnd* toCompile, Tuple* top, IndexHT* indexPtr);
+ISR* compileHelper(ISRAnd* toCompile, query::Tuple* top, const IndexBlob* indexPtr);
 
 TupleList::TupleList(): Top(nullptr), Bottom(nullptr) {}
 
@@ -23,7 +23,7 @@ void TupleList::Empty()
         Bottom = Top = nullptr;
     }
 
-void TupleList::Append(Tuple* t)
+void TupleList::Append(query::Tuple* t)
     {
         // t->next = nullptr;
         if(!Top){
@@ -42,7 +42,7 @@ OrExpression::~OrExpression() {
 }
 
 // OR Compiler
-ISR* OrExpression::Compile(IndexHT *indexPtr) 
+ISR* OrExpression::Compile(const IndexBlob *indexPtr) 
     {
     ISROr* orISR = new ISROr(indexPtr);
     return (ISROr *) compileHelper((ISRAnd *) orISR, Top, indexPtr);
@@ -51,7 +51,7 @@ ISR* OrExpression::Compile(IndexHT *indexPtr)
 AndExpression::AndExpression() : TupleList() {}
 
 // AND Compiler
-ISR* AndExpression::Compile(IndexHT *indexPtr) {
+ISR* AndExpression::Compile(const IndexBlob *indexPtr) {
     ISRAnd* andISR = new ISRAnd(indexPtr);  
     return (ISRAnd *) compileHelper(andISR, Top, indexPtr);
 } // end AndExpression::Compile()
@@ -59,13 +59,13 @@ ISR* AndExpression::Compile(IndexHT *indexPtr) {
 Phrase::Phrase() : TupleList() {}
 
 // Phrase Compiler
-ISR* Phrase::Compile(IndexHT *indexPtr) {
+ISR* Phrase::Compile(const IndexBlob *indexPtr) {
     ISRPhrase* phraseISR = new ISRPhrase(indexPtr);   
     return (ISRPhrase *) compileHelper((ISRAnd *) phraseISR, Top, indexPtr);
 }
 
-ISR* compileHelper(ISRAnd* toCompile, Tuple* top, IndexHT* indexPtr) {
-    Tuple* curr = top;
+ISR* compileHelper(ISRAnd* toCompile, query::Tuple* top, const IndexBlob* indexPtr) {
+    query::Tuple* curr = top;
     while (curr != nullptr)
         {
             toCompile->numTerms++;

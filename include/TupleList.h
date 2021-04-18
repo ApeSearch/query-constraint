@@ -24,19 +24,19 @@ namespace query {
         public:
             OrExpression();
             ~OrExpression();
-            ISR* Compile(IndexHT *indexPtr);
+            ISR* Compile(const IndexBlob *indexPtr);
     };
 
     class AndExpression : public TupleList {
         public:
             AndExpression();
-            ISR* Compile(IndexHT *indexPtr);
+            ISR* Compile(const IndexBlob *indexPtr);
     };
 
     class Phrase : public TupleList {
         public:
             Phrase();
-            ISR* Compile(IndexHT *indexPtr);
+            ISR* Compile(const IndexBlob *indexPtr);
     };
 
 }
