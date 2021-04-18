@@ -4,6 +4,7 @@
 #include "../libraries/AS/include/AS/string.h"
 #include "../libraries/AS/include/AS/vector.h"
 #include "../libraries/AS/include/AS/listdir.h"
+#include "../libraries/AS/include/AS/unique_ptr.h"
 #include "../libraries/HashTable/include/HashTable/HashBlob.h"
 #include "../libraries/AS/include/AS/algorithms.h"
 #include "IndexHT.h"
@@ -132,15 +133,16 @@ class SerializedPostingList
 
 class ListIterator {
     public:
-        ListIterator(const SerializedPostingList * pl_): pl(pl_), curPost(0, 0), prevLoc(0){
+        ListIterator(const SerializedPostingList * pl_): pl(pl_), curPost(nullptr), prevLoc(0){
             assert(pl_ != nullptr);
             plPtr = (uint8_t * ) &pl->Key + strlen(pl->Key) + 1;
             startOfDeltas = (uint8_t * ) &pl->Key + strlen(pl->Key) + 1;
         }
 
-        Post& Seek(Location l){
-
-            assert(curPost.loc < l);
+        Post* Seek(Location l){
+            if(curPost.get())
+                assert(curPost.get()->loc< l);
+            
             uint8_t highBit = 31 - __builtin_clz(l >> 8);
 
             assert(highBit < 24);
@@ -152,36 +154,40 @@ class ListIterator {
             size_t prevOffset = decodeDelta(plPtr); //difference of curLoc - prevLoc, can calculate prevLoc
             size_t tData = decodeDelta(plPtr);
 
-            curPost = Post(pl->syncTable[highBit].absoluteLoc, tData);
+            curPost = APESEARCH::unique_ptr<Post>(new Post(pl->syncTable[highBit].absoluteLoc, tData));
             prevLoc = pl->syncTable[highBit].absoluteLoc - prevOffset;
             
 
-            while(curPost.tData != NullPost && curPost.loc < l) Next();
+            while(curPost.get()->tData != NullPost && curPost.get()->loc < l) Next();
 
-            return curPost;
+            return curPost.get();
         }
 
-        Post& Next(){
-            prevLoc = curPost.loc;
+        Post* Next(){
+
+            if(curPost.get())
+                prevLoc = curPost.get()->loc;
+            else
+                prevLoc = 0;
 
             if(plPtr >= (uint8_t *) pl + pl->bytesOfPostingList)
-                curPost = Post(0, NullPost); //end of posting list
+                curPost = APESEARCH::unique_ptr<Post>(new Post(0, NullPost)); //end of posting list
             
             else{
                 Location loc = prevLoc + decodeDelta(plPtr);
                 size_t tData = decodeDelta(plPtr);
-
-                curPost = Post(loc, tData);
+            
+                curPost = APESEARCH::unique_ptr<Post>(new Post(loc, tData));
             }
 
-            return curPost;
+            return curPost.get();
         }
 
         const SerializedPostingList * pl;
 
         uint8_t* startOfDeltas;
         uint8_t* plPtr;
-        Post curPost;
+        APESEARCH::unique_ptr<Post> curPost;
 
         Location prevLoc;
 

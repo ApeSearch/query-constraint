@@ -209,15 +209,15 @@ TEST(sync_table){
 
     ListIterator* itr = new ListIterator(pl);
 
-    Post p = itr->Seek(3012);
+    Post* p = itr->Seek(3012);
 
-    assert(p.loc == 3013);
+    assert(p->loc == 3013);
     p = itr->Next();
-    assert(p.loc == 3021);
+    assert(p->loc == 3021);
 
     p = itr->Seek(1000000000);
 
-    assert(p.tData == NullPost);
+    assert(p->tData == NullPost);
 
     delete itr;
     
