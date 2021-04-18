@@ -36,7 +36,7 @@ TEST(postingList_seek)
     ASSERT_EQUAL(notFound, nullptr);
     }
 
-/*
+
 TEST(build_with_file){
     const char *filename = "./tests/indexFiles/indexFile1.txt";
 
@@ -68,7 +68,7 @@ TEST(build_with_file){
         }
         std::cout << std::endl;
         itr++;
-    }
+    }*/
     
     entry4->value->posts.push_back(new WordPost(1000000, WordAttributeNormal));
     size_t bytesRequired = parser.index->BytesRequired();
@@ -82,7 +82,7 @@ TEST(build_with_file){
 
     std::cout << "PASS" << std::endl;
 
-}*/
+}
 
 
 TEST(basic_encode_deltas_bytes){
@@ -218,11 +218,26 @@ TEST(sync_table){
 
     p = itr->Seek(1000000000);
 
-    assert(p->tData == NullPost);
+    assert(p == nullptr);
 
     delete itr;
     
 }
 
+
+TEST(find_urls){
+    // char const *filename = "./tests/indexChunks/chunk0.ape";
+    char const *filename = "./tests/testIndexBlobLarge.txt";
+
+    IndexFile hashFile (filename);
+    const IndexBlob* blob = hashFile.Blob();
+
+    auto urls = blob->getUrls();
+
+    const char * c = (char *) blob + blob->VectorStart;
+
+    while(c < (char *) blob + blob->BlobSize)
+        printf("%c", c);
+}
 
 TEST_MAIN();

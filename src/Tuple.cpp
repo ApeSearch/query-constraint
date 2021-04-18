@@ -19,7 +19,7 @@ SearchWord::~SearchWord() {}
 
 ISR* SearchWord::Compile(const IndexBlob *indexPtr) {
     // TODO: Get SearchWord ISR from index
-    return indexPtr->getWordISR(indexPtr, word); 
+    return indexPtr->getWordISR(word); 
 }
 
 // End SearchWord

@@ -156,16 +156,6 @@ Post *PostingList::Seek(Location l) {
     return posts[index];
 }
 
-// ISRWord* IndexHT::getWordISR ( APESEARCH::string word ) {
-//     hash::Tuple<APESEARCH::string, PostingList *> * entry = dict.Find(word);
-//     return entry ? new ISRWord(entry->value, this, word) : nullptr;
-// }
-
-// ISREndDoc* IndexHT::getEndDocISR ( ) {
-//     hash::Tuple<APESEARCH::string, PostingList *> * entry = dict.Find(APESEARCH::string("%"));
-//     return new ISREndDoc(entry->value, this);
-// }
-
 uint32_t IndexHT::BytesRequired() {
 
     if(calcBytes)

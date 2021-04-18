@@ -125,17 +125,17 @@ void printFlattenedISR(ISR* tree, Location documentEnd) {
 void checkDocuments(APESEARCH::vector<ISR *> &trees, APESEARCH::vector<APESEARCH::vector<int>>& expected, const IndexBlob *index, bool verbose) {
     
     for (int i = 0; i < trees.size(); ++i) {
-        APESEARCH::unique_ptr<ISREndDoc> docEnd = APESEARCH::unique_ptr<ISREndDoc>(index->getEndDocISR(index));
+        APESEARCH::unique_ptr<ISREndDoc> docEnd = APESEARCH::unique_ptr<ISREndDoc>(index->getEndDocISR());
         
-        // cout << "Query " << i + 1 << endl;
+        cout << "Query " << i + 1 << endl;
         Post * post = trees[i]->NextDocument(docEnd.get());
 
         int counter = 0;
         while (post) {
             docEnd->Seek(post->loc, docEnd.get());
-            // cout << post->loc << endl;
+            cout << post->loc << endl;
 
-            printFlattenedISR(trees[i], docEnd->posts->curPost->loc);
+            // printFlattenedISR(trees[i], docEnd->posts->curPost->loc);
 
             if (counter < expected[i].size()) {
                 ASSERT_EQUAL(post->loc, expected[i][counter]);
@@ -153,200 +153,233 @@ void checkDocuments(APESEARCH::vector<ISR *> &trees, APESEARCH::vector<APESEARCH
     }
 }
 
-TEST(ISRword) {
-    char const *filename = "./tests/indexChunk.ape";
-    IndexFile hashFile (filename);
-    const IndexBlob* blob = hashFile.Blob();
+// TEST(ISRword) {
+//     char const *filename = "./tests/indexChunk.ape";
+//     IndexFile hashFile (filename);
+//     const IndexBlob* blob = hashFile.Blob();
 
-    APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("pig"); 
-    APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("and"); 
-    APESEARCH::unique_ptr<query::Tuple> constraint3 = buildParseTree("do"); 
-    APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("test");
+//     APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("pig"); 
+//     APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("and"); 
+//     APESEARCH::unique_ptr<query::Tuple> constraint3 = buildParseTree("do"); 
+//     APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("test");
 
-    APESEARCH::vector<ISR *> trees = {
-        constraint1->Compile(blob),
-        constraint2->Compile(blob),
-        constraint3->Compile(blob),
-        constraint4->Compile(blob)
-    };
+//     APESEARCH::vector<ISR *> trees = {
+//         constraint1->Compile(blob),
+//         constraint2->Compile(blob),
+//         constraint3->Compile(blob),
+//         constraint4->Compile(blob)
+//     };
 
-    APESEARCH::vector<APESEARCH::vector<int>> expected = {
-        {0},
-        {5, 14},
-        {},
-        {15}
-    };
+//     APESEARCH::vector<APESEARCH::vector<int>> expected = {
+//         {0},
+//         {5, 14},
+//         {},
+//         {15}
+//     };
 
-    checkDocuments(trees, expected, blob, false);
-}
+//     checkDocuments(trees, expected, blob, false);
+// }
 
-TEST(ISRand) {
-    char const *filename = "./tests/indexChunk.ape";
-    IndexFile hashFile (filename);
-    const IndexBlob* blob = hashFile.Blob();
+// TEST(ISRand) {
+//     char const *filename = "./tests/indexChunk.ape";
+//     IndexFile hashFile (filename);
+//     const IndexBlob* blob = hashFile.Blob();
 
-    APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("pig animals"); 
-    APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("and is"); 
-    APESEARCH::unique_ptr<query::Tuple> constraint3 = buildParseTree("what the do");
-    APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("test is");
-    APESEARCH::unique_ptr<query::Tuple> constraint5 = buildParseTree("the cow");
+//     APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("pig animals"); 
+//     APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("and is"); 
+//     APESEARCH::unique_ptr<query::Tuple> constraint3 = buildParseTree("what the do");
+//     APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("test is");
+//     APESEARCH::unique_ptr<query::Tuple> constraint5 = buildParseTree("the cow");
     
 
-    APESEARCH::vector<ISR *> trees = {
-        constraint1->Compile(blob),
-        constraint2->Compile(blob),
-        constraint3->Compile(blob),
-        constraint4->Compile(blob),
-        constraint5->Compile(blob)
-    };
+//     APESEARCH::vector<ISR *> trees = {
+//         constraint1->Compile(blob),
+//         constraint2->Compile(blob),
+//         constraint3->Compile(blob),
+//         constraint4->Compile(blob),
+//         constraint5->Compile(blob)
+//     };
 
-    APESEARCH::vector<APESEARCH::vector<int>> expected = {
-        {0},
-        {12},
-        {},
-        {12},
-        {1}
-    };
+//     APESEARCH::vector<APESEARCH::vector<int>> expected = {
+//         {0},
+//         {12},
+//         {},
+//         {12},
+//         {1}
+//     };
 
-    checkDocuments(trees, expected, blob, false);
-}
+//     checkDocuments(trees, expected, blob, false);
+// }
 
-TEST(ISRand_or) {
-    char const *filename = "./tests/indexChunk.ape";
-    IndexFile hashFile (filename);
-    const IndexBlob* blob = hashFile.Blob();
+// TEST(ISRand_or) {
+//     char const *filename = "./tests/indexChunk.ape";
+//     IndexFile hashFile (filename);
+//     const IndexBlob* blob = hashFile.Blob();
     
-    APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("pig animals | test"); // doc1
-    APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("donkey cow | test is"); // doc2
-    APESEARCH::unique_ptr<query::Tuple> constraint3 = buildParseTree("what the do || yooo"); // none
-    APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("what | it | do"); // none
+//     APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("pig animals | test"); // doc1
+//     APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("donkey cow | test is"); // doc2
+//     APESEARCH::unique_ptr<query::Tuple> constraint3 = buildParseTree("what the do || yooo"); // none
+//     APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("what | it | do"); // none
 
-    APESEARCH::vector<ISR *> trees = {
-        constraint1->Compile(blob),
-        constraint2->Compile(blob),
-        constraint3->Compile(blob),
-        constraint4->Compile(blob)
-    };
+//     APESEARCH::vector<ISR *> trees = {
+//         constraint1->Compile(blob),
+//         constraint2->Compile(blob),
+//         constraint3->Compile(blob),
+//         constraint4->Compile(blob)
+//     };
 
-    APESEARCH::vector<APESEARCH::vector<int>> expected = {
-        {0, 15},
-        {12},
-        {},
-        {}
-    };
+//     APESEARCH::vector<APESEARCH::vector<int>> expected = {
+//         {0, 15},
+//         {12},
+//         {},
+//         {}
+//     };
 
-    checkDocuments(trees, expected, blob, false);
-}
+//     checkDocuments(trees, expected, blob, false);
+// }
 
-TEST(ISRand_phrase) {
-    char const *filename = "./tests/indexChunk.ape";
+// TEST(ISRand_phrase) {
+//     char const *filename = "./tests/indexChunk.ape";
+//     IndexFile hashFile (filename);
+//     const IndexBlob* blob = hashFile.Blob();
+
+//     APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("test \"the cow\""); // none
+//     APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("pig \"the cow\""); // doc1
+//     APESEARCH::unique_ptr<query::Tuple> constraint3 = buildParseTree("and \"and test\""); // none
+//     APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("\"the pig\" \"the cow\""); // none
+
+//     APESEARCH::vector<ISR *> trees = {
+//         constraint1->Compile(blob),
+//         constraint2->Compile(blob),
+//         constraint3->Compile(blob),
+//         constraint4->Compile(blob)
+//     };
+
+//     APESEARCH::vector<APESEARCH::vector<int>> expected = {
+//         {},
+//         {0},
+//         {14},
+//         {1}
+//     };
+
+//     checkDocuments(trees, expected, blob, false);
+// }
+
+// TEST(ISRor) {
+//     char const *filename = "./tests/indexChunk.ape";
+//     IndexFile hashFile (filename);
+//     const IndexBlob* blob = hashFile.Blob();
+
+//     APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("this | test"); // doc2
+//     APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("the | this"); // doc1, doc2
+//     APESEARCH::unique_ptr<query::Tuple> constraint3 = buildParseTree("what | the | do"); // doc1
+//     APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("what | it | do"); // none
+
+//     APESEARCH::vector<ISR *> trees = {
+//         constraint1->Compile(blob),
+//         constraint2->Compile(blob),
+//         constraint3->Compile(blob),
+//         constraint4->Compile(blob)
+//     };
+
+//     APESEARCH::vector<APESEARCH::vector<int>> expected = {
+//         {11},
+//         {1, 11},
+//         {1},
+//         {}
+//     };
+
+//     checkDocuments(trees, expected, blob, false);
+// }
+
+// TEST(ISRor_phrase) {
+//     char const *filename = "./tests/indexChunk.ape";
+//     IndexFile hashFile (filename);
+//     const IndexBlob* blob = hashFile.Blob();
+
+//     APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("\"the pig\" | test");
+//     APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("\"the test\" | test");
+//     APESEARCH::unique_ptr<query::Tuple> constraint3 = buildParseTree("\"the pig\" | \"the test\"");
+//     APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("\"hello there\" | \"the test\"");
+
+//     APESEARCH::vector<ISR *> trees = {
+//         constraint1->Compile(blob),
+//         constraint2->Compile(blob),
+//         constraint3->Compile(blob),
+//         constraint4->Compile(blob)
+//     };
+
+//     APESEARCH::vector<APESEARCH::vector<int>> expected = {
+//         {3, 15},
+//         {15},
+//         {3},
+//         {}
+//     };
+
+//     checkDocuments(trees, expected, blob, false);
+// }
+
+// TEST(ISRphrase) {
+//     char const *filename = "./tests/indexChunk.ape";
+//     IndexFile hashFile (filename);
+//     const IndexBlob* blob = hashFile.Blob();
+
+//     APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("\"the\""); 
+//     APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("\"the and pig\""); 
+//     APESEARCH::unique_ptr<query::Tuple> constraint3 = buildParseTree("\"and all of the animals\""); 
+//     APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("\"the pig\""); 
+//     APESEARCH::unique_ptr<query::Tuple> constraint5 = buildParseTree("\"a and\""); 
+//     APESEARCH::unique_ptr<query::Tuple> constraint6 = buildParseTree("\"and\""); 
+
+//     APESEARCH::vector<ISR *> trees = {
+//         constraint1->Compile(blob),
+//         constraint2->Compile(blob),
+//         constraint3->Compile(blob),
+//         constraint4->Compile(blob),
+//         constraint5->Compile(blob),
+//         constraint6->Compile(blob)
+//     };
+
+//     APESEARCH::vector<APESEARCH::vector<int>> expected = {
+//         {1},
+//         {},
+//         {5},
+//         {3},
+//         {13},
+//         {5, 14}
+//     };
+
+//     checkDocuments(trees, expected, blob, false);
+// }
+
+TEST(ISRphrase_2) {
+    char const *filename = "./tests/testIndexBlobLarge.txt";
     IndexFile hashFile (filename);
     const IndexBlob* blob = hashFile.Blob();
 
-    APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("test \"the cow\""); // none
-    APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("pig \"the cow\""); // doc1
-    APESEARCH::unique_ptr<query::Tuple> constraint3 = buildParseTree("and \"and test\""); // none
-    APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("\"the pig\" \"the cow\""); // none
+    APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("\"york city\""); 
+    // APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("\"the and pig\""); 
+    // APESEARCH::unique_ptr<query::Tuple> constraint3 = buildParseTree("\"and all of the animals\""); 
+    // APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("\"the pig\""); 
+    // APESEARCH::unique_ptr<query::Tuple> constraint5 = buildParseTree("\"a and\""); 
+    // APESEARCH::unique_ptr<query::Tuple> constraint6 = buildParseTree("\"and\""); 
 
     APESEARCH::vector<ISR *> trees = {
         constraint1->Compile(blob),
-        constraint2->Compile(blob),
-        constraint3->Compile(blob),
-        constraint4->Compile(blob)
+        // constraint2->Compile(blob),
+        // constraint3->Compile(blob),
+        // constraint4->Compile(blob),
+        // constraint5->Compile(blob),
+        // constraint6->Compile(blob)
     };
 
     APESEARCH::vector<APESEARCH::vector<int>> expected = {
-        {},
-        {0},
-        {14},
-        {1}
-    };
-
-    checkDocuments(trees, expected, blob, false);
-}
-
-TEST(ISRor) {
-    char const *filename = "./tests/indexChunk.ape";
-    IndexFile hashFile (filename);
-    const IndexBlob* blob = hashFile.Blob();
-
-    APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("this | test"); // doc2
-    APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("the | this"); // doc1, doc2
-    APESEARCH::unique_ptr<query::Tuple> constraint3 = buildParseTree("what | the | do"); // doc1
-    APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("what | it | do"); // none
-
-    APESEARCH::vector<ISR *> trees = {
-        constraint1->Compile(blob),
-        constraint2->Compile(blob),
-        constraint3->Compile(blob),
-        constraint4->Compile(blob)
-    };
-
-    APESEARCH::vector<APESEARCH::vector<int>> expected = {
-        {11},
-        {1, 11},
         {1},
-        {}
-    };
-
-    checkDocuments(trees, expected, blob, false);
-}
-
-TEST(ISRor_phrase) {
-    char const *filename = "./tests/indexChunk.ape";
-    IndexFile hashFile (filename);
-    const IndexBlob* blob = hashFile.Blob();
-
-    APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("\"the pig\" | test");
-    APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("\"the test\" | test");
-    APESEARCH::unique_ptr<query::Tuple> constraint3 = buildParseTree("\"the pig\" | \"the test\"");
-    APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("\"hello there\" | \"the test\"");
-
-    APESEARCH::vector<ISR *> trees = {
-        constraint1->Compile(blob),
-        constraint2->Compile(blob),
-        constraint3->Compile(blob),
-        constraint4->Compile(blob)
-    };
-
-    APESEARCH::vector<APESEARCH::vector<int>> expected = {
-        {3, 15},
-        {15},
-        {3},
-        {}
-    };
-
-    checkDocuments(trees, expected, blob, false);
-}
-
-TEST(ISRphrase) {
-    char const *filename = "./tests/indexChunk.ape";
-    IndexFile hashFile (filename);
-    const IndexBlob* blob = hashFile.Blob();
-
-    APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("\"the\""); 
-    APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("\"the and pig\""); 
-    APESEARCH::unique_ptr<query::Tuple> constraint3 = buildParseTree("\"and all of the animals\""); 
-    APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("\"the pig\""); 
-    APESEARCH::unique_ptr<query::Tuple> constraint5 = buildParseTree("\"a and\""); 
-    APESEARCH::unique_ptr<query::Tuple> constraint6 = buildParseTree("\"and\""); 
-
-    APESEARCH::vector<ISR *> trees = {
-        constraint1->Compile(blob),
-        constraint2->Compile(blob),
-        constraint3->Compile(blob),
-        constraint4->Compile(blob),
-        constraint5->Compile(blob),
-        constraint6->Compile(blob)
-    };
-
-    APESEARCH::vector<APESEARCH::vector<int>> expected = {
-        {1},
-        {},
-        {5},
-        {3},
-        {13},
-        {5, 14}
+        // {},
+        // {5},
+        // {3},
+        // {13},
+        // {5, 14}
     };
 
     checkDocuments(trees, expected, blob, false);

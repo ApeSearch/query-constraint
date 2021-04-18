@@ -31,7 +31,5 @@
 *.out
 *.app
 
-*.txt
-
 # Executables
 tests/bin/*

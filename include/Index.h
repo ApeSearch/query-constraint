@@ -143,13 +143,7 @@ class ListIterator {
             startOfDeltas = (uint8_t * ) &pl->Key + strlen(pl->Key) + 1;
         }
 
-        Post* Seek(Location l){
-            // this assert was causing failures, commented it out and it works
-            // I don't think it's right to check, as sometimes you want to seek pretty far after
-            // whatever the current post's location may be 
-
-            // if(curPost.get())
-            //     assert(curPost.get()->loc < l);
+        Post* Seek(Location l) {
             
             uint8_t highBit = 31 - __builtin_clz(l >> 8);
 
@@ -166,27 +160,24 @@ class ListIterator {
             prevLoc = pl->syncTable[highBit].absoluteLoc - prevOffset;
             
 
-            while(curPost.get()->tData != NullPost && curPost.get()->loc < l) Next();
-            if (curPost.get()->tData == NullPost) {
-                return nullptr;
-            }
+            while(curPost.get() != nullptr && curPost.get()->loc < l) Next();
 
             return curPost.get();
         }
 
-        Post* Next(){
+        Post* Next() {
 
             if(curPost.get())
                 prevLoc = curPost.get()->loc;
             else
                 prevLoc = 0;
 
-            if(plPtr >= (uint8_t *) pl + pl->bytesOfPostingList)
-                curPost = APESEARCH::unique_ptr<Post>(new Post(0, NullPost)); //end of posting list
+            if(plPtr >= (uint8_t *) pl + pl->bytesOfPostingList) //reached end of PL
+                curPost = nullptr;
             
             else{
-                Location loc = prevLoc + decodeDelta(plPtr);
-                size_t tData = decodeDelta(plPtr);
+                Location loc = prevLoc + decodeDelta(plPtr); //decode delta bytes from curPointer, returns actual deltas
+                size_t tData = decodeDelta(plPtr); //get attribute, urlIndex for endDocPOst
             
                 curPost = APESEARCH::unique_ptr<Post>(new Post(loc, tData));
             }
@@ -239,7 +230,7 @@ class IndexBlob
         BlobSize,
         NumOfDocs,
         MaxAbsolLoc,
-        VectorStart, // Byte offset that points to beginning of vector array
+        VectorStart, // Byte offset that points to beginning of urls
         NumberOfBuckets,
         Buckets[ Unknown ];
 
@@ -275,6 +266,7 @@ class IndexBlob
 
     static IndexBlob *Write( IndexBlob *ib, uint32_t bytes,
             const IndexHT *indexHT ) {
+
             ib->MagicNumber = IndexBlob::decidedMagicNum;
             ib->Version = IndexBlob::version;
 
@@ -286,8 +278,6 @@ class IndexBlob
             ib->NumOfDocs = entry->value->posts.size();
             
             memset( ib->Buckets, 0, sizeof( uint32_t ) * ib->NumberOfBuckets );
-            
-            ib->VectorStart = reinterpret_cast< IndexBlob * >( ib->Buckets ) - ib;
 
             //points to beginning of posting lists
             char *serialPtr =reinterpret_cast< char *>( ib->Buckets + indexHT->dict.table_size() );
@@ -308,8 +298,12 @@ class IndexBlob
                 serialPtr += sizeof( uint32_t ); // Signify end of a chain
             }
 
-            for ( size_t i = 0; i < indexHT->urls.size(); ++i )
+            ib->VectorStart = reinterpret_cast< IndexBlob * >( serialPtr ) - ib;
+
+            for ( size_t i = 0; i < indexHT->urls.size(); ++i ){
+                std::cout << indexHT->urls[i] << std::endl;
                 serialPtr = strcpy( serialPtr, indexHT->urls[ i ].cstr( ) ) + indexHT->urls[ i ].size( ) + 1;
+            }
                 
         assert( serialPtr == end );
     }
@@ -329,8 +323,10 @@ class IndexBlob
                Version == IndexBlob::version;
          }
 
-    ISRWord *getWordISR ( const IndexBlob* blob, APESEARCH::string word ) const;
-    ISREndDoc *getEndDocISR ( const IndexBlob* blob ) const;
+    APESEARCH::vector<APESEARCH::string> getUrls( ) const;
+
+    ISRWord *getWordISR ( APESEARCH::string word ) const;
+    ISREndDoc *getEndDocISR ( ) const;
     };
 
 
