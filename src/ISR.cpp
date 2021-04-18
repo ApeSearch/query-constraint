@@ -108,14 +108,14 @@ ISROr::ISROr(const IndexBlob *_indexPtr) : ISR(_indexPtr), terms(nullptr), numTe
 
 Post * ISROr::Seek( Location target, ISREndDoc* docEnd )
     {
-    foundPosts = {};
+    // foundPosts = {};
     Location minLoc = (Location)-1;
     Post *nearestPost = nullptr;
     for (int i = 0; i < numTerms; ++i) {
         if (!terms[i]) continue;
         Post * foundPost = terms[i]->Seek(target, docEnd);
         if (foundPost) {
-            foundPosts.push_back(i);
+            // foundPosts.push_back(i);
             if (foundPost->loc < minLoc) {
                 nearestPost = foundPost;
                 nearestTerm = i;
@@ -193,7 +193,7 @@ Post * ISRAnd::Seek( Location target, ISREndDoc* docEnd )
     nearestStartLocation = (Location) - 1;
     while (true) 
         {
-        foundPosts = {};
+        // foundPosts = {};
         // 2. Move the document end ISR to just past the furthest
         //    word, then calculate the document begin location.
         Post * enddocPost = docEnd->Seek(nearestEndLocation, docEnd);
@@ -208,7 +208,7 @@ Post * ISRAnd::Seek( Location target, ISREndDoc* docEnd )
             Post* foundPost = terms[i]->Seek(documentBegin, docEnd);
             if (foundPost) 
                 {
-                foundPosts.push_back(i);
+                // foundPosts.push_back(i);
                 if (foundPost->loc >= nearestEndLocation)
                     {
                     nearestEndLocation = foundPost->loc;
@@ -223,7 +223,7 @@ Post * ISRAnd::Seek( Location target, ISREndDoc* docEnd )
 
                 // 4. If any term is past the document end, return to
                 //    step 2.
-                if (foundPost->loc > docEnd->GetEndLocation() && (docEnd->GetStartLocation() != docEnd->GetEndLocation())) 
+                if (foundPost->loc > docEnd->GetEndLocation()) 
                     {
                     found = false;
                     break;
@@ -316,7 +316,7 @@ Post *ISRPhrase::Seek( Location target, ISREndDoc* docEnd )
         nearestStartLocation = (Location) - 1;
         while (true)
         {   
-            foundPosts = {};
+            // foundPosts = {};
             bool found = true;
             for (int i = 0; i < numTerms; ++i) {
                 if (!terms[i]) continue;
@@ -331,7 +331,7 @@ Post *ISRPhrase::Seek( Location target, ISREndDoc* docEnd )
                 }
                 if (found) 
                     {
-                    foundPosts.push_back(i);
+                    // foundPosts.push_back(i);
                     post = terms[i]->Seek(expectedLoc, docEnd);
                     if (!post)
                         return nullptr;

@@ -110,6 +110,18 @@ void printPhrase(query::TupleList* phrase) {
     cout << wordPtr->word << endl;
 }
 
+// Puts all the word ISRs belonging to an ISR tree into a vector
+// Prints each word, and the document end where this ISR was found 
+void printFlattenedISR(ISR* tree, Location documentEnd) {
+    APESEARCH::vector<ISR *> flattened;
+    tree->Flatten(flattened);
+
+    for (auto reader : flattened) {
+        cout << reader->GetNearestWord() << " ";
+    }
+    cout << " " << documentEnd << endl;
+}
+
 void checkDocuments(APESEARCH::vector<ISR *> &trees, APESEARCH::vector<APESEARCH::vector<int>>& expected, const IndexBlob *index, bool verbose) {
     
     for (int i = 0; i < trees.size(); ++i) {
@@ -121,15 +133,9 @@ void checkDocuments(APESEARCH::vector<ISR *> &trees, APESEARCH::vector<APESEARCH
         int counter = 0;
         while (post) {
             docEnd->Seek(post->loc, docEnd.get());
-            cout << post->loc << endl;
-            
-            // APESEARCH::vector<ISR *> flattened;
-            // trees[i]->Flatten(flattened);
+            // cout << post->loc << endl;
 
-            // for (auto reader : flattened) {
-            //     cout << reader->GetNearestWord() << " ";
-            // }
-            // cout << endl;
+            printFlattenedISR(trees[i], docEnd->posts->curPost->loc);
 
             if (counter < expected[i].size()) {
                 ASSERT_EQUAL(post->loc, expected[i][counter]);

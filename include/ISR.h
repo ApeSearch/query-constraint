@@ -142,23 +142,23 @@ class ISROr : public ISR
 
             void Flatten(APESEARCH::vector<ISR *> &flattened) 
                 {
-                for (unsigned i : foundPosts)
-                    {
-                    terms[i]->Flatten(flattened);
-                    }
-                // for (int i = 0; i < numTerms; ++i)
+                // for (unsigned i : foundPosts)
                 //     {
-                //     if (terms[i]) 
-                //         {
-                //         terms[i]->Flatten(flattened);
-                //         }
+                //     terms[i]->Flatten(flattened);
                 //     }
+                for (int i = 0; i < numTerms; ++i)
+                    {
+                    if (terms[i]) 
+                        {
+                        terms[i]->Flatten(flattened);
+                        }
+                    }
                 }
         
         private:
             Post * post;
 
-            APESEARCH::vector<unsigned> foundPosts;
+            // APESEARCH::vector<unsigned> foundPosts;
 
             unsigned nearestTerm;
             Location nearestStartLocation, nearestEndLocation;
@@ -205,23 +205,23 @@ class ISRAnd : public ISR
             
             void Flatten(APESEARCH::vector<ISR *> &flattened) 
                 {
-                for (unsigned i : foundPosts)
-                    {
-                    terms[i]->Flatten(flattened);
-                    }
-                // for (int i = 0; i < numTerms; ++i)
+                // for (unsigned i : foundPosts)
                 //     {
-                //     if (terms[i]) 
-                //         {
-                //         terms[i]->Flatten(flattened);
-                //         }
+                //     terms[i]->Flatten(flattened);
                 //     }
+                for (int i = 0; i < numTerms; ++i)
+                    {
+                    if (terms[i]) 
+                        {
+                        terms[i]->Flatten(flattened);
+                        }
+                    }
                 }
 
         private: 
             Post *post;
 
-            APESEARCH::vector<unsigned> foundPosts;
+            // APESEARCH::vector<unsigned> foundPosts;
 
             unsigned nearestTerm, farthestTerm;
             Location nearestStartLocation, nearestEndLocation;
@@ -272,24 +272,24 @@ class ISRPhrase : public ISR
 
         void Flatten(APESEARCH::vector<ISR *> &flattened) 
             {
-            for (unsigned i : foundPosts)
-                {
-                terms[i]->Flatten(flattened);
-                }
-            // for (int i = 0; i < numTerms; ++i)
+            // for (unsigned i : foundPosts)
             //     {
-            //     if (terms[i]) 
-            //         {
-            //         terms[i]->Flatten(flattened);
-            //         }
+            //     terms[i]->Flatten(flattened);
             //     }
+            for (int i = 0; i < numTerms; ++i)
+                {
+                if (terms[i]) 
+                    {
+                    terms[i]->Flatten(flattened);
+                    }
+                }
             }
             
 
     private: 
         Post * post;
 
-        APESEARCH::vector<unsigned> foundPosts;
+        // APESEARCH::vector<unsigned> foundPosts;
 
         unsigned nearestTerm, farthestTerm;
         Location nearestStartLocation, nearestEndLocation;
