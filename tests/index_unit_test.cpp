@@ -60,7 +60,7 @@ TEST(build_with_file){
     assert(entry3->value->posts[0]->loc == 689);
     assert(entry3->value->posts[1]->loc == 716);
 
-
+    /*
     while(itr != parser.index->dict.end()){
         std::cout << itr->key << std::endl;
         for(size_t i = 0; i < itr->value->posts.size(); ++i) {
@@ -68,7 +68,7 @@ TEST(build_with_file){
         }
         std::cout << std::endl;
         itr++;
-    }
+    }*/
     
     entry4->value->posts.push_back(new WordPost(1000000, WordAttributeNormal));
     size_t bytesRequired = parser.index->BytesRequired();

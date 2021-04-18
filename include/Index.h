@@ -130,14 +130,14 @@ class SerializedPostingList
 
 class ListIterator {
     public:
-        ListIterator(const SerializedPostingList * pl_): pl(pl_), curPost(0), prevLoc(0), offset(0){
+        ListIterator(const SerializedPostingList * pl_): pl(pl_), curPost(0, 0), prevLoc(0), offset(0){
             startOfDeltas = (uint8_t * ) &pl->Key + strlen(pl->Key) + 1;
         }
 
         Post& Seek(Location l){
-            assert(curPost->loc < l);
+            assert(curPost.loc < l);
 
-            while(curPost->loc < l){
+            while(curPost.loc < l){
                 Next();
             }
 
@@ -146,7 +146,7 @@ class ListIterator {
 
         Post& Next(){
             uint8_t * cur = startOfDeltas + offset;
-            prevLoc = curPost->loc;
+            prevLoc = curPost.loc;
 
             Location loc = decodeDelta(cur);
             size_t tData = decodeDelta(cur);
