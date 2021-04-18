@@ -77,14 +77,10 @@ class TokenStream {
 
         bool isSkippedChar (char a) {
             switch(a) {
-            case ' ':
-            case '.':
-            case ';':
-            case ',':
-            case '\t':
-            case '\n':
-            case '\r':
-            case '+':
+            case ' ':case '\t':case '\n':case '\r':case '.':case '!':case '?':
+            case ',':case ';':case ':':case '\'':
+            case '*': case '{': case '}': case '[': case ']':case '_':case '=':
+            case '#':case '$':case '%':case '^':case '~':case '`':case '/':
                return true;
             default:
                return false;

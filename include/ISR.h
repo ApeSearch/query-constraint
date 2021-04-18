@@ -260,10 +260,7 @@ class ISRPhrase : public ISR
 
         Post *Seek( Location target, ISREndDoc* docEnd ) override;
 
-        Post * Next( ISREndDoc* docEnd ) override
-            {
-            return Seek( nearestStartLocation + 1, docEnd );
-            }
+        Post * Next( ISREndDoc* docEnd ) override;
 
         APESEARCH::string GetNearestWord() override 
             {

@@ -189,19 +189,23 @@ TEST(ISRand) {
     APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("and is"); 
     APESEARCH::unique_ptr<query::Tuple> constraint3 = buildParseTree("what the do");
     APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("test is");
+    APESEARCH::unique_ptr<query::Tuple> constraint5 = buildParseTree("the cow");
+    
 
     APESEARCH::vector<ISR *> trees = {
         constraint1->Compile(blob),
         constraint2->Compile(blob),
         constraint3->Compile(blob),
-        constraint4->Compile(blob)
+        constraint4->Compile(blob),
+        constraint5->Compile(blob)
     };
 
     APESEARCH::vector<APESEARCH::vector<int>> expected = {
         {0},
         {12},
         {},
-        {12}
+        {12},
+        {1}
     };
 
     checkDocuments(trees, expected, blob, false);

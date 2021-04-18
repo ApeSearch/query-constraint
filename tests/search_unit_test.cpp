@@ -90,8 +90,10 @@ TEST(search_index) {
     Index search = Index(chunkDir);
 
     APESEARCH::string queryLine = buildQuery("the cow");
+    APESEARCH::string queryLine1 = buildQuery("\"the pig\"");
 
     search.searchIndexChunks(queryLine);
+    search.searchIndexChunks(queryLine1);
 }
 
 TEST_MAIN();

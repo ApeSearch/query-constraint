@@ -12,6 +12,8 @@
 #include "Tuple.h"
 #include "QueryParser.h"
 
+#include <iostream>
+using std::cout; using std::endl;
 
 //1. Calculate deltas and figure out how many bytes will need to represent each delta
 //2. Attribute
@@ -397,23 +399,7 @@ class Index {
         ~Index() {}
 
         // Given a search query, search the index chunks for matching documents and rank them
-        void searchIndexChunks(APESEARCH::string queryLine) {
-            for (int i = 0; i < chunkFileNames.size(); ++i) {
-                // Build the parse tree (done for every index chunk because the parse tree is deleted on Compile())
-                APESEARCH::unique_ptr<query::Tuple> parseTree = buildParseTree(queryLine); 
-                IndexFile chunkFile (chunkFileNames[i].cstr());
-                const IndexBlob* chunk = chunkFile.Blob();
-
-                APESEARCH::unique_ptr<ISR> compiledTree = APESEARCH::unique_ptr<ISR>(parseTree->Compile(chunk));
-
-                // solve constraint on index chunk using ISR tree
-                // for each matching document
-                    // isrTree.Seek(beginning of document) 
-                    // rank = rankerClass.getRank(isrTree)
-                    // struct RankStruct = {double rank, string documentURL};
-                    // top10<RankStruct>.insert(rank, matching document)
-            }
-        }
+        void searchIndexChunks(APESEARCH::string queryLine);
 
         APESEARCH::vector<APESEARCH::string> & getFiles() {
             return chunkFileNames;
