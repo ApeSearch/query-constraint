@@ -7,6 +7,7 @@
 #include "../libraries/HashTable/include/HashTable/HashBlob.h"
 #include "../libraries/AS/include/AS/algorithms.h"
 #include "IndexHT.h"
+#include "ISR.h"
 
 
 //1. Calculate deltas and figure out how many bytes will need to represent each delta
@@ -86,22 +87,23 @@ class SerializedPostingList
 
             memset(serialTuple->syncTable, 0, SYNCTABLESIZE * sizeof(uint32_t) * 2);
             
-            serialTuple->syncTable[0] = SyncEntry{ static_cast<uint32_t>(pl->posts[0]->loc), 0 };
+            serialTuple->syncTable[0] = SyncEntry{ static_cast<uint32_t>(pl->posts[0]->loc), 0 }; //1st post
             
             uint32_t absoluteLocation = 0, currentPost = 0;
             uint8_t nextHighBit = 1;
 
             for(uint32_t i = 0; i < pl->deltas.size();){ //i keeps track of byte offset from beg of posts
 
-                assert(currentPost < pl->posts.size());
-                absoluteLocation = pl->posts[currentPost++]->loc;
-                uint32_t prevOffset = i;
-                i += decodeDeltaIndex((uint8_t *) ptrAfterKey + i);
+                assert(currentPost < pl->posts.size()); //sanity check, if deltas still exist, then posts still exists
+
+                absoluteLocation = pl->posts[currentPost++]->loc; //keep track of absLoc
+                uint32_t prevOffset = i; //keep track of previous Delta Location, start of currentPost
+                i += decodeDeltaIndex((uint8_t *) ptrAfterKey + i); //byte offset in posting list
 
                 uint8_t leadingZeros = __builtin_clz(absoluteLocation >> 8); //Calculate highest bit, chop off last byte
                 assert(leadingZeros >= 8 );
 
-                uint8_t highBit = 31 - leadingZeros;
+                uint8_t highBit = 31 - leadingZeros; //calculate the highest bit based on leading 0s
 
                 while(highBit >= nextHighBit)
                     serialTuple->syncTable[nextHighBit++] = SyncEntry{ absoluteLocation, prevOffset };
@@ -130,47 +132,61 @@ class SerializedPostingList
 
 class ListIterator {
     public:
-        ListIterator(const SerializedPostingList * pl_): pl(pl_), curPost(0, 0), prevLoc(0), offset(0){
+        ListIterator(const SerializedPostingList * pl_): pl(pl_), curPost(0, 0), prevLoc(0){
+            plPtr = (uint8_t * ) &pl->Key + strlen(pl->Key) + 1;
             startOfDeltas = (uint8_t * ) &pl->Key + strlen(pl->Key) + 1;
         }
 
         Post& Seek(Location l){
-            assert(curPost.loc < l);
 
-            while(curPost.loc < l){
-                Next();
-            }
+            assert(curPost.loc < l);
+            uint8_t highBit = 31 - __builtin_clz(l >> 8);
+
+            assert(highBit < 24);
+
+            //if no entries exist for such a high seek location, go until you find the lowest one
+            while(highBit > 0 && pl->syncTable[highBit].absoluteLoc == 0) --highBit;
+            plPtr = startOfDeltas + pl->syncTable[highBit].seekOffset;
+
+            size_t prevOffset = decodeDelta(plPtr); //difference of curLoc - prevLoc, can calculate prevLoc
+            size_t tData = decodeDelta(plPtr);
+
+            curPost = Post(pl->syncTable[highBit].absoluteLoc, tData);
+            prevLoc = pl->syncTable[highBit].absoluteLoc - prevOffset;
+            
+
+            while(curPost.tData != NullPost && curPost.loc < l) Next();
 
             return curPost;
         }
 
         Post& Next(){
-            uint8_t * cur = startOfDeltas + offset;
             prevLoc = curPost.loc;
 
-            Location loc = decodeDelta(cur);
-            size_t tData = decodeDelta(cur);
+            if(plPtr >= (uint8_t *) pl + pl->bytesOfPostingList)
+                curPost = Post(0, NullPost); //end of posting list
+            
+            else{
+                Location loc = prevLoc + decodeDelta(plPtr);
+                size_t tData = decodeDelta(plPtr);
 
-            curPost = Post(loc, tData);
-
-            offset = (cur + 1) - startOfDeltas;
+                curPost = Post(loc, tData);
+            }
 
             return curPost;
-
         }
 
         const SerializedPostingList * pl;
 
         uint8_t* startOfDeltas;
-
+        uint8_t* plPtr;
         Post curPost;
 
         Location prevLoc;
-        Location offset; //offset of next post to be read
 
     private:
         size_t decodeDelta(uint8_t * &deltas){
-            size_t addedDeltas = 0, index = 0;
+            size_t addedDeltas = 0;
 
             int mask = 0x7F;
 
@@ -179,7 +195,7 @@ class ListIterator {
             while(true) {
                 uint8_t byte = *deltas++;
 
-                assert(deltas < (uint8_t *) pl + pl->bytesOfPostingList);
+                assert(deltas <= (uint8_t *) pl + pl->bytesOfPostingList);
 
                 addedDeltas |= (byte & mask) << shift;
                 if(!(~mask & byte))
@@ -295,7 +311,14 @@ class IndexBlob
                Version == IndexBlob::version;
          }
 
-    
+    ISRWord *getWordISR ( IndexBlob* ib, APESEARCH::string word )
+        {
+            return new ISRWord(new ListIterator(ib->Find(word)));
+        }
+    ISREndDoc *getEndDocISR ( IndexBlob* ib )
+        {
+            return new ISREndDoc(new ListIterator(ib->Find(APESEARCH::string("the"))));
+        }
     };
 
 

@@ -37,7 +37,7 @@ using std::size_t;
 
 enum WordAttributes
     {
-        WordAttributeNormal, WordAttributeBold, WordAttributeHeading
+        WordAttributeNormal, WordAttributeBold, WordAttributeHeading, NullPost
     };
 
 

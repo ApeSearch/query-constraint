@@ -36,7 +36,7 @@ TEST(postingList_seek)
     ASSERT_EQUAL(notFound, nullptr);
     }
 
-
+/*
 TEST(build_with_file){
     const char *filename = "./tests/indexFiles/indexFile1.txt";
 
@@ -64,11 +64,11 @@ TEST(build_with_file){
     while(itr != parser.index->dict.end()){
         std::cout << itr->key << std::endl;
         for(size_t i = 0; i < itr->value->posts.size(); ++i) {
-            std::cout << itr->value->posts[i]->loc << " ";
+            std::cout << itr->value->posts[i]->loc << "-" << itr->value->posts[i]->tData << ' ';
         }
         std::cout << std::endl;
         itr++;
-    }*/
+    }
     
     entry4->value->posts.push_back(new WordPost(1000000, WordAttributeNormal));
     size_t bytesRequired = parser.index->BytesRequired();
@@ -82,7 +82,7 @@ TEST(build_with_file){
 
     std::cout << "PASS" << std::endl;
 
-}
+}*/
 
 
 TEST(basic_encode_deltas_bytes){
@@ -181,7 +181,6 @@ TEST(basic_index_file_read_test){
 }
 
 
-
 TEST(sync_table){
     char const *filename = "./tests/testIndexBlobLarge.txt";
 
@@ -191,24 +190,38 @@ TEST(sync_table){
     APESEARCH::string strToFind = "the";
 
     const SerializedPostingList* pl = blob->Find(strToFind);
+    const SerializedPostingList* notFound = blob->Find(APESEARCH::string("dfjakslfjldksa;f"));
 
+    assert(notFound == nullptr);
+
+    
     for(int i = 0; i < SYNCTABLESIZE; ++i){
         printf("%d %d\n", pl->syncTable[i].seekOffset, pl->syncTable[i].absoluteLoc);
     }
 
+    assert(pl->syncTable[1].absoluteLoc == 517);
+    assert(pl->syncTable[2].absoluteLoc == 1044);
+    assert(pl->syncTable[3].absoluteLoc == 2082);
+    assert(pl->syncTable[4].absoluteLoc == 4101);
+    assert(pl->syncTable[5].absoluteLoc == 8405);
+
+
+
     ListIterator* itr = new ListIterator(pl);
 
-    Post p = itr->Next();
+    Post p = itr->Seek(3012);
 
-    std::cout << p.loc << ' ' << p.tData << std::endl;
+    assert(p.loc == 3013);
+    p = itr->Next();
+    assert(p.loc == 3021);
+
+    p = itr->Seek(1000000000);
+
+    assert(p.tData == NullPost);
 
     delete itr;
-
-    std::cout << pl->bytesOfPostingList << std::endl;
-
-
+    
 }
-
 
 
 TEST_MAIN();

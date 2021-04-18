@@ -1,4 +1,5 @@
 #include "../include/ISR.h"
+#include "../include/Index.h"
 
 ISR::ISR() {}
 
@@ -13,9 +14,15 @@ ISRWord::ISRWord(PostingList * _posts, IndexHT *_indexPtr, APESEARCH::string _wo
     startLocation = _start;
 }
 
+ISRWord::ISRWord(ListIterator * plIterator) : plItr(plIterator){}
+
 ISREndDoc::ISREndDoc() : ISRWord() {}
 
 ISREndDoc::ISREndDoc(PostingList* _posts, IndexHT *_indexPtr) : ISRWord(_posts, _indexPtr, "%", 0) {
+    startLocation = endLocation = 0;
+}
+
+ISREndDoc::ISREndDoc(ListIterator * plIterator) : ISRWord(plIterator) {
     startLocation = endLocation = 0;
 }
 

@@ -12,6 +12,8 @@
 #include "../libraries/AS/include/AS/string.h"
 #include "IndexHT.h"
 
+class ListIterator;
+
 class ISR //fix inheritance to be logical, remove duplicate code and member variables
     {
 
@@ -42,6 +44,8 @@ class ISRWord : public ISR
         ISRWord();
         ISRWord(PostingList * _posts, IndexHT *indexPtr, APESEARCH::string word);
         ISRWord(PostingList * _posts, IndexHT *_indexPtr, APESEARCH::string _word, Location _start);
+        ISRWord(ListIterator * plIterator);
+
         ~ISRWord() {
 
         }
@@ -71,6 +75,7 @@ class ISRWord : public ISR
         APESEARCH::string word;
         PostingList* posts;
         Location startLocation, endLocation;
+        ListIterator* plItr;
         unsigned postIndex;
     };
 
@@ -79,6 +84,7 @@ class ISREndDoc : public ISRWord
     public:
         ISREndDoc();
         ISREndDoc(PostingList* _posts, IndexHT *indexPtr);
+        ISREndDoc(ListIterator * plIterator);
 
         unsigned GetDocumentLength( );
         unsigned GetTitleLength( );
