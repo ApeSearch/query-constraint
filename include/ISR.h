@@ -31,6 +31,8 @@ class ISR //fix inheritance to be logical, remove duplicate code and member vari
 
         virtual APESEARCH::string GetNearestWord() = 0;
 
+        virtual void Flatten(APESEARCH::vector<ISR *> &flattened) = 0;
+
         IndexHT *indexPtr;
     };
 
@@ -61,6 +63,11 @@ class ISRWord : public ISR
             return word;
             }
 
+        void Flatten(APESEARCH::vector<ISR *> &flattened) 
+            {
+            flattened.push_back(this);
+            }
+
         APESEARCH::string word;
         PostingList* posts;
         Location startLocation, endLocation;
@@ -83,6 +90,10 @@ class ISREndDoc : public ISRWord
         APESEARCH::string GetNearestWord() override 
             {
             return word;
+            }
+
+        void Flatten(APESEARCH::vector<ISR *> &flattened) 
+            {
             }
     };
 
@@ -124,9 +135,26 @@ class ISROr : public ISR
                 { 
                 return terms[nearestTerm]->GetNearestWord();
                 }
+
+            void Flatten(APESEARCH::vector<ISR *> &flattened) 
+                {
+                for (unsigned i : foundPosts)
+                    {
+                    terms[i]->Flatten(flattened);
+                    }
+                // for (int i = 0; i < numTerms; ++i)
+                //     {
+                //     if (terms[i]) 
+                //         {
+                //         terms[i]->Flatten(flattened);
+                //         }
+                //     }
+                }
         
         private:
             Post * post;
+
+            APESEARCH::vector<unsigned> foundPosts;
 
             unsigned nearestTerm;
             Location nearestStartLocation, nearestEndLocation;
@@ -170,9 +198,26 @@ class ISRAnd : public ISR
                 {
                 return terms[nearestTerm]->GetNearestWord();
                 }
+            
+            void Flatten(APESEARCH::vector<ISR *> &flattened) 
+                {
+                for (unsigned i : foundPosts)
+                    {
+                    terms[i]->Flatten(flattened);
+                    }
+                // for (int i = 0; i < numTerms; ++i)
+                //     {
+                //     if (terms[i]) 
+                //         {
+                //         terms[i]->Flatten(flattened);
+                //         }
+                //     }
+                }
 
         private: 
             Post *post;
+
+            APESEARCH::vector<unsigned> foundPosts;
 
             unsigned nearestTerm, farthestTerm;
             Location nearestStartLocation, nearestEndLocation;
@@ -221,8 +266,26 @@ class ISRPhrase : public ISR
             return terms[nearestTerm]->GetNearestWord();
             }
 
+        void Flatten(APESEARCH::vector<ISR *> &flattened) 
+            {
+            for (unsigned i : foundPosts)
+                {
+                terms[i]->Flatten(flattened);
+                }
+            // for (int i = 0; i < numTerms; ++i)
+            //     {
+            //     if (terms[i]) 
+            //         {
+            //         terms[i]->Flatten(flattened);
+            //         }
+            //     }
+            }
+            
+
     private: 
         Post * post;
+
+        APESEARCH::vector<unsigned> foundPosts;
 
         unsigned nearestTerm, farthestTerm;
         Location nearestStartLocation, nearestEndLocation;
@@ -342,7 +405,21 @@ class ISRContainer : public ISR
             return Seek( docEnd->GetStartLocation() + 1, docEnd);
             }
 
-        APESEARCH::string GetNearestWord() override {return contained[nearestContained]->GetNearestWord();}
+        APESEARCH::string GetNearestWord() override 
+            {
+            return contained[nearestContained]->GetNearestWord();
+            }
+
+        void Flatten(APESEARCH::vector<ISR *> &flattened) 
+            {
+            for (int i = 0; i < countContained; ++i)
+                {
+                if (contained[i]) 
+                    {
+                    contained[i]->Flatten(flattened);
+                    }
+                }
+            }
 
     private:
         Post * post;
