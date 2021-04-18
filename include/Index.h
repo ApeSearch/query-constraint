@@ -133,6 +133,7 @@ class SerializedPostingList
 class ListIterator {
     public:
         ListIterator(const SerializedPostingList * pl_): pl(pl_), curPost(0, 0), prevLoc(0){
+            assert(pl_ != nullptr);
             plPtr = (uint8_t * ) &pl->Key + strlen(pl->Key) + 1;
             startOfDeltas = (uint8_t * ) &pl->Key + strlen(pl->Key) + 1;
         }
