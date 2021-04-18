@@ -78,10 +78,10 @@
             "miDebuggerPath": "/usr/bin/gdb"
         },
         {
-            "name": "index test",
+            "name": "search test",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/tests/bin/index_test",
+            "program": "${workspaceFolder}/tests/bin/search_unit_test",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

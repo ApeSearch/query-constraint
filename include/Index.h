@@ -9,6 +9,8 @@
 #include "../libraries/AS/include/AS/algorithms.h"
 #include "IndexHT.h"
 #include "ISR.h"
+#include "Tuple.h"
+#include "QueryParser.h"
 
 
 //1. Calculate deltas and figure out how many bytes will need to represent each delta
@@ -392,18 +394,18 @@ class Index {
 
         // Index constructor given a directory relative from the working directory where the executable was invoked
         Index(const char * chunkDirectory) : chunkFileNames(listdir(chunkDirectory)) {}
-
         ~Index() {}
 
-        // Probably given an ISR, searches for matches in each index chunk we have
-        void searchIndexChunks(APESEARCH::string query) {
-            //build parse tree
-
+        // Given a search query, search the index chunks for matching documents and rank them
+        void searchIndexChunks(APESEARCH::string queryLine) {
             for (int i = 0; i < chunkFileNames.size(); ++i) {
-                loadIndexChunk(chunkFileNames[i]);
-                // parseTree.compile(indexchunk)
+                // Build the parse tree (done for every index chunk because the parse tree is deleted on Compile())
+                APESEARCH::unique_ptr<query::Tuple> parseTree = buildParseTree(queryLine); 
+                IndexFile chunkFile (chunkFileNames[i].cstr());
+                const IndexBlob* chunk = chunkFile.Blob();
 
-                // TODO: actually search the whole gd thing
+                APESEARCH::unique_ptr<ISR> compiledTree = APESEARCH::unique_ptr<ISR>(parseTree->Compile(chunk));
+
                 // solve constraint on index chunk using ISR tree
                 // for each matching document
                     // isrTree.Seek(beginning of document) 
@@ -413,22 +415,27 @@ class Index {
             }
         }
 
+        APESEARCH::vector<APESEARCH::string> & getFiles() {
+            return chunkFileNames;
+        }
+
     private:
-        // TODO: implement HashFile default constructor
-        // HashFile indexChunkFile;
-        const HashBlob *blob;
 
         // File Names corresponding to index chunk files
         APESEARCH::vector<APESEARCH::string> chunkFileNames;
-        
+
         // Given a filename with a HashBlob, loads that file into main memory
-        void loadIndexChunk(APESEARCH::string &filename) 
+        HashFile loadIndexChunk(APESEARCH::string &filename) 
             {
             // TODO: implement Hashfile = operator or do this some other way (need to keep the object around for unique_map RAII)
             // indexChunkFile = HashFile(filename.cstr());
 
             // blob = indexChunkFile.Blob();
             }
-        
 
+        // Builds a parse tree for a given query
+        APESEARCH::unique_ptr<query::Tuple> buildParseTree(APESEARCH::string queryLine) {
+            QueryParser query = QueryParser(queryLine);
+            return APESEARCH::unique_ptr<query::Tuple>( query.FindOrConstraint());
+        }
 };
