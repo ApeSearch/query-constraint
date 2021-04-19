@@ -4,7 +4,7 @@
 ISRWord *IndexBlob::getWordISR ( APESEARCH::string word ) const
     {
         const SerializedPostingList* entry = Find(word);
-        return entry ? new ISRWord(new ListIterator(entry), this, word) : nullptr;
+        return new ISRWord(new ListIterator(entry), this, word);
     }
 ISREndDoc *IndexBlob::getEndDocISR ( ) const
     {

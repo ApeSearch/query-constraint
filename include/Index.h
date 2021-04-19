@@ -166,13 +166,19 @@ class SerializedAnchorText {
 class ListIterator {
     public:
         ListIterator(const SerializedPostingList * pl_): pl(pl_), curPost(nullptr), prevLoc(0){
-            assert(pl_ != nullptr);
-            plPtr = (uint8_t * ) &pl->Key + strlen(pl->Key) + 1;
-            startOfDeltas = (uint8_t * ) &pl->Key + strlen(pl->Key) + 1;
+            if(pl){
+                plPtr = (uint8_t * ) &pl->Key + strlen(pl->Key) + 1;
+                startOfDeltas = (uint8_t * ) &pl->Key + strlen(pl->Key) + 1;
+            }
+            else{
+                plPtr = nullptr, startOfDeltas = nullptr;
+            }
         }
 
         Post* Seek(Location l) {
-            
+            if(!pl)
+                return nullptr;
+    
             uint8_t highBit = 31 - __builtin_clz(l >> 8);
 
             assert(highBit < 24);
@@ -194,7 +200,9 @@ class ListIterator {
         }
 
         Post* Next() {
-
+            if(!pl)
+                return nullptr;
+                
             if(curPost.get())
                 prevLoc = curPost.get()->loc;
             else
