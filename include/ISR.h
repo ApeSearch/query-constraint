@@ -67,7 +67,7 @@ class ISRWord : public ISR
             return word;
             }
 
-        void Flatten(APESEARCH::vector<ISR *> &flattened) 
+        void Flatten(APESEARCH::vector<ISR *> &flattened) override
             {
             flattened.push_back(this);
             }
@@ -97,7 +97,7 @@ class ISREndDoc : public ISRWord
                 return word;
             }
 
-        void Flatten(APESEARCH::vector<ISR *> &flattened) 
+        void Flatten(APESEARCH::vector<ISR *> &flattened)
             {
             }
     };
@@ -141,7 +141,7 @@ class ISROr : public ISR
                 return terms[nearestTerm]->GetNearestWord();
                 }
 
-            void Flatten(APESEARCH::vector<ISR *> &flattened) 
+            void Flatten(APESEARCH::vector<ISR *> &flattened) override
                 {
                 // for (unsigned i : foundPosts)
                 //     {
@@ -204,7 +204,7 @@ class ISRAnd : public ISR
                 return terms[nearestTerm]->GetNearestWord();
                 }
             
-            void Flatten(APESEARCH::vector<ISR *> &flattened) 
+            void Flatten(APESEARCH::vector<ISR *> &flattened) override
                 {
                 // for (unsigned i : foundPosts)
                 //     {
@@ -268,7 +268,7 @@ class ISRPhrase : public ISR
             return terms[nearestTerm]->GetNearestWord();
             }
 
-        void Flatten(APESEARCH::vector<ISR *> &flattened) 
+        void Flatten(APESEARCH::vector<ISR *> &flattened) override
             {
             // for (unsigned i : foundPosts)
             //     {
@@ -362,7 +362,7 @@ class ISRContainer : public ISR
             return contained[nearestContained]->GetNearestWord();
             }
 
-        void Flatten(APESEARCH::vector<ISR *> &flattened) 
+        void Flatten(APESEARCH::vector<ISR *> &flattened) override
             {
             for (int i = 0; i < countContained; ++i)
                 {

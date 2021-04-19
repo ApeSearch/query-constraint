@@ -58,7 +58,7 @@ void Index::searchIndexChunks(APESEARCH::string queryLine) {
 
             // Do this in the ranker? 
             // Seek all ISRs back to document beginning
-            std::cout << docEnd->posts->curPost->loc << std::endl;
+            
             double rank = ranker.getRank(docEnd.get(), chunkURLs[docEnd->posts->curPost->tData]);
 
             // compiledTree->Seek(docEnd->GetStartLocation(), docEnd.get());

@@ -80,6 +80,7 @@ Location ISRWord::GetEndLocation( ) {
     return endLocation;
 }
 
+//never used
 Post* ISRWord::NextDocument( ISREndDoc* docEnd ) {
     // Post *seeked = Seek( docEnd->GetEndLocation() + 1, docEnd );
     

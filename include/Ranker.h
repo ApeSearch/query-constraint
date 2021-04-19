@@ -5,7 +5,7 @@
 class Ranker {
     public:
         Ranker(ISR* tree, ISREndDoc* docEnd);
-        double getRank(ISREndDoc *docEnd, APESEARCH::string &url);
+        double getRank(ISREndDoc const *docEnd, APESEARCH::string &url);
 
     private:
         APESEARCH::vector<ISR *> wordISRs;

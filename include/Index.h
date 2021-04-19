@@ -16,10 +16,6 @@
 #include <iostream>
 using std::cout; using std::endl;
 
-//1. Calculate deltas and figure out how many bytes will need to represent each delta
-//2. Attribute
-//3. Sync table
-
 #define SYNCTABLESIZE 24
 
 using std::size_t;
@@ -130,10 +126,41 @@ class SerializedPostingList
 
                 return buffer + b->tuple.value->bytesList; //buffer + numOfBytes of Posting List
         }
-
-        //should include other metadata
-        // Pure bit manipulation..
    };
+
+
+class SerializedAnchorText {
+    public:
+        uint32_t bytesRequired;
+        uint32_t frequency;
+        char Key[ Unknown ];
+
+
+        static SerializedAnchorText * initSerializedAnchorText(char* buffer, 
+            const hash::Bucket<APESEARCH::string, PostingList *> * b, uint32_t length)
+        {
+            char* temp = buffer;
+            SerializedAnchorText *serialTuple = reinterpret_cast< SerializedAnchorText * >( buffer );
+
+            assert(temp == (char * ) serialTuple); //sanity check, byte alignment
+
+            serialTuple->bytesRequired = length;
+            serialTuple->frequency = b->tuple.value->posts.size();
+
+            strcpy( serialTuple->Key, b->tuple.key.cstr() );
+
+            return serialTuple;
+        }
+
+        static char* Write(char* buffer, const hash::Bucket<APESEARCH::string, PostingList *> * b)
+        {
+            SerializedAnchorText* serialAnchor = initSerializedAnchorText(buffer, b, b->tuple.value->bytesList);
+            char *end = buffer + b->tuple.value->bytesList;
+            assert( end == (char * ) serialAnchor);
+
+            return buffer + b->tuple.value->bytesList;
+        }
+};
 
 
 class ListIterator {
@@ -371,6 +398,9 @@ class IndexFile{
                 
                 blob = unique_mmap( 0, bytesReq, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0 );
                 IndexBlob *indexBlob = reinterpret_cast< IndexBlob *> ( blob.get() );
+
+                //index->dict.Optimize(); Seg Faults
+
                 IndexBlob::Write( indexBlob, bytesReq, index);
                 good = true;
             }
