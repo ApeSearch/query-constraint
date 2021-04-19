@@ -1,4 +1,5 @@
 #include "../include/Index.h"
+#include "../include/Ranker.h"
 
 ISRWord *IndexBlob::getWordISR ( APESEARCH::string word ) const
     {
@@ -31,29 +32,40 @@ APESEARCH::vector<APESEARCH::string> IndexBlob::getUrls( ) const
 void Index::searchIndexChunks(APESEARCH::string queryLine) {
     for (int i = 0; i < chunkFileNames.size(); ++i) {
         // Build the parse tree (done for every index chunk because the parse tree is deleted on isr->Compile())
-        APESEARCH::unique_ptr<query::Tuple> parseTree = buildParseTree(queryLine); 
+        APESEARCH::unique_ptr<query::Tuple> parseTree = buildParseTree(queryLine); //could add to latency, recompiling
         IndexFile chunkFile (chunkFileNames[i].cstr());
         const IndexBlob* chunk = chunkFile.Blob();
+
+        chunkURLs = chunk->getUrls();
 
         // Get the compiled ISR tree and Document End ISR
         APESEARCH::unique_ptr<ISR> compiledTree = APESEARCH::unique_ptr<ISR>(parseTree->Compile(chunk));
         APESEARCH::unique_ptr<ISREndDoc> docEnd = APESEARCH::unique_ptr<ISREndDoc>(chunk->getEndDocISR());
 
+        // Flatten, 
+        // create Ranker(flattened)
+        Ranker ranker(compiledTree.get(), docEnd.get());
+
         // Find the First Match
         Post *post = compiledTree->NextDocument(docEnd.get());
-
+        
+        int documentIndex = 0;
         cout << chunkFileNames[i] << " ";
+
         while (post) {
             docEnd->Seek(post->loc, docEnd.get());
             cout << post->loc << " ";
 
             // Do this in the ranker? 
             // Seek all ISRs back to document beginning
-            compiledTree->Seek(docEnd->GetStartLocation(), docEnd.get());
+            std::cout << docEnd->posts->curPost->loc << std::endl;
+            double rank = ranker.getRank(docEnd.get(), chunkURLs[docEnd->posts->curPost->tData]);
 
-            // Def do this in ranker
-            APESEARCH::vector<ISR *> flattened;
-            compiledTree->Flatten(flattened);
+            // compiledTree->Seek(docEnd->GetStartLocation(), docEnd.get());
+
+            // // Def do this in ranker
+            // APESEARCH::vector<ISR *> flattened;
+            // compiledTree->Flatten(flattened);
             
 
             post = compiledTree->NextDocument(docEnd.get());
@@ -61,11 +73,5 @@ void Index::searchIndexChunks(APESEARCH::string queryLine) {
 
         cout << endl;
 
-        // solve constraint on index chunk using ISR tree
-        // for each matching document
-            // isrTree.Seek(beginning of document) 
-            // rank = rankerClass.getRank(isrTree)
-            // struct RankStruct = {double rank, string documentURL};
-            // top10<RankStruct>.insert(rank, matching document)
     }
 }

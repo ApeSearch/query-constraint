@@ -62,14 +62,26 @@ NestedConstraint::~NestedConstraint() {}
 ISR* NestedConstraint::Compile(const IndexBlob *indexPtr) {
     ISRContainer* containerISR = new ISRContainer(indexPtr);
 
-    
-    containerISR->contained = new ISR*;
-    *containerISR->contained = constraint->Compile(indexPtr);
-    ++containerISR->countContained;
-
+    ISRAnd *compiled = (ISRAnd *) constraint->Compile(indexPtr);
     delete constraint;
+
+    containerISR->countContained = compiled->numTerms;
+    containerISR->contained = new ISR*[compiled->numTerms];
+
+    for (int i = 0; i < containerISR->countContained; ++i)
+        containerISR->contained[i] = compiled->terms[i];
         
     return containerISR;
+
+    // containerISR->contained = new ISR*;
+    // *containerISR->contained = constraint->Compile(indexPtr);
+    // ++containerISR->countContained;
+
+    // delete constraint;
+
+    // quick brown -fox
+        
+    // return containerISR;
 }
 
 //Implement ISR constructors before Compile for each Tuple

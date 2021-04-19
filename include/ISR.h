@@ -12,7 +12,9 @@
 #include "../libraries/AS/include/AS/string.h"
 #include "Index.h"
 
+// class IndexBlob;
 class ListIterator;
+
 
 class ISR //fix inheritance to be logical, remove duplicate code and member variables
     {
@@ -84,16 +86,15 @@ class ISREndDoc : public ISRWord
         ISREndDoc(ListIterator * _posts, const IndexBlob *indexPtr);
         ISREndDoc(ListIterator * plIterator);
 
-        unsigned GetDocumentLength( );
+        size_t GetDocumentLength( );
         unsigned GetTitleLength( );
-        unsigned GetUrlLength( );
 
         Post *Next( ISREndDoc* docEnd ) override;
         Post *Seek( Location target, ISREndDoc* docEnd ) override;
 
         APESEARCH::string GetNearestWord() override 
             {
-            return word;
+                return word;
             }
 
         void Flatten(APESEARCH::vector<ISR *> &flattened) 
@@ -310,57 +311,7 @@ class ISRContainer : public ISR
         unsigned countContained, countExcluded;
         // Location Next( );
         
-        Post *Seek( Location target, ISREndDoc* docEnd ) override
-            {
-            // 1. Seek all the included ISRs to the first occurrence beginning at
-            //    the target location.
-            
-            // 2. Move the document end ISR to just past the furthest
-            //    contained ISR, then calculate the document begin location.
-
-            // 3. Seek all the other contained terms to past the document begin.
-
-            // 4. If any contained term is past the document end, return to
-            //    step 2.
-
-            // 5. If any ISR reaches the end, there is no match.
-
-
-            // nearestStartLocation = endDocLoc;
-            // nearestEndLocation = target;
-            // for (int i = 0; i < countContained; ++i) {\
-            //     // If one of the terms doesn't have a posting list, this document isn't a match
-            //     if (contained[i] == nullptr) return nullptr;
-
-            //     Post* foundPost = contained[i]->Seek(target, endDocLoc);
-            //     if ((!foundPost) || foundPost->loc > endDocLoc) return nullptr;
-            //     if (foundPost->loc >= nearestEndLocation)
-            //         {
-            //         nearestEndLocation = foundPost->loc;
-            //         farthestTerm = i;
-            //         }
-            //     if (foundPost->loc <= nearestStartLocation)
-            //         {
-            //         post = foundPost;
-            //         nearestContained = i;
-            //         nearestStartLocation = foundPost->loc;
-            //         nearestTerm = i;
-            //         }
-            // }
-
-            // // 6. Seek all the excluded ISRs to the first occurrence beginning at
-            // //    the document begin location.
-            // if (excluded) {
-            //     excluded->Seek(target, endDocLoc);
-            //     Location loceroni = excluded->GetStartLocation();
-            //     return (loceroni < endDocLoc) ? post : nullptr;
-            // }
-
-            // // 7. If any excluded ISR falls within the document, reset the
-            // //    target to one past the end of the document and return to
-            // //    step 1.
-            // return post;
-            }
+        Post *Seek( Location target, ISREndDoc* docEnd ) override;
 
         Post * Next( ISREndDoc* docEnd ) override
                 {
@@ -403,7 +354,7 @@ class ISRContainer : public ISR
             {
             // Seek all the ISRs to the first occurrence just past
             // the end of this document.
-            return Seek( docEnd->GetStartLocation() + 1, docEnd);
+            return Seek( (docEnd->GetEndLocation() == 0) ? 0 : docEnd->GetEndLocation() + 1, docEnd);
             }
 
         APESEARCH::string GetNearestWord() override 

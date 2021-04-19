@@ -1,6 +1,7 @@
 #include "../include/ISR.h"
 #include "../include/Index.h"
 
+
 ISR::ISR() {}
 
 ISR::ISR(const IndexBlob *_indexPtr) : indexPtr(_indexPtr) {}
@@ -85,9 +86,7 @@ Post* ISRWord::NextDocument( ISREndDoc* docEnd ) {
     // return (seeked && (seeked->loc < docStartLoc)) ? seeked : nullptr;
 }
 
-unsigned ISREndDoc::GetDocumentLength( ) {}
 unsigned ISREndDoc::GetTitleLength( ) {}
-unsigned ISREndDoc::GetUrlLength( ) {}
 
 
 
@@ -285,13 +284,14 @@ Post *ISRPhrase::Seek( Location target, ISREndDoc* docEnd )
         //    where they should appear relative to the furthest
         //    term.
         Post * nearestPost = nullptr;
+        Post * farthestPost = nullptr;
         nearestStartLocation = (Location) - 1;
         while (true)
         {   
             // foundPosts = {};
             bool found = true;
             for (int i = 0; i < numTerms; ++i) {
-                if (!terms[i]) continue;
+                if (!terms[i]) return nullptr;
                 Location expectedLoc;
                 if (i < farthestTerm) {
                     expectedLoc = nearestEndLocation - farthestTerm + i;
@@ -308,23 +308,35 @@ Post *ISRPhrase::Seek( Location target, ISREndDoc* docEnd )
                     if (!post)
                         return nullptr;
 
-                    nearestEndLocation = (post->loc >= nearestEndLocation) ? terms[(farthestTerm = i)]->GetStartLocation() : nearestEndLocation;
-                    nearestStartLocation = (post->loc <= nearestStartLocation) ? terms[(nearestTerm = i)]->GetStartLocation() : nearestStartLocation;
-
-                    if (i == nearestTerm)
-                        nearestPost = post;
-                        
                     // 3. If any term is past the desired location, return
                     //    to step 2.
                     if (post->loc > expectedLoc) 
                         {
+                        nearestStartLocation = (post->loc <= nearestStartLocation) ? terms[(nearestTerm = i)]->GetStartLocation() : nearestStartLocation;
+                        nearestEndLocation = (post->loc >= nearestEndLocation) ? terms[(farthestTerm = i)]->GetStartLocation() : nearestEndLocation;
                         found = false;
                         break;
                         }
                     }
+                    // nearestEndLocation = (post->loc >= nearestEndLocation) ? terms[(farthestTerm = i)]->GetStartLocation() : nearestEndLocation;
+                    
+                    if (i == nearestTerm) {
+                        nearestPost = post;
+                    } 
+                    else if (i == farthestTerm) {
+                        farthestPost = post;
+                    }
+                        
+                    
             }
             if (found)
+                {
+                if (farthestTerm < nearestTerm)
+                    {
+                    return farthestPost;
+                    }
                 return nearestPost;
+                }
         }
         return nullptr;
 
@@ -339,3 +351,91 @@ Post * ISRPhrase::Next( ISREndDoc* docEnd )
 
 ISRContainer::ISRContainer(const IndexBlob *_indexPtr) : ISR(_indexPtr), contained(nullptr), excluded(nullptr), 
     countContained(0), countExcluded(0) {} 
+
+Post * ISRContainer::Seek(Location target, ISREndDoc* docEnd)
+    {
+    // 1. Seek all the ISRs to the first occurrence beginning at
+    //    the target location.
+    nearestStartLocation = (Location) - 1;
+    nearestEndLocation = target;
+    post = nullptr;
+    for (int i = 0; i < countContained; ++i) {\
+        if (!contained[i]) return nullptr;
+
+        Post* foundPost = contained[i]->Seek(target, docEnd);
+        if (foundPost) {
+            if (foundPost->loc >= nearestEndLocation)
+                {
+                nearestEndLocation = foundPost->loc;
+                farthestTerm = i;
+                }
+            if (foundPost->loc <= nearestStartLocation)
+                {
+                post = foundPost;
+                nearestStartLocation = foundPost->loc;
+                nearestTerm = i;
+                }
+        }
+    }
+
+    post = nullptr;
+    nearestStartLocation = (Location) - 1;
+    while (true) 
+        {
+        // foundPosts = {};
+        // 2. Move the document end ISR to just past the furthest
+        //    word, then calculate the document begin location.
+        Post * enddocPost = docEnd->Seek(nearestEndLocation, docEnd);
+
+        Location documentBegin = docEnd->posts->prevLoc;
+
+        // 3. Seek all the other terms to past the document begin.
+        bool found = true;
+        for (int i = 0; i < countContained; ++i) 
+            {
+            if (!contained[i]) continue;
+
+            Post* foundPost = contained[i]->Seek(documentBegin, docEnd);
+            if (foundPost) 
+                {
+                // foundPosts.push_back(i);
+                if (foundPost->loc >= nearestEndLocation)
+                    {
+                    nearestEndLocation = foundPost->loc;
+                    farthestTerm = i;
+                    }
+                if (foundPost->loc <= nearestStartLocation)
+                    {
+                    post = foundPost;
+                    nearestStartLocation = foundPost->loc;
+                    nearestTerm = i;
+                    }
+
+                // 4. If any term is past the document end, return to
+                //    step 2.
+                if (foundPost->loc > docEnd->GetEndLocation()) 
+                    {
+                    found = false;
+                    break;
+                    }
+                } 
+            else 
+                {
+                // 5. If any ISR reaches the end, there is no match.
+                return nullptr;
+                }
+            } 
+
+            if (found)
+                {
+                // if (excluded) {
+                //     excluded->Seek(target, endDocLoc);
+                //     Location loceroni = excluded->GetStartLocation();
+                //     return (loceroni < endDocLoc) ? post : nullptr;
+                // }
+                return post;
+                }
+        }
+    
+    return nullptr;
+    }

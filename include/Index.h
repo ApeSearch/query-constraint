@@ -8,9 +8,10 @@
 #include "../libraries/HashTable/include/HashTable/HashBlob.h"
 #include "../libraries/AS/include/AS/algorithms.h"
 #include "IndexHT.h"
-#include "ISR.h"
 #include "Tuple.h"
 #include "QueryParser.h"
+#include "ISR.h"
+
 
 #include <iostream>
 using std::cout; using std::endl;
@@ -405,6 +406,7 @@ class Index {
 
         // File Names corresponding to index chunk files
         APESEARCH::vector<APESEARCH::string> chunkFileNames;
+        APESEARCH::vector<APESEARCH::string> chunkURLs;
 
         // Given a filename with a HashBlob, loads that file into main memory
         HashFile loadIndexChunk(APESEARCH::string &filename) 

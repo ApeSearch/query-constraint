@@ -102,7 +102,7 @@ query::Tuple* QueryParser::FindAndConstraint()
             return top;
         }
 
-        return andExp; //the memory will be deallocated after compiling into an ISR.
+        return andExp; // the memory will be deallocated after compiling into an ISR.
 
     }
 
