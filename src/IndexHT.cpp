@@ -118,7 +118,7 @@ void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<IndexEntry> &text,
 
     DocEndPostingList * docEndList = (DocEndPostingList *) entry->value;
 
-    docEndList->appendToList(endDocLoc, url.size() - 1, lastDocIndex);
+    docEndList->appendToList(endDocLoc, urls.size() - 1, lastDocIndex);
 
     for(Location indexLoc = 0; indexLoc < text.size(); ++indexLoc) {
         APESEARCH::string word = text[indexLoc].word;

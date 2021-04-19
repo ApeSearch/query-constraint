@@ -36,7 +36,7 @@ TEST(postingList_seek)
     ASSERT_EQUAL(notFound, nullptr);
     }
 
-
+/*
 TEST(build_with_file){
     const char *filename = "./tests/indexFiles/indexFile1.txt";
 
@@ -69,7 +69,7 @@ TEST(build_with_file){
         }
         std::cout << std::endl;
         itr++;
-    }*/
+    }
     
     entry4->value->posts.push_back(new WordPost(1000000, WordAttributeNormal));
     size_t bytesRequired = parser.index->BytesRequired();
@@ -85,6 +85,7 @@ TEST(build_with_file){
 
 }
 
+/*
 TEST(basic_encode_deltas_bytes){
      APESEARCH::vector<IndexEntry> words = {
         {"the", WordAttributeNormal, BodyText},
@@ -153,7 +154,7 @@ TEST(basic_index_file_write_test){
     char const *filename = "./tests/testIndexBlobFile.txt";
     IndexFile hashFile( filename, index.get() );
 
-}
+}*/
 
 
 TEST(basic_index_file_read_test){
@@ -238,6 +239,30 @@ TEST(find_urls){
     assert(urls[1] == "www.monkey1.com");
     assert(urls[2] == "www.monkey2.com");
     assert(urls[3] == "www.monkey3.com");
+
+}
+
+TEST(docEnd_indicies){
+    char const *filename = "./tests/testIndexBlobFile.txt";
+
+    IndexFile hashFile (filename);
+    const IndexBlob* blob = hashFile.Blob();
+
+    APESEARCH::string strToFind = "%";
+
+    const SerializedPostingList* pl = blob->Find(strToFind);
+
+    ListIterator itr(pl);
+
+    Post* p = itr.Next();
+
+    assert(p->tData == 0);
+    p = itr.Next();
+
+    assert(p->tData == 1);
+    p = itr.Next();
+
+    assert(p == nullptr);
 }
 
 TEST_MAIN();
