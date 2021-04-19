@@ -46,8 +46,8 @@ void Index::searchIndexChunks(APESEARCH::string queryLine) {
         // create Ranker(flattened)
         Ranker ranker(compiledTree.get(), docEnd.get());
 
-        // Find the First Match
-        Post *post = compiledTree->NextDocument(docEnd.get());
+        // Gets the first post Returns seek past 0
+        Post *post = compiledTree->NextDocument(docEnd.get()); 
         
         int documentIndex = 0;
         cout << chunkFileNames[i] << " ";
@@ -55,6 +55,10 @@ void Index::searchIndexChunks(APESEARCH::string queryLine) {
         while (post) {
             docEnd->Seek(post->loc, docEnd.get());
             cout << post->loc << " ";
+
+            documentIndex = docEnd->posts->curPost->tData;
+
+            std::cout << documentIndex << std::endl;
 
             // Do this in the ranker? 
             // Seek all ISRs back to document beginning
