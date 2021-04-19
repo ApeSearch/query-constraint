@@ -14,7 +14,7 @@ static const struct DynamicStats
     static const size_t W_AllWordsFrequent = 5;
     static const size_t W_MostWordsFrequent = 5;
     static const size_t W_SomeWordsFrequent = 5;
-    }
+    };
 
 
 
