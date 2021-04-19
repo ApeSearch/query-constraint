@@ -298,10 +298,10 @@ class IndexBlob
                 serialPtr += sizeof( uint32_t ); // Signify end of a chain
             }
 
-            ib->VectorStart = reinterpret_cast< IndexBlob * >( serialPtr ) - ib;
+            ib->VectorStart = serialPtr - (char * ) ib;
 
             for ( size_t i = 0; i < indexHT->urls.size(); ++i ){
-                std::cout << indexHT->urls[i] << std::endl;
+                //std::cout << indexHT->urls[i] << std::endl;
                 serialPtr = strcpy( serialPtr, indexHT->urls[ i ].cstr( ) ) + indexHT->urls[ i ].size( ) + 1;
             }
                 

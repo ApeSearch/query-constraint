@@ -36,7 +36,7 @@ TEST(postingList_seek)
     ASSERT_EQUAL(notFound, nullptr);
     }
 
-
+/*
 TEST(build_with_file){
     const char *filename = "./tests/indexFiles/indexFile1.txt";
 
@@ -60,6 +60,7 @@ TEST(build_with_file){
     assert(entry3->value->posts[0]->loc == 689);
     assert(entry3->value->posts[1]->loc == 716);
 
+
     /*
     while(itr != parser.index->dict.end()){
         std::cout << itr->key << std::endl;
@@ -68,7 +69,7 @@ TEST(build_with_file){
         }
         std::cout << std::endl;
         itr++;
-    }*/
+    }
     
     entry4->value->posts.push_back(new WordPost(1000000, WordAttributeNormal));
     size_t bytesRequired = parser.index->BytesRequired();
@@ -83,8 +84,7 @@ TEST(build_with_file){
     std::cout << "PASS" << std::endl;
 
 }
-
-
+/*
 TEST(basic_encode_deltas_bytes){
      APESEARCH::vector<IndexEntry> words = {
         {"the", WordAttributeNormal, BodyText},
@@ -128,8 +128,6 @@ TEST(basic_encode_deltas_bytes){
     assert(theList->deltas[0] + theList->deltas[2] + theList->deltas[4] == 7); //added up deltas = abs location of 3rd the
 
     std::cout << std::endl;
-
-    //assert(entry->value->bytesList == 1048);
 
     std::cout << entry->value->bytesList << std::endl;
 }
@@ -223,10 +221,10 @@ TEST(sync_table){
     delete itr;
     
 }
-
+*/
 
 TEST(find_urls){
-    // char const *filename = "./tests/indexChunks/chunk0.ape";
+    //char const *filename = "./tests/indexChunks/chunk0.ape";
     char const *filename = "./tests/testIndexBlobLarge.txt";
 
     IndexFile hashFile (filename);
@@ -235,9 +233,11 @@ TEST(find_urls){
     auto urls = blob->getUrls();
 
     const char * c = (char *) blob + blob->VectorStart;
-
-    while(c < (char *) blob + blob->BlobSize)
-        printf("%c", c);
+    
+    assert(urls[0] == "www.monkey.com");
+    assert(urls[1] == "www.monkey1.com");
+    assert(urls[2] == "www.monkey2.com");
+    assert(urls[3] == "www.monkey3.com");
 }
 
 TEST_MAIN();

@@ -120,7 +120,6 @@ class IndexFileParser
                         while(*cur++ != '\n');
                         size_t numSentences = indexOffBuffer(beg, cur - 1);
 
-
                         /**** Debugging Purposes ****
                         for(int i = 0; i < entries.size(); ++i){
                             APESEARCH::string attribute = "Bold";
@@ -136,13 +135,18 @@ class IndexFileParser
 
                         size_t dot1 = url.find('.');
                         size_t dot2 = url.find('.', dot1 + 1);
+
                         APESEARCH::string urlString = APESEARCH::string(url, dot1 + 1, dot2 - dot1 - 1);
                         entries.push_back(IndexEntry{urlString, WordAttributeNormal, URL});
 
                         index->addDoc(url, entries, entries.size());
+
                         APESEARCH::vector<IndexEntry> temp;
                         entries = temp;
+
+
                         assert(*cur++ == '\0');
+                        beg = cur;
                     }
 
                     munmap( map, file.fileSize() );
