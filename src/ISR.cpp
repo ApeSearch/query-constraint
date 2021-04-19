@@ -309,12 +309,13 @@ Post *ISRPhrase::Seek( Location target, ISREndDoc* docEnd )
                     if (!post)
                         return nullptr;
 
+                    nearestStartLocation = (post->loc <= nearestStartLocation) ? terms[(nearestTerm = i)]->GetStartLocation() : nearestStartLocation;
+                    nearestEndLocation = (post->loc >= nearestEndLocation) ? terms[(farthestTerm = i)]->GetStartLocation() : nearestEndLocation;
+
                     // 3. If any term is past the desired location, return
                     //    to step 2.
                     if (post->loc > expectedLoc) 
                         {
-                        nearestStartLocation = (post->loc <= nearestStartLocation) ? terms[(nearestTerm = i)]->GetStartLocation() : nearestStartLocation;
-                        nearestEndLocation = (post->loc >= nearestEndLocation) ? terms[(farthestTerm = i)]->GetStartLocation() : nearestEndLocation;
                         found = false;
                         break;
                         }
