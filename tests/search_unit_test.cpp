@@ -7,6 +7,7 @@ using std::cout; using std::endl;
 #include "../libraries/unit_test_framework/include/unit_test_framework/unit_test_framework.h"
 
 #include "queries.h"
+#include "../include/Ranker.h"
 
 char cwd[PATH_MAX];
 

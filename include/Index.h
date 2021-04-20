@@ -7,8 +7,8 @@
 #include "../libraries/AS/include/AS/unique_ptr.h"
 #include "../libraries/HashTable/include/HashTable/HashBlob.h"
 #include "../libraries/AS/include/AS/algorithms.h"
+
 #include "IndexHT.h"
-#include "Tuple.h"
 #include "QueryParser.h"
 #include "ISR.h"
 
@@ -20,6 +20,7 @@ using std::cout; using std::endl;
 
 using std::size_t;
 
+class Ranker;
 
 struct SyncEntry
    {
@@ -458,8 +459,4 @@ class Index {
             }
 
         // Builds a parse tree for a given query
-        APESEARCH::unique_ptr<query::Tuple> buildParseTree(APESEARCH::string queryLine) {
-            QueryParser query = QueryParser(queryLine);
-            return APESEARCH::unique_ptr<query::Tuple>( query.FindOrConstraint());
-        }
 };

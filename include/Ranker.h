@@ -1,50 +1,79 @@
+#pragma once
+
+#ifndef _RANKER_H
+#define _RANKER_H
+
 #include "../libraries/AS/include/AS/string.h"
 #include "../libraries/AS/include/AS/vector.h"
+#include "../libraries/AS/include/AS/unique_ptr.h"
+#include "Index.h"
 #include "ISR.h"
+#include "Tuple.h"
 
-// static const struct DynamicStats 
-//     {
-//     static const size_t WordFrequentThreshold = 20;
-//     static const size_t MaxToBeShort = 10;
-
-//     static const size_t W_NumShortSpans = 5;
-//     static const size_t W_NumInOrderSpans = 5;
-//     static const size_t W_ExactPhrases = 15;
-//     static const size_t W_NumSpansNearTop = 5;
-//     static const size_t W_AllWordsFrequent = 5;
-//     static const size_t W_MostWordsFrequent = 5;
-//     static const size_t W_SomeWordsFrequent = 5;
-
-//     static const size_t W_Anchor = 20;
-//     static const size_t W_Url = 10;
-//     static const size_t W_Title = 10;
-//     static const size_t W_Body = 1;
-//     };
-
-// static const struct StaticStats
-//     {
-//     static const size_t ShortTitleThreshold = 20;
-//     static const size_t MinNumAnchorText = 10;
-//     static const size_t MaxURLLengthToBeShort = 20;
-
-//     static const size_t W_Domain = 2;
-//     static const size_t W_ShortTitle = 2;
-//     static const size_t W_LotsAnchorText = 10;
-//     static const size_t W_ShortURL = 2;
-//     };
-
-
+struct RankedEntry {
+    APESEARCH::string url;
+    double rank;
+};
 
 class Ranker {
     public:
 
         //Dynamic weights : minToBeMost, minToBeNearTop
 
-
-        Ranker(ISR* tree, ISREndDoc* docEnd);
-        double getRank(ISREndDoc const *docEnd, APESEARCH::string &url);
+        Ranker(const IndexBlob* index, const APESEARCH::string queryLine);
 
     private:
-        APESEARCH::vector<ISR *> wordISRs;
-        ISREndDoc* endDoc;
+
+        APESEARCH::unique_ptr<query::Tuple> buildParseTree(APESEARCH::string queryLine) {
+            QueryParser query = QueryParser(queryLine);
+            return APESEARCH::unique_ptr<query::Tuple>( query.FindOrConstraint());
+        }
+
+        double getScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<size_t> &indices, ISREndDoc* endDoc);
+
+        const struct DynamicStats 
+            {
+            static constexpr double WordFrequentThreshold = 20;
+            static constexpr double MaxToBeShort = 10;
+
+            static constexpr double W_NumShortSpans = 5;
+            static constexpr double W_NumInOrderSpans = 5;
+            static constexpr double W_ExactPhrases = 15;
+            static constexpr double W_NumSpansNearTop = 5;
+            static constexpr double W_AllWordsFrequent = 5;
+            static constexpr double W_MostWordsFrequent = 5;
+            static constexpr double W_SomeWordsFrequent = 5;
+
+            static constexpr double W_Anchor = 20;
+            static constexpr double W_Url = 10;
+            static constexpr double W_Title = 10;
+            static constexpr double W_Body = 1;
+            };
+
+        const struct StaticStats
+            {
+            static constexpr size_t ShortTitleThreshold = 20;
+            static constexpr size_t MinNumAnchorText = 10;
+            static constexpr size_t MaxURLLengthToBeShort = 20;
+
+            static constexpr size_t W_Domain = 2;
+            static constexpr size_t W_ShortTitle = 2;
+            static constexpr size_t W_LotsAnchorText = 10;
+            static constexpr size_t W_ShortURL = 2;
+            };
+
+        const IndexBlob* ib;
+
+
+        APESEARCH::vector<ISR * > flattened;
+        APESEARCH::vector<APESEARCH::string> urls;
+
+        APESEARCH::vector<RankedEntry> chunkResults;
+
+
+        APESEARCH::unique_ptr<ISR> compiledTree;
+        APESEARCH::unique_ptr<ISREndDoc> docEnd;
 };
+
+
+#endif
