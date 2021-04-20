@@ -132,7 +132,7 @@ class SerializedPostingList
 class SerializedAnchorText {
     public:
         uint32_t bytesRequired;
-        uint32_t frequency;
+
         char Key[ Unknown ];
 
 
@@ -145,11 +145,13 @@ class SerializedAnchorText {
             assert(temp == (char * ) serialTuple); //sanity check, byte alignment
 
             serialTuple->bytesRequired = length;
-            serialTuple->frequency = b->tuple.value->posts.size();
 
             strcpy( serialTuple->Key, b->tuple.key.cstr() );
 
-            return serialTuple;
+            char *ptrAfterKey = serialTuple->Key + b->tuple.key.size( ) + 1;
+
+            return ( SerializedAnchorText * ) 
+                APESEARCH::copy( b->tuple.value->deltas.begin(), b->tuple.value->deltas.end(), ( uint8_t * ) ptrAfterKey );
         }
 
         static char* Write(char* buffer, const hash::Bucket<APESEARCH::string, PostingList *> * b)

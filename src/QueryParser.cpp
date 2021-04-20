@@ -2,7 +2,7 @@
 #include "../libraries/AS/include/AS/string.h"
 #include "assert.h"
 
-APESEARCH::vector<char> QueryParser::decorators = {'%', '#', '$'};
+APESEARCH::vector<char> QueryParser::decorators = {'$'};
 
 QueryParser::QueryParser( APESEARCH::string queryLine )
     {
@@ -120,8 +120,10 @@ query::Tuple* QueryParser::FindPhrase()
         
         token = FindNextToken();
         while(token->getTokenType() != TokenTypePhrase && token->getTokenType() != TokenTypeEOF) {
-            if(token->getTokenType() != TokenTypeWord)
+            if(token->getTokenType() != TokenTypeWord){
+                token = FindNextToken();
                 continue;
+            }
             
             query::Tuple* tuple = new query::SearchWord(token->TokenString());
 
@@ -129,15 +131,13 @@ query::Tuple* QueryParser::FindPhrase()
             nextPhrase->Append(tuple);
             nextPhrase = (query::Phrase* ) nextPhrase->next;
             
-            for(size_t i = 0; i < 3; ++i){
-                APESEARCH::string temp = token->TokenString();
-                temp.push_front(decorators[i]);
+            APESEARCH::string temp = token->TokenString();
+            temp.push_front('$');
 
-                query::Tuple* tuple = new query::SearchWord(temp);
+            tuple = new query::SearchWord(temp);
 
-                nextPhrase->Append(tuple);
-                nextPhrase = (query::Phrase*) nextPhrase->next;
-            }
+            nextPhrase->Append(tuple);
+
             token = FindNextToken();
         }
 
@@ -189,11 +189,10 @@ query::Tuple* QueryParser::FindSearchWord()
             return nullptr;
         }
 
-        for (int i = 0; i < decorators.size(); ++i) {
-            APESEARCH::string decoratedWord = token->TokenString();
-            decoratedWord.push_front(decorators[i]);
-            orList->Append( new query::SearchWord(decoratedWord));
-        }
+        APESEARCH::string decoratedWord = token->TokenString();
+        decoratedWord.push_front('$');
+        orList->Append( new query::SearchWord(decoratedWord));
+
         orList->Append( new query::SearchWord(token->TokenString()));
 
         

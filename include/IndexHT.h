@@ -43,7 +43,7 @@ enum WordAttributes
 
 enum PostingListType
     {
-        BodyText, TitleText, AnchorText, URL
+        BodyText, TitleText, AnchorText
     };
 
 
@@ -76,6 +76,15 @@ class EODPost: public Post
     public:
         EODPost(): Post() {}
         EODPost(Location loc_, size_t urlIndex_) : Post(loc_, urlIndex_) {}
+    };
+
+class AnchorPost : public Post
+    {
+    public:
+        AnchorPost(): Post() {}
+
+        //loc in AnchorPost actually refers to its frequency
+        AnchorPost(Location frequency, size_t urlIndex): Post(frequency, urlIndex) {}
     };
 
 class PostingList
@@ -129,6 +138,18 @@ class DocEndPostingList : public PostingList
         uint32_t bytesRequired( const APESEARCH::string &key );
 
         void appendToList(Location loc_, size_t urlIndex, size_t lastDocIndex = 0) override; 
+    };
+
+class AnchorPostingList : public PostingList
+    {
+    public:
+
+        AnchorPostingList(): PostingList() {}
+
+        uint32_t bytesRequired( const APESEARCH::string &key);
+
+        //loc_ is unused, only for clean override
+        void appendToList(Location _unused, size_t urlIndex, size_t lastDocIndex = 0) override;
     };
 
 class IndexHT

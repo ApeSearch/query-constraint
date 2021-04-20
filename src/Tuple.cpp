@@ -62,16 +62,36 @@ NestedConstraint::~NestedConstraint() {}
 ISR* NestedConstraint::Compile(const IndexBlob *indexPtr) {
     ISRContainer* containerISR = new ISRContainer(indexPtr);
 
-    ISRAnd *compiled = (ISRAnd *) constraint->Compile(indexPtr);
-    delete constraint;
+    query::Tuple* curr = constraint;
+    while (curr != nullptr)
+        {
+            containerISR->countContained++;
+            curr = curr->next;
+        }
+    
+    curr = constraint;
+    containerISR->contained = new ISR*[containerISR->countContained];
 
-    containerISR->countContained = compiled->numTerms;
-    containerISR->contained = new ISR*[compiled->numTerms];
-
-    for (int i = 0; i < containerISR->countContained; ++i)
-        containerISR->contained[i] = compiled->terms[i];
+    for(auto i = containerISR->contained; i < containerISR->contained + containerISR->countContained; ++i)
+        {
+            *i = curr->Compile(indexPtr);
+            auto next = curr->next;
+            delete curr;
+            curr = next;
+        }
         
     return containerISR;
+
+    // ISRAnd *compiled = (ISRAnd *) constraint->Compile(indexPtr);
+    // delete constraint;
+
+    // containerISR->countContained = compiled->numTerms;
+    // containerISR->contained = new ISR*[compiled->numTerms];
+
+    // for (int i = 0; i < containerISR->countContained; ++i)
+    //     containerISR->contained[i] = compiled->terms[i];
+        
+    // return containerISR;
 
     // containerISR->contained = new ISR*;
     // *containerISR->contained = constraint->Compile(indexPtr);

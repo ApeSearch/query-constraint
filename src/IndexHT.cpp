@@ -29,6 +29,17 @@ void WordPostingList::appendToList(Location loc_, size_t attribute, size_t lastD
     posts.push_back(new WordPost(loc_, attribute));
 }
 
+void AnchorPostingList::appendToList(Location loc_, size_t urlIndex, size_t lastDocIndex){
+    if(!posts.size())
+        posts.push_back(new AnchorPost(1, urlIndex));
+    else{
+        if(urlIndex == posts.back()->tData)
+            posts.back()->loc++; //loc refers to frequency in case of anchorText
+        else
+            posts.push_back(new AnchorPost(1, urlIndex));
+    }
+}
+
 uint32_t WordPostingList::bytesRequired(const APESEARCH::string &key) {
 
     if(calcBytes)
@@ -92,7 +103,35 @@ uint32_t DocEndPostingList::bytesRequired(const APESEARCH::string &key) { //impl
     bytesList = numBytes;
 
     return numBytes;
-} 
+}
+
+uint32_t AnchorPostingList::bytesRequired( const APESEARCH::string &key) {
+    if(calcBytes)
+        return bytesList;
+
+    uint32_t numBytes = key.size() + 1;
+    numBytes += sizeof( SerializedAnchorText );
+
+    for(size_t i = 0; i < posts.size(); ++i) {
+        AnchorPost* aPost = (AnchorPost * ) posts[i];
+
+        APESEARCH::vector<uint8_t> bytes = encodeDelta(aPost->loc); //loc refers to freq
+
+        for(size_t byte = 0; byte < bytes.size(); ++byte)
+            deltas.push_back(bytes[byte]);
+        
+        bytes = encodeDelta(aPost->tData);
+
+        for(size_t byte = 0; byte < bytes.size(); ++byte)
+            deltas.push_back(bytes[byte]);
+    }
+
+    numBytes += deltas.size();
+    calcBytes = true;
+    bytesList = numBytes;
+
+    return numBytes;
+}
 
 void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<IndexEntry> &text, 
     size_t endDocLoc){ //change
@@ -122,27 +161,38 @@ void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<IndexEntry> &text,
 
     for(Location indexLoc = 0; indexLoc < text.size(); ++indexLoc) {
         APESEARCH::string word = text[indexLoc].word;
-        switch (text[indexLoc].plType) {
-            case TitleText:
-                word.push_front('%');
-                break;
-            case URL:
-                word.push_front('#');
-                break;
-            case AnchorText:
-                word.push_front('$');
-                break;
-            default:
-                break;
+
+        bool anchor = false;
+
+        if(text[indexLoc].plType == TitleText)
+            word.push_front('$');
+
+        else if(text[indexLoc].plType == AnchorText){
+            word.push_front('#');
+            anchor == true;
         }
 
         entry = dict.Find(word);
 
-        if(!entry)
-            entry = dict.Find(word, new WordPostingList());
 
-        WordPostingList * wordList = (WordPostingList *) entry->value;
-        wordList->appendToList(indexLoc, static_cast<size_t>(text[indexLoc].attribute), lastDocIndex);
+        //Different actions for anchorText vs regularText
+
+        if(!entry){ //add AnchorPostingList if is anchor text
+            if(anchor)
+                entry = dict.Find(word, new AnchorPostingList());
+            else
+                entry = dict.Find(word, new WordPostingList());
+        }
+
+        if(anchor){
+            AnchorPostingList* anchorList = (AnchorPostingList *) entry->value;
+            anchorList->appendToList(0, urls.size() - 1);
+        }
+
+        else{
+            WordPostingList * wordList = (WordPostingList *) entry->value;
+            wordList->appendToList(indexLoc, static_cast<size_t>(text[indexLoc].attribute), lastDocIndex);
+        }
     }
 }
 
