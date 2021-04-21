@@ -31,7 +31,8 @@ class Ranker {
 
         double getScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<size_t> &indices, ISREndDoc* endDoc);
         double getURLScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<size_t> &indices, APESEARCH::string &url);
-        
+        double getAnchorScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<size_t> &indices, const IndexBlob* index);
+
         struct DynamicStats 
             {
             static constexpr double WordFrequentThreshold = 20;

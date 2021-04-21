@@ -36,6 +36,7 @@ class ISR //fix inheritance to be logical, remove duplicate code and member vari
         virtual APESEARCH::string GetNearestWord() = 0;
 
         virtual void Flatten(APESEARCH::vector<ISR *> &flattened) = 0;
+        virtual void FlattenStructure(APESEARCH::vector<APESEARCH::vector<ISR *>> &flattened) = 0;
 
         const IndexBlob *indexPtr;
     };
@@ -70,6 +71,11 @@ class ISRWord : public ISR
             flattened.push_back(this);
             }
 
+        void FlattenStructure(APESEARCH::vector<APESEARCH::vector<ISR *>> &flattened)
+            {
+            flattened.back().push_back(this);
+            }
+
         APESEARCH::string word;
         ListIterator * posts;
         Location startLocation, endLocation;
@@ -98,6 +104,8 @@ class ISREndDoc : public ISRWord
         void Flatten(APESEARCH::vector<ISR *> &flattened)
             {
             }
+
+        void FlattenStructure(APESEARCH::vector<APESEARCH::vector<ISR *>> &flattened) {}
     };
 
 class ISROr : public ISR
@@ -151,6 +159,15 @@ class ISROr : public ISR
                         {
                         terms[i]->Flatten(flattened);
                         }
+                    }
+                }
+
+            void FlattenStructure(APESEARCH::vector<APESEARCH::vector<ISR *>> &flattened)
+                {
+                for (int i = 0; i < numTerms; ++i)
+                    {   
+                    flattened.push_back({});
+                    terms[i]->Flatten(flattened.back());
                     }
                 }
         
@@ -217,6 +234,15 @@ class ISRAnd : public ISR
                     }
                 }
 
+            void FlattenStructure(APESEARCH::vector<APESEARCH::vector<ISR *>> &flattened)
+                {
+                for (int i = 0; i < numTerms; ++i)
+                    {   
+                    terms[i]->FlattenStructure(flattened);
+                    // terms[i]->Flatten(flattened.back());
+                    }
+                }
+
         private: 
             Post *post;
 
@@ -278,6 +304,15 @@ class ISRPhrase : public ISR
                     {
                     terms[i]->Flatten(flattened);
                     }
+                }
+            }
+        
+        void FlattenStructure(APESEARCH::vector<APESEARCH::vector<ISR *>> &flattened)
+            {
+            for (int i = 0; i < numTerms; ++i)
+                {   
+                // flattened.push_back({});
+                terms[i]->Flatten(flattened.back());
                 }
             }
             
@@ -380,6 +415,20 @@ class ISRContainer : public ISR
                     {
                     excluded[i]->Flatten(flattened);
                     }
+                }
+            }
+
+        void FlattenStructure(APESEARCH::vector<APESEARCH::vector<ISR *>> &flattened)
+            {
+            if (!flattened.size())
+                {
+                flattened.push_back({});
+                }
+            for (int i = 0; i < countContained; ++i)
+                {   
+                // flattened.push_back({});
+                // contained[i]->FlattenStructure(flattened);
+                contained[i]->Flatten(flattened.back());
                 }
             }
 

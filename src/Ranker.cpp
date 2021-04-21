@@ -109,10 +109,10 @@ double Ranker::getScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<si
     overallScore += DynamicStats::W_NumSpansNearTop * numSpansNearTop;
 
 
-    std::cout << numExactSpans << std::endl;
-    std::cout << numInOrderSpans << std::endl;
-    std::cout << numShortSpans << std::endl;
-    std::cout << numSpansNearTop << std::endl;
+    // std::cout << numExactSpans << std::endl;
+    // std::cout << numInOrderSpans << std::endl;
+    // std::cout << numShortSpans << std::endl;
+    // std::cout << numSpansNearTop << std::endl;
 
     return overallScore;
 
@@ -130,20 +130,47 @@ double Ranker::getURLScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector
     return DynamicStats::W_Url * matches;
     }
 
+double Ranker::getAnchorScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<size_t> &indices, const IndexBlob* index)
+    {
+    // build the anchor string and put a space between each term
+    APESEARCH::string anchorString = "#";
+    for (int i = 0; i < indices.size() - 1; ++i)
+        {
+        anchorString += flattened[indices[i]]->GetNearestWord();
+        anchorString += " ";
+        }
+    // ensure that a space isn't added after the last word
+    anchorString += flattened[indices.back()]->GetNearestWord();
+
+    const SerializedAnchorText *foundAnchor = index->FindAnchorText(anchorString);
+    if (foundAnchor)
+        {
+        uint8_t * ptr = (uint8_t * ) &foundAnchor->Key;
+        ptr += strlen(foundAnchor->Key) + 1;
+        return DynamicStats::W_Anchor * (*ptr);
+        }
+        // std::cout << anchorString << std::endl;
+    return 0;
+    }
 
 
 Ranker::Ranker(const IndexBlob* index, const APESEARCH::string queryLine) : ib(index), chunkResults(), flattened(){
     APESEARCH::unique_ptr<query::Tuple> parseTree = buildParseTree(queryLine);
+    if (!parseTree)
+        return;
+
     compiledTree = APESEARCH::unique_ptr<ISR>(parseTree->Compile(ib));
     docEnd = APESEARCH::unique_ptr<ISREndDoc>(ib->getEndDocISR());
     compiledTree->Flatten(flattened);
+
+    APESEARCH::vector<APESEARCH::vector<ISR *>> flattenedStructure;
+    compiledTree->FlattenStructure(flattenedStructure);
 
     urls = ib->getUrls();
     // Gets the first post Returns seek past 0
     Post *post = compiledTree->NextDocument(docEnd.get()); 
 
     size_t documentIndex = 0;
-    //need
     while(post){
         bool filesToSearch = docEnd->Seek(post->loc, docEnd.get());
             if (!filesToSearch)
@@ -152,26 +179,44 @@ Ranker::Ranker(const IndexBlob* index, const APESEARCH::string queryLine) : ib(i
         documentIndex = docEnd->posts->curPost->tData;
         Location startLoc = docEnd->GetStartLocation();
 
-        APESEARCH::vector<size_t> titleIndices;
-        APESEARCH::vector<size_t> bodyIndices;
+        double titleScore = 0; 
+        double bodyScore = 0;
+        double URLScore = 0;
+        double anchorScore = 0;
 
-        for(size_t i = 0; i < flattened.size(); ++i){
-            APESEARCH::string word = ((ISRWord *) flattened[i])->word;
+        for (APESEARCH::vector<ISR*> orTerms : flattenedStructure) {
+            APESEARCH::vector<size_t> titleIndices;
+            APESEARCH::vector<size_t> bodyIndices;
+            // for (auto term : orTerms) {
+            //     std::cout << term->GetNearestWord() << " ";
+            // }
+            // std::cout << endl;
+            for(size_t i = 0; i < orTerms.size(); ++i)
+                {
+                APESEARCH::string word = orTerms[i]->GetNearestWord();
 
-            flattened[i]->Seek(startLoc, docEnd.get());
+                orTerms[i]->Seek(startLoc, docEnd.get());
 
-            if(word[0] == '$')
-                titleIndices.push_back(i);
-            else
-                bodyIndices.push_back(i);
+                if(word[0] == '$')
+                    titleIndices.push_back(i);
+                else
+                    bodyIndices.push_back(i);
+                }
+
+            if (titleIndices.size()) {
+                titleScore += DynamicStats::W_Title * getScore(orTerms, titleIndices, docEnd.get());
+            }
+            if (bodyIndices.size()) {
+                bodyScore += DynamicStats::W_Body * getScore(orTerms, bodyIndices, docEnd.get());
+                URLScore += getURLScore(orTerms, bodyIndices, urls[documentIndex].convertToLower());
+                anchorScore += getAnchorScore(orTerms, bodyIndices, ib);
+            }
         }
 
-        //double titleScore = DynamicStats::W_Title * getScore(flattened, titleIndices, docEnd.get());
-        double bodyScore = DynamicStats::W_Body * getScore(flattened, bodyIndices, docEnd.get());
+        double rank = titleScore + bodyScore + URLScore + anchorScore;
+        std::cout << rank << ' ' << titleScore << ' ' << bodyScore << ' ' << URLScore << ' ' << anchorScore << ' ' << urls[documentIndex] << std::endl;
 
-        double URLScore = getURLScore(flattened, bodyIndices, urls[documentIndex]);
-
-        std::cout << ' ' << bodyScore << ' ' << urls[documentIndex] << std::endl;
+        // std::cout << urls[documentIndex] << std::endl;
         //URL score
         //AnchorText score
         //insertion sort
