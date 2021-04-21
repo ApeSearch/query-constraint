@@ -18,9 +18,9 @@ double Ranker::getScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<si
     while(furthestLoc < endLoc){
         //calculate furthest isr location
         for(size_t i = 0; i < indices.size(); ++i) {
-            ISRWord * isr = (ISRWord * ) flattened[i];
-            if(isr->startLocation() > furthestLoc)
-                furthestLoc = isr->startLocation();
+            ISRWord * isr = (ISRWord * ) flattened[indices[i]];
+            if(isr->GetStartLocation() > furthestLoc)
+                furthestLoc = isr->GetStartLocation();
         }
 
         //Call Next, count freq, on each isr until they are past
@@ -31,14 +31,17 @@ double Ranker::getScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<si
         bool pastEnd = false;
         APESEARCH::vector<Location> locations(indices.size());
 
-        for(size_t i = 0; i < indices.size(); ++i){
-            ISRWord * isr = (ISRWord * ) flattened[i];
+        for(size_t i = 0; i < indices.size(); ++i) {
+            ISRWord * isr = (ISRWord * ) flattened[indices[i]];
 
             //count freq until loc after furthest loc
-            while(isr->GetStartLocation() <= furthestLoc)
-                freq[i]++, isr->Next();
+            Post * nextPost = isr->Next(endDoc);
+            while(nextPost && isr->GetStartLocation() <= furthestLoc){
+                freq[i]++,    
+                nextPost = isr->Next(endDoc);
+            }
 
-            if(isr->GetStartLocation() > endLoc){
+            if(!nextPost || isr->GetStartLocation() > endLoc){
                 pastEnd = true;
                 break;
                 //maybe we still need to count doubles and triples?
@@ -60,8 +63,7 @@ double Ranker::getScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<si
         size_t lastLoc = startSpan;
         bool inOrder = true;
 
-        for(size_t i = 1; i < indices.size(); ++i){
-            ISRWord * isr = (ISRWord * ) flattened[i];
+        for(size_t i = 1; i < locations.size(); ++i){
 
             if(locations[i] > lastLoc)
                 lastLoc = locations[i];
@@ -75,7 +77,7 @@ double Ranker::getScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<si
                 endSpan = locations[i];
         }
 
-        if(inOrder && endSpan - startSpan == indices.size())
+        if(inOrder && endSpan - startSpan == indices.size() - 1)
             numExactSpans++;
         if(inOrder)
             numInOrderSpans++;
@@ -91,10 +93,12 @@ double Ranker::getScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<si
 
     for(size_t i = 0; i < freq.size(); ++i){
         if(freq[i] >= DynamicStats::WordFrequentThreshold)
-            numFreq;
+            numFreq++;
     }
 
-    if(numFreq > minToBeMost)
+    if(numFreq == freq.size())
+        overallScore += DynamicStats::W_AllWordsFrequent;
+    else if(numFreq > minToBeMost)
         overallScore += DynamicStats::W_MostWordsFrequent;
     else if(numFreq > 1)
         overallScore += DynamicStats::W_SomeWordsFrequent;
@@ -104,9 +108,27 @@ double Ranker::getScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<si
     overallScore += DynamicStats::W_NumShortSpans * numShortSpans;
     overallScore += DynamicStats::W_NumSpansNearTop * numSpansNearTop;
 
+
+    std::cout << numExactSpans << std::endl;
+    std::cout << numInOrderSpans << std::endl;
+    std::cout << numShortSpans << std::endl;
+    std::cout << numSpansNearTop << std::endl;
+
     return overallScore;
 
 }
+
+double Ranker::getURLScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<size_t> &indices, APESEARCH::string &url)
+    {
+    int matches = 0;
+    for (size_t index: indices)
+        {
+        size_t foundLocation = url.find(flattened[index]->GetNearestWord());
+        if (foundLocation != APESEARCH::string::npos)
+            ++matches;
+        }
+    return DynamicStats::W_Url * matches;
+    }
 
 
 
@@ -121,10 +143,12 @@ Ranker::Ranker(const IndexBlob* index, const APESEARCH::string queryLine) : ib(i
     Post *post = compiledTree->NextDocument(docEnd.get()); 
 
     size_t documentIndex = 0;
-
+    //need
     while(post){
-        docEnd->Seek(post->loc, docEnd.get());
-
+        bool filesToSearch = docEnd->Seek(post->loc, docEnd.get());
+            if (!filesToSearch)
+                return;
+        
         documentIndex = docEnd->posts->curPost->tData;
         Location startLoc = docEnd->GetStartLocation();
 
@@ -136,15 +160,18 @@ Ranker::Ranker(const IndexBlob* index, const APESEARCH::string queryLine) : ib(i
 
             flattened[i]->Seek(startLoc, docEnd.get());
 
-            if(word[0] == '#')
+            if(word[0] == '$')
                 titleIndices.push_back(i);
             else
                 bodyIndices.push_back(i);
         }
 
-        double titleScore = DynamicStats::W_Title * getScore(flattened, titleIndices, docEnd.get());
+        //double titleScore = DynamicStats::W_Title * getScore(flattened, titleIndices, docEnd.get());
         double bodyScore = DynamicStats::W_Body * getScore(flattened, bodyIndices, docEnd.get());
-        
+
+        double URLScore = getURLScore(flattened, bodyIndices, urls[documentIndex]);
+
+        std::cout << ' ' << bodyScore << ' ' << urls[documentIndex] << std::endl;
         //URL score
         //AnchorText score
         //insertion sort

@@ -29,15 +29,8 @@ void WordPostingList::appendToList(Location loc_, size_t attribute, size_t lastD
     posts.push_back(new WordPost(loc_, attribute));
 }
 
-void AnchorPostingList::appendToList(Location loc_, size_t urlIndex, size_t lastDocIndex){
-    if(!posts.size())
-        posts.push_back(new AnchorPost(1, urlIndex));
-    else{
-        if(urlIndex == posts.back()->tData)
-            posts.back()->loc++; //loc refers to frequency in case of anchorText
-        else
-            posts.push_back(new AnchorPost(1, urlIndex));
-    }
+void AnchorPostingList::appendToList(Location freq, size_t urlIndex, size_t lastDocIndex){
+    posts.push_back(new AnchorPost(freq, urlIndex));
 }
 
 uint32_t WordPostingList::bytesRequired(const APESEARCH::string &key) {
@@ -133,7 +126,7 @@ uint32_t AnchorPostingList::bytesRequired( const APESEARCH::string &key) {
     return numBytes;
 }
 
-void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<IndexEntry> &text, 
+void IndexHT::addDoc(APESEARCH::string url, const APESEARCH::vector<IndexEntry> &text, const APESEARCH::vector<AnchorText> &aText,
     size_t endDocLoc){ //change
     
     urls.push_back(url);
@@ -162,38 +155,34 @@ void IndexHT::addDoc(APESEARCH::string url, APESEARCH::vector<IndexEntry> &text,
     for(Location indexLoc = 0; indexLoc < text.size(); ++indexLoc) {
         APESEARCH::string word = text[indexLoc].word;
 
-        bool anchor = false;
-
         if(text[indexLoc].plType == TitleText)
             word.push_front('$');
-
-        else if(text[indexLoc].plType == AnchorText){
-            word.push_front('#');
-            anchor == true;
-        }
 
         entry = dict.Find(word);
 
 
         //Different actions for anchorText vs regularText
 
-        if(!entry){ //add AnchorPostingList if is anchor text
-            if(anchor)
-                entry = dict.Find(word, new AnchorPostingList());
-            else
-                entry = dict.Find(word, new WordPostingList());
-        }
+        if(!entry) //add AnchorPostingList if is anchor text
+            entry = dict.Find(word, new WordPostingList());
 
-        if(anchor){
-            AnchorPostingList* anchorList = (AnchorPostingList *) entry->value;
-            anchorList->appendToList(0, urls.size() - 1);
-        }
-
-        else{
-            WordPostingList * wordList = (WordPostingList *) entry->value;
-            wordList->appendToList(indexLoc, static_cast<size_t>(text[indexLoc].attribute), lastDocIndex);
-        }
+        WordPostingList * wordList = (WordPostingList *) entry->value;
+        wordList->appendToList(indexLoc, static_cast<size_t>(text[indexLoc].attribute), lastDocIndex);
     }
+
+    for(size_t anchor = 0; anchor < aText.size(); ++anchor) {
+        APESEARCH::string text = aText[anchor].text;
+        text.push_front('#');
+
+        entry = dict.Find(text);
+
+        if(!entry)
+            entry = dict.Find(text, new AnchorPostingList());
+        
+        AnchorPostingList * anchorList = (AnchorPostingList * ) entry->value;
+        anchorList->appendToList(aText[anchor].freq, urls.size() - 1);
+    }
+    
 }
 
 Post *PostingList::Seek(Location l) {

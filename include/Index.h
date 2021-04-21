@@ -118,8 +118,7 @@ class SerializedPostingList
 
         }
 
-        static char * Write(char *buffer, char const * const bufferEnd,
-            const hash::Bucket<APESEARCH::string, PostingList *> *b){
+        static char * Write(char *buffer, const hash::Bucket<APESEARCH::string, PostingList *> *b){
                 
                 SerializedPostingList * serialList = initSerializedPostingList(buffer, b, b->tuple.value->bytesList);
                 char *end = buffer + b->tuple.value->bytesList;
@@ -301,6 +300,35 @@ class IndexBlob
 
         return nullptr;
     }
+
+    template<class HashFunc = hash::FNV> 
+    const SerializedAnchorText* FindAnchorText(const APESEARCH::string &key) const {
+        static HashFunc func;
+
+        uint8_t const *byteAddr = reinterpret_cast< uint8_t const * > ( &MagicNumber );
+
+        uint32_t hashVal = ( uint32_t )func( key );
+        uint32_t bucketInd = hashVal & ( NumberOfBuckets - 1 );
+        uint32_t offset = Buckets[ bucketInd ];
+
+        if(offset){
+            byteAddr += offset;
+            SerializedAnchorText const *pl = reinterpret_cast<SerializedAnchorText const *>( byteAddr );
+
+            while(pl->bytesRequired){
+                if(!strcmp(key.cstr(), pl->Key))
+                    return pl;
+
+                byteAddr += pl->bytesRequired;
+                pl = reinterpret_cast<SerializedAnchorText const *>( byteAddr );
+            }
+
+        }
+
+        return nullptr;
+    }
+
+    
     
 
     static IndexBlob *Write( IndexBlob *ib, uint32_t bytes,
@@ -331,7 +359,11 @@ class IndexBlob
 
                 for(size_t sameChain = 0; sameChain < buckets[i].size(); ++sameChain) {
                     hash::Bucket<APESEARCH::string, PostingList*> * bucket = buckets[i][sameChain];
-                    serialPtr = SerializedPostingList::Write( serialPtr, end, bucket );
+
+                    if(bucket->tuple.key[0] == '#')
+                        serialPtr = SerializedAnchorText::Write( serialPtr, bucket );
+                    else
+                        serialPtr = SerializedPostingList::Write( serialPtr, bucket );
                 }
                 *reinterpret_cast< uint32_t *>( serialPtr ) = 0;
                 serialPtr += sizeof( uint32_t ); // Signify end of a chain
@@ -448,15 +480,6 @@ class Index {
         // File Names corresponding to index chunk files
         APESEARCH::vector<APESEARCH::string> chunkFileNames;
         APESEARCH::vector<APESEARCH::string> chunkURLs;
-
-        // Given a filename with a HashBlob, loads that file into main memory
-        HashFile loadIndexChunk(APESEARCH::string &filename) 
-            {
-            // TODO: implement Hashfile = operator or do this some other way (need to keep the object around for unique_map RAII)
-            // indexChunkFile = HashFile(filename.cstr());
-
-            // blob = indexChunkFile.Blob();
-            }
 
         // Builds a parse tree for a given query
 };

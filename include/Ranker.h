@@ -30,8 +30,9 @@ class Ranker {
         }
 
         double getScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<size_t> &indices, ISREndDoc* endDoc);
-
-        const struct DynamicStats 
+        double getURLScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<size_t> &indices, APESEARCH::string &url);
+        
+        struct DynamicStats 
             {
             static constexpr double WordFrequentThreshold = 20;
             static constexpr double MaxToBeShort = 10;
@@ -50,7 +51,7 @@ class Ranker {
             static constexpr double W_Body = 1;
             };
 
-        const struct StaticStats
+        struct StaticStats
             {
             static constexpr size_t ShortTitleThreshold = 20;
             static constexpr size_t MinNumAnchorText = 10;

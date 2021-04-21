@@ -40,11 +40,12 @@ TEST(postingList_seek)
 TEST(build_with_file){
     const char *filename = "./tests/indexFiles/indexFile1.txt";
 
-    IndexFileParser parser(filename);
+    IndexFileParser parser;
+    parser.writeFile(filename);
 
 
     APESEARCH::string s1 = "continue";
-    APESEARCH::string s2 = "%the";
+    APESEARCH::string s2 = "$the";
     APESEARCH::string s3 = "newsletter";
     APESEARCH::string s4 = "the";
 
@@ -60,8 +61,7 @@ TEST(build_with_file){
     assert(entry3->value->posts[0]->loc == 689);
     assert(entry3->value->posts[1]->loc == 716);
 
-
-    /*
+  
     while(itr != parser.index->dict.end()){
         std::cout << itr->key << std::endl;
         for(size_t i = 0; i < itr->value->posts.size(); ++i) {
@@ -69,9 +69,8 @@ TEST(build_with_file){
         }
         std::cout << std::endl;
         itr++;
-    }*/
+    }
     
-    entry4->value->posts.push_back(new WordPost(1000000, WordAttributeNormal));
     size_t bytesRequired = parser.index->BytesRequired();
 
     size_t bytes = entry4->value->bytesRequired("the");
@@ -79,7 +78,7 @@ TEST(build_with_file){
     WordPostingList * theList = (WordPostingList * )entry4->value;
 
     char const *filenameo = "./tests/testIndexBlobLarge.txt";
-    IndexFile hashFile( filenameo, parser.index );
+    IndexFile hashFile( filenameo, parser.index.get() );
 
     std::cout << "PASS" << std::endl;
 
@@ -100,8 +99,11 @@ TEST(basic_encode_deltas_bytes){
     };
 
     APESEARCH::unique_ptr<IndexHT> index = APESEARCH::unique_ptr<IndexHT>(new IndexHT());
-    index->addDoc("https://eecs440.com", words, 9);
-    index->addDoc("https://eecs441.com", words, 9);
+
+    APESEARCH::vector<AnchorText> aText;
+
+    index->addDoc("https://eecs440.com", words, aText, 9);
+    index->addDoc("https://eecs441.com", words, aText, 9);
 
     size_t bytesRequired = index->BytesRequired();
 
@@ -148,8 +150,10 @@ TEST(basic_index_file_write_test){
     
     APESEARCH::unique_ptr<IndexHT> index = APESEARCH::unique_ptr<IndexHT>(new IndexHT());
 
-    index->addDoc("https://eecs440.com", words, 9);
-    index->addDoc("https://eecs441.com", words, 9);
+    APESEARCH::vector<AnchorText> aText;
+
+    index->addDoc("https://eecs440.com", words, aText, 9);
+    index->addDoc("https://eecs441.com", words, aText, 9);
 
     char const *filename = "./tests/testIndexBlobFile.txt";
     IndexFile hashFile( filename, index.get() );
@@ -201,9 +205,9 @@ TEST(sync_table){
 
     assert(pl->syncTable[1].absoluteLoc == 517);
     assert(pl->syncTable[2].absoluteLoc == 1044);
-    assert(pl->syncTable[3].absoluteLoc == 2082);
-    assert(pl->syncTable[4].absoluteLoc == 4101);
-    assert(pl->syncTable[5].absoluteLoc == 8405);
+    assert(pl->syncTable[3].absoluteLoc == 2081);
+    assert(pl->syncTable[4].absoluteLoc == 4099);
+    assert(pl->syncTable[5].absoluteLoc == 8403);
 
 
 

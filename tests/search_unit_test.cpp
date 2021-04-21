@@ -6,8 +6,11 @@ using std::cout; using std::endl;
 #include "../libraries/AS/include/AS/unique_ptr.h"
 #include "../libraries/unit_test_framework/include/unit_test_framework/unit_test_framework.h"
 
+#include "../include/IndexFileParser.h"
+
 #include "queries.h"
-#include "../include/Ranker.h"
+
+#include "../include/Builder.h"
 
 char cwd[PATH_MAX];
 
@@ -34,9 +37,12 @@ APESEARCH::vector<IndexEntry> document2 = {
 
 APESEARCH::unique_ptr<IndexHT> buildIndex(const char * filename) {
     APESEARCH::unique_ptr<IndexHT> index(new IndexHT());
-
-    index->addDoc("https://eecs440.com", document1, document1.size());
-    index->addDoc("https://eecs441.com", document2, document2.size());
+    APESEARCH::vector<AnchorText> aText;
+    for (int i = 0; i < 1; ++i) {
+        index->addDoc("https://eecs440.com", document1, aText, document1.size());
+        index->addDoc("https://eecs441.com", document2, aText, document2.size());
+    }
+    
 
     IndexFile hashFile( filename, index.get() );
     return index;
@@ -58,43 +64,82 @@ APESEARCH::string buildQuery(APESEARCH::string queryIn) {
 }
 
 // TEST(builder) {
-//     buildIndex("./tests/indexChunks/chunk0.ape");
-//     buildIndex("./tests/indexChunks/chunk1.ape");
-//     buildIndex("./tests/indexChunks/chunk2.ape");
+
+//     Builder built = Builder("./tests/processedFiles");
+//     // buildIndex("./tests/indexChunks/chunk4.ape");
+//     // buildIndex("./tests/indexChunks/chunk1.ape");
+//     // buildIndex("./tests/indexChunks/chunk2.ape");
 // }
 
-TEST(build_index) {
-    const char *chunkDir = "tests/indexChunks";
-    Index search = Index(chunkDir);
+// TEST(build_index) {
+//     const char *chunkDir = "tests/indexChunks";
+//     Index search = Index(chunkDir);
 
-    getcwd(cwd, sizeof(cwd));
+//     getcwd(cwd, sizeof(cwd));
 
-    APESEARCH::string workingDir = cwd;
+//     APESEARCH::string workingDir = cwd;
 
-    APESEARCH::vector<APESEARCH::string> fileNames = {
-        "/tests/indexChunks/chunk0.ape",
-        "/tests/indexChunks/chunk1.ape",
-        "/tests/indexChunks/chunk2.ape"
-    };
+//     APESEARCH::vector<APESEARCH::string> fileNames = {
+//         "/tests/indexChunks/chunk0.ape",
+//         "/tests/indexChunks/chunk1.ape",
+//         "/tests/indexChunks/chunk2.ape"
+//     };
 
-    auto chunkFiles = search.getFiles();
-    for (int i = 0; i < chunkFiles.size(); ++i) {
-        APESEARCH::string expectedFile = workingDir;
-        expectedFile += fileNames[i];
+//     auto chunkFiles = search.getFiles();
+//     for (int i = 0; i < chunkFiles.size(); ++i) {
+//         APESEARCH::string expectedFile = workingDir;
+//         expectedFile += fileNames[i];
 
-        ASSERT_EQUAL(chunkFiles[i], expectedFile);
-    }
-}
+//         ASSERT_EQUAL(chunkFiles[i], expectedFile);
+//     }
+// }
 
 TEST(search_index) {
-    const char *chunkDir = "tests/indexChunks";
+    const char *chunkDir = "tests/apechunks";
     Index search = Index(chunkDir);
 
-    APESEARCH::string queryLine = buildQuery("the cow");
-    APESEARCH::string queryLine1 = buildQuery("\"the pig\"");
+
+    APESEARCH::string queryLine = buildQuery("monarchs");
+    // APESEARCH::string queryLine1 = buildQuery("\"the pig\"");
 
     search.searchIndexChunks(queryLine);
-    search.searchIndexChunks(queryLine1);
+    // search.searchIndexChunks(queryLine1);
 }
+
+// TEST(anchor_text_blob) {
+//     char const *filename = "tests/apechunks/apechunk0";
+
+//     IndexFile hashFile (filename);
+
+//     const IndexBlob* blob = hashFile.Blob();
+//     APESEARCH::string strToFind = "#list of french monarchs";
+
+//     const SerializedAnchorText* pl = blob->FindAnchorText(strToFind);
+
+//     std::cout << pl->Key << std::endl;
+//     assert(strcmp(pl->Key, strToFind.cstr()) == 0);
+
+//     uint8_t * ptr = (uint8_t * ) &pl->Key;
+//     ptr += strlen(pl->Key) + 1;
+
+//     while(ptr < (uint8_t * ) pl + pl->bytesRequired)
+//         printf("%d ", *ptr++);
+    
+//     std::cout << std::endl;
+// }
+
+// TEST(build_condensed) {
+//     const char *filename = "./tests/indexFiles/condensedFile0";
+
+//     IndexFileParser parser(filename);
+//     char const *filenameo = "./tests/apechunks/apefile.ape";
+//     IndexFile hashFile( filenameo, parser.index );
+
+//     const char *chunkDir = "tests/apechunks";
+//     Index search = Index(chunkDir);
+
+//     APESEARCH::string queryLine = buildQuery("the cow");
+//     search.searchIndexChunks(queryLine);
+// }
 
 TEST_MAIN();

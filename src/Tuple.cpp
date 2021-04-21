@@ -31,22 +31,27 @@ UnarySimpleConstraint::~UnarySimpleConstraint() {}
 ISR* UnarySimpleConstraint::Compile(const IndexBlob *indexPtr) {
     ISRContainer* containerISR = new ISRContainer(indexPtr);
 
-    ISROr *compiled = (ISROr *) actualConstraint->Compile(indexPtr);
+    containerISR->countExcluded++;
+    containerISR->excluded = new ISR*;
+    *containerISR->excluded = actualConstraint->Compile(indexPtr);
     delete actualConstraint;
 
-    ISR** termList;
-    unsigned termCount;
-    // jank garbage
-    if (compiled->numTerms) {
-        std::cout << "or" << std::endl;
-        containerISR->countExcluded = compiled->numTerms;
-        
-    } else {
-        std::cout << "container" << std::endl;
-        containerISR->countExcluded = ((ISRContainer *) compiled)->countContained;
-    }
+    // ISROr *compiled = (ISROr *) actualConstraint->Compile(indexPtr);
+    // delete actualConstraint;
 
-    containerISR->excluded = compiled;
+    // ISR** termList;
+    // unsigned termCount;
+    // // jank garbage
+    // if (compiled->numTerms) {
+    //     std::cout << "or" << std::endl;
+    //     containerISR->countExcluded = compiled->numTerms;
+        
+    // } else {
+    //     std::cout << "container" << std::endl;
+    //     containerISR->countExcluded = ((ISRContainer *) compiled)->countContained;
+    // }
+
+    // containerISR->excluded = compiled;
 
     // ISRAnd * contained = (ISRAnd *) compiled->terms[0];
         

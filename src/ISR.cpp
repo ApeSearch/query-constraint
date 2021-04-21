@@ -8,11 +8,15 @@ ISR::ISR(const IndexBlob *_indexPtr) : indexPtr(_indexPtr) {}
 
 ISRWord::ISRWord() : ISR() {}
 
-ISRWord::ISRWord(ListIterator *  _posts, const IndexBlob *_indexPtr, APESEARCH::string _word) : ISR(_indexPtr), posts(_posts), postIndex(0), word(_word) 
+ISRWord::ISRWord(ListIterator *  _posts, const IndexBlob *_indexPtr, APESEARCH::string _word) : ISR(_indexPtr), posts(_posts), postIndex(0), word(_word.convertToLower()) 
     {
     startLocation = posts->prevLoc;
     endLocation = posts->prevLoc;
     }
+
+ISRWord::~ISRWord() {
+    delete posts;
+}
 
 ISREndDoc::ISREndDoc() : ISRWord() {}
 
@@ -30,13 +34,12 @@ Post *ISRWord::GetCurrentPost( ) {
 }
 
 Post * ISRWord::Next( ISREndDoc* docEnd ) {
-    // if (++postIndex < posts->posts.size()) 
-    //     {
-    //     Post * next = posts->posts[postIndex];
-    //     startLocation = next->loc;
-    //     return next;
-    //     }
-    return posts->Next();
+    Post * nextPost = posts->Next();
+    if (nextPost) 
+        {
+        startLocation = nextPost->loc;
+        }
+    return nextPost;
 }
 
 Post * ISREndDoc::Next( ISREndDoc* docEnd ) {
@@ -182,6 +185,7 @@ Post * ISRAnd::Seek( Location target, ISREndDoc* docEnd )
         }
     }
 
+    if (post == nullptr) return nullptr;
     post = nullptr;
     nearestStartLocation = (Location) - 1;
     while (true) 
@@ -358,49 +362,17 @@ Post * ISRContainer::Seek(Location target, ISREndDoc* docEnd)
     {
     // 1. Seek all the ISRs to the first occurrence beginning at
     //    the target location.
-    nearestStartLocation = (Location) - 1;
-    nearestEndLocation = target;
-    post = nullptr;
-    for (int i = 0; i < countContained; ++i) {\
-        if (!contained[i]) return nullptr;
-
-        Post* foundPost = contained[i]->Seek(target, docEnd);
-        if (foundPost) {
-            if (foundPost->loc >= nearestEndLocation)
-                {
-                nearestEndLocation = foundPost->loc;
-                farthestTerm = i;
-                }
-            if (foundPost->loc <= nearestStartLocation)
-                {
-                post = foundPost;
-                nearestStartLocation = foundPost->loc;
-                nearestTerm = i;
-                }
-        }
-    }
-
-    post = nullptr;
-    nearestStartLocation = (Location) - 1;
     while (true) 
         {
-        // foundPosts = {};
-        // 2. Move the document end ISR to just past the furthest
-        //    word, then calculate the document begin location.
-        Post * enddocPost = docEnd->Seek(nearestEndLocation, docEnd);
+        bool foundExcluded = false;
+        nearestStartLocation = (Location) - 1;
+        nearestEndLocation = target;
+        post = nullptr;
+        for (int i = 0; i < countContained; ++i) {\
+            if (!contained[i]) return nullptr;
 
-        Location documentBegin = docEnd->posts->prevLoc;
-
-        // 3. Seek all the other terms to past the document begin.
-        bool found = true;
-        for (int i = 0; i < countContained; ++i) 
-            {
-            if (!contained[i]) continue;
-
-            Post* foundPost = contained[i]->Seek(documentBegin, docEnd);
-            if (foundPost) 
-                {
-                // foundPosts.push_back(i);
+            Post* foundPost = contained[i]->Seek(target, docEnd);
+            if (foundPost) {
                 if (foundPost->loc >= nearestEndLocation)
                     {
                     nearestEndLocation = foundPost->loc;
@@ -412,31 +384,82 @@ Post * ISRContainer::Seek(Location target, ISREndDoc* docEnd)
                     nearestStartLocation = foundPost->loc;
                     nearestTerm = i;
                     }
+            }
+        }
+        // if (post == nullptr) return nullptr;
+        post = nullptr;
+        nearestStartLocation = (Location) - 1;
+        while (true) 
+            {
+            // foundPosts = {};
+            // 2. Move the document end ISR to just past the furthest
+            //    word, then calculate the document begin location.
+            const Post * const enddocPost = docEnd->Seek(nearestEndLocation, docEnd);
+            if (!enddocPost) return nullptr;
+            Location documentEnd = enddocPost->loc;
+            Location documentBegin = docEnd->posts->prevLoc;
 
-                // 4. If any term is past the document end, return to
-                //    step 2.
-                if (foundPost->loc > docEnd->GetEndLocation()) 
+            // 3. Seek all the other terms to past the document begin.
+            bool found = false;
+            for (int i = 0; i < countContained; ++i) 
+                {
+                if (!contained[i]) continue;
+
+                Post* foundPost = contained[i]->Seek(documentBegin, docEnd);
+                if (foundPost) 
                     {
-                    found = false;
-                    break;
+                    found = true;
+                    // foundPosts.push_back(i);
+                    if (foundPost->loc >= nearestEndLocation)
+                        {
+                        nearestEndLocation = foundPost->loc;
+                        farthestTerm = i;
+                        }
+                    if (foundPost->loc <= nearestStartLocation)
+                        {
+                        post = foundPost;
+                        nearestStartLocation = foundPost->loc;
+                        nearestTerm = i;
+                        }
+
+                    // 4. If any term is past the document end, return to
+                    //    step 2.
+                    if (foundPost->loc > documentEnd) 
+                        {
+                        found = false;
+                        break;
+                        }
+                    } 
+                else 
+                    {
+                    // 5. If any ISR reaches the end, there is no match.
+                    return nullptr;
                     }
                 } 
-            else 
-                {
-                // 5. If any ISR reaches the end, there is no match.
-                return nullptr;
-                }
-            } 
 
-            if (found)
-                {
-                // if (excluded) {
-                //     excluded->Seek(target, endDocLoc);
-                //     Location loceroni = excluded->GetStartLocation();
-                //     return (loceroni < endDocLoc) ? post : nullptr;
-                // }
-                return post;
-                }
+                    
+                if (countExcluded > 0) 
+                    {
+                    
+                    for (int i = 0; i < countExcluded; ++i)
+                        {
+                        Post* excludedPost = excluded[i]->Seek(documentBegin, docEnd);
+                        if (!excludedPost || excluded[i]->GetStartLocation() < documentEnd)
+                            {
+                            target = documentEnd + 1;
+                            foundExcluded = true;
+                            break;
+                            }
+                        }
+                    if (foundExcluded)
+                        break;
+                    }
+                if (found)
+                    {
+                    if (post->loc < documentBegin) return nullptr;
+                    return post;
+                    }
+            }
         }
     
     return nullptr;

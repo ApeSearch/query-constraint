@@ -43,7 +43,7 @@ enum WordAttributes
 
 enum PostingListType
     {
-        BodyText, TitleText, AnchorText
+        BodyText, TitleText
     };
 
 
@@ -51,6 +51,11 @@ struct IndexEntry {
     APESEARCH::string word;
     WordAttributes attribute;
     PostingListType plType;
+};
+
+struct AnchorText {
+    APESEARCH::string text;
+    size_t freq;
 };
 
 class Post
@@ -149,7 +154,7 @@ class AnchorPostingList : public PostingList
         uint32_t bytesRequired( const APESEARCH::string &key);
 
         //loc_ is unused, only for clean override
-        void appendToList(Location _unused, size_t urlIndex, size_t lastDocIndex = 0) override;
+        void appendToList(Location freq, size_t urlIndex, size_t lastDocIndex = 0) override;
     };
 
 class IndexHT
@@ -160,7 +165,7 @@ class IndexHT
         IndexHT();
         ~IndexHT();
 
-        void addDoc(APESEARCH::string url, APESEARCH::vector<IndexEntry> &text, size_t endDocLoc);
+        void addDoc(APESEARCH::string url, const APESEARCH::vector<IndexEntry> &text, const APESEARCH::vector<AnchorText> &aText, size_t endDocLoc);
         Post *goToNext( Location location ); // May need to inherit here...
 
         uint32_t BytesRequired();

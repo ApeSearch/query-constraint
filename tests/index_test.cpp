@@ -19,8 +19,10 @@ int main()
         };
 
         IndexHT *index = new IndexHT();
-        index->addDoc("https://eecs440.com", words, 9);
-        index->addDoc("https://eecs441.com", words, 9);
+
+        APESEARCH::vector<AnchorText> aText;
+        index->addDoc("https://eecs440.com", words, aText, 9);
+        index->addDoc("https://eecs441.com", words, aText, 9);
 
         APESEARCH::string strToFind = "the";
 

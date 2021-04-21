@@ -46,9 +46,7 @@ class ISRWord : public ISR
         ISRWord();
         ISRWord(ListIterator * plIterator, const IndexBlob *indexPtr, APESEARCH::string word);
 
-        ~ISRWord() {
-            delete posts;
-        }
+        ~ISRWord();
 
         unsigned GetDocumentCount( );
         unsigned GetNumberOfOccurrences( );
@@ -302,11 +300,15 @@ class ISRContainer : public ISR
             for (int i = 0; i < countContained; ++i) {
                 delete contained[i];
             }
-            delete contained;
+            for (int i = 0; i < countExcluded; ++i) {
+                delete excluded[i];
+            }
+            delete [] contained;
+            delete [] excluded;
         }
 
         ISR **contained; //List of ISRs to include
-        ISR *excluded; //ISR to exclude
+        ISR **excluded; //ISR to exclude
 
         unsigned countContained, countExcluded;
         // Location Next( );
@@ -369,6 +371,14 @@ class ISRContainer : public ISR
                 if (contained[i]) 
                     {
                     contained[i]->Flatten(flattened);
+                    }
+                }
+
+            for (int i = 0; i < countExcluded; ++i)
+                {
+                if (excluded[i]) 
+                    {
+                    excluded[i]->Flatten(flattened);
                     }
                 }
             }

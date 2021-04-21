@@ -1,6 +1,8 @@
 #pragma once
 
 #include "IndexHT.h"
+#include "Index.h"
+
 #include "../libraries/AS/include/AS/File.h"
 #include "../libraries/AS/include/AS/string.h"
 #include "../libraries/AS/include/AS/vector.h"
@@ -11,14 +13,15 @@
 class IndexFileParser 
     {
         public:
-            IndexFileParser(){}
-            IndexFileParser(const char * fileName): file(fileName, O_RDONLY), index(new IndexHT()){
-                parseFile();
-            }
+            IndexFileParser(): currentChunk(0), index(new IndexHT()), entries(), aText() {}
 
-            ~IndexFileParser(){
-                delete index;
-            }
+            ~IndexFileParser() {}
+
+            void writeFile(const char * fileName)
+                {
+                APESEARCH::File file = APESEARCH::File(fileName, O_RDONLY);
+                parseFile(file);
+                }
             
             //given a char buffer of beg and 1 past the end of the last number, returns the actual number
             size_t indexOffBuffer(const char * beg, const char * pastEnd) const{
@@ -30,11 +33,13 @@ class IndexFileParser
                 return static_cast<size_t>(atoi(buffer));
             }
 
-            IndexHT* index;
-            APESEARCH::File file;
+            APESEARCH::unique_ptr<IndexHT> index;
             APESEARCH::vector<IndexEntry> entries;
+            APESEARCH::vector<AnchorText> aText;
             APESEARCH::string url;
 
+            int currentChunk;
+            const Location MAX_LOCATION = 1000;
 
             private:
                 char* parseBodyText(char * cur){
@@ -59,8 +64,6 @@ class IndexFileParser
                     while(*cur != '\n'){
                         while(*cur++ != ' ');
 
-                        char buffer[32];
-
                         size_t index = indexOffBuffer(beg, cur - 1);
 
                         entries[index].plType = TitleText;
@@ -76,8 +79,6 @@ class IndexFileParser
                     while(*cur != '\n'){
                         while(*cur++ != ' ');
 
-                        char buffer[32];
-
                         size_t index = indexOffBuffer(beg, cur - 1);
 
                         entries[index].attribute = attribute;
@@ -87,8 +88,31 @@ class IndexFileParser
                     return cur + 1;
                 }
 
+                char * parseAnchorText(char * cur){
+                    while(*cur != '\0'){
+                        while(*cur++ != '"'); //newline safeguard
 
-                void parseFile() {
+                        char* beg = cur;
+                        
+                        while(*cur++ != '"');
+
+                        APESEARCH::string text(beg, 0, cur - beg - 1);
+
+                        assert(*cur++ == ' ');   
+
+                        beg = cur;
+                        while(*cur++ != '\n');
+
+                        size_t freq = indexOffBuffer(beg, cur - 1);
+
+                        aText.push_back(AnchorText{text, freq});
+                    }
+
+                    return cur;
+                }
+
+
+                void parseFile(APESEARCH::File &file) {
                     char* map = ( char * ) mmap( nullptr, file.fileSize(), PROT_READ, MAP_PRIVATE, file.getFD(), 0 );
 
                     char* end = map + file.fileSize();
@@ -132,12 +156,26 @@ class IndexFileParser
                             std::cout << entries[i].word << ' ' << entries[i].plType << ' ' << attribute << ' ' << entries[i].word.size() << std::endl;
                         }
                         */
+                        cur = parseAnchorText(cur);
 
-                        index->addDoc(url, entries, entries.size());
+                        for(int i = 0; i < aText.size(); ++i){
+                            std::cout << aText[i].text << ' ' << aText[i].freq << std::endl;
+                        }
 
-                        APESEARCH::vector<IndexEntry> temp;
-                        entries = temp;
+                        index->addDoc(url, entries, aText, entries.size());
 
+                        if (index->MaximumLocation > MAX_LOCATION)
+                            {
+                            char buffer[64]; // The filename buffer.
+                            snprintf(buffer, sizeof(char) * 32, "apechunk%i", currentChunk++);
+                            // IndexFile()
+                            index->dict.Optimize();
+                            IndexFile hashFile( buffer, index.get() );
+                            index = APESEARCH::unique_ptr<IndexHT>(new IndexHT());
+                            }
+
+                        entries = {};
+                        aText = {};
 
                         assert(*cur++ == '\0');
                         beg = cur;
