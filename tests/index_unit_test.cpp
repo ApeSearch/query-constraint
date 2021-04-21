@@ -61,7 +61,6 @@ TEST(build_with_file){
     assert(entry3->value->posts[0]->loc == 689);
     assert(entry3->value->posts[1]->loc == 716);
 
-  
     while(itr != parser.index->dict.end()){
         std::cout << itr->key << std::endl;
         for(size_t i = 0; i < itr->value->posts.size(); ++i) {
@@ -84,7 +83,7 @@ TEST(build_with_file){
 
 }
 
-/*
+
 TEST(basic_encode_deltas_bytes){
      APESEARCH::vector<IndexEntry> words = {
         {"the", WordAttributeNormal, BodyText},
@@ -158,7 +157,7 @@ TEST(basic_index_file_write_test){
     char const *filename = "./tests/testIndexBlobFile.txt";
     IndexFile hashFile( filename, index.get() );
 
-}*/
+}
 
 
 TEST(basic_index_file_read_test){
@@ -215,9 +214,9 @@ TEST(sync_table){
 
     Post* p = itr->Seek(3012);
 
-    assert(p->loc == 3013);
+    assert(p->loc == 3019);
     p = itr->Next();
-    assert(p->loc == 3021);
+    assert(p->loc == 3026);
 
     p = itr->Seek(1000000000);
 

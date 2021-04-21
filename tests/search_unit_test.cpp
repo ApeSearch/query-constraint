@@ -99,34 +99,34 @@ TEST(search_index) {
     Index search = Index(chunkDir);
 
 
-    APESEARCH::string queryLine = buildQuery("monarchs");
+    APESEARCH::string queryLine = buildQuery("the");
     // APESEARCH::string queryLine1 = buildQuery("\"the pig\"");
 
     search.searchIndexChunks(queryLine);
     // search.searchIndexChunks(queryLine1);
 }
 
-// TEST(anchor_text_blob) {
-//     char const *filename = "tests/apechunks/apechunk0";
+TEST(anchor_text_blob) {
+    char const *filename = "tests/apechunks/apechunk0";
 
-//     IndexFile hashFile (filename);
+    IndexFile hashFile (filename);
 
-//     const IndexBlob* blob = hashFile.Blob();
-//     APESEARCH::string strToFind = "#list of french monarchs";
+    const IndexBlob* blob = hashFile.Blob();
+    APESEARCH::string strToFind = "#list of french monarchs";
 
-//     const SerializedAnchorText* pl = blob->FindAnchorText(strToFind);
+    const SerializedAnchorText* pl = blob->FindAnchorText(strToFind);
 
-//     std::cout << pl->Key << std::endl;
-//     assert(strcmp(pl->Key, strToFind.cstr()) == 0);
+    std::cout << pl->Key << std::endl;
+    assert(strcmp(pl->Key, strToFind.cstr()) == 0);
 
-//     uint8_t * ptr = (uint8_t * ) &pl->Key;
-//     ptr += strlen(pl->Key) + 1;
+    uint8_t * ptr = (uint8_t * ) &pl->Key;
+    ptr += strlen(pl->Key) + 1;
 
-//     while(ptr < (uint8_t * ) pl + pl->bytesRequired)
-//         printf("%d ", *ptr++);
+    while(ptr < (uint8_t * ) pl + pl->bytesRequired)
+        printf("%d ", *ptr++);
     
-//     std::cout << std::endl;
-// }
+    std::cout << std::endl;
+}
 
 // TEST(build_condensed) {
 //     const char *filename = "./tests/indexFiles/condensedFile0";

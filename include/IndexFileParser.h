@@ -39,7 +39,7 @@ class IndexFileParser
             APESEARCH::string url;
 
             int currentChunk;
-            const Location MAX_LOCATION = 1000;
+            const Location MAX_LOCATION = 10000000;
 
             private:
                 char* parseBodyText(char * cur){
@@ -181,6 +181,12 @@ class IndexFileParser
                         beg = cur;
                     }
 
+                    char buffer[64]; // The filename buffer.
+                    snprintf(buffer, sizeof(char) * 32, "apechunk%i", currentChunk++);
+                    // IndexFile()
+                    index->dict.Optimize();
+                    IndexFile hashFile( buffer, index.get() );
+                    // index = APESEARCH::unique_ptr<IndexHT>(new IndexHT());
                     munmap( map, file.fileSize() );
                 }
 
