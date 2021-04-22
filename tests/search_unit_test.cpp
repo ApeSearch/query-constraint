@@ -97,7 +97,7 @@ TEST(search_index) {
 
     APESEARCH::string queryLine = buildQuery("the");
     // APESEARCH::string queryLine1 = buildQuery("\"the pig\"");
-    search.searchIndexChunks(queryLine);
+    search.searchIndexChunks(queryLine.cstr());
     // search.searchIndexChunks(queryLine1);
     std::cout << "yeet" << std::endl;
 }

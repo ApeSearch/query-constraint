@@ -569,7 +569,7 @@ class Index {
         ~Index() {}
 
         // Given a search query, search the index chunks for matching documents and rank them
-        void searchIndexChunks(APESEARCH::string queryLine);
+        void searchIndexChunks(const char * queryLine);
 
         APESEARCH::vector<APESEARCH::string> & getFiles() {
             return chunkFileNames;
@@ -591,5 +591,5 @@ class Index {
 
 struct rankArgs {
     Index* index;
-    APESEARCH::string * query;
+    const char * query;
 };

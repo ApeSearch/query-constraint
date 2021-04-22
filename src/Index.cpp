@@ -73,7 +73,7 @@ void * rankChunk(void * arg){
     struct rankArgs * args = (struct rankArgs * ) arg;
 
     Index* index = args->index;
-    APESEARCH::string query = *(args->query);
+    APESEARCH::string query = args->query;
 
     pthread_mutex_lock(&queueLock);
     while(index->threadQueue.empty())
@@ -93,7 +93,6 @@ void * rankChunk(void * arg){
     APESEARCH::vector<RankedEntry> results = ranker.getTopTen();
 
     pthread_mutex_lock(&resultsLock);
-
     APESEARCH::vector<RankedEntry> &topTen = index->topTen;
 
     if ( !results.empty() )
@@ -114,7 +113,7 @@ void * rankChunk(void * arg){
 }
 
 
-void Index::searchIndexChunks(APESEARCH::string queryLine) {
+void Index::searchIndexChunks(const char * queryLine) {
 
 
     pthread_t threads[NUM_THREADS];
@@ -122,7 +121,7 @@ void Index::searchIndexChunks(APESEARCH::string queryLine) {
     struct rankArgs * args = (struct rankArgs * ) malloc(sizeof(this) + sizeof(&queryLine));
     
     args->index = this;
-    args->query = &queryLine;
+    args->query = queryLine;
     
     for(int i = 0; i < NUM_THREADS; ++i)
         pthread_create(&threads[i], NULL, rankChunk, (void *) args);
@@ -175,4 +174,9 @@ void Index::searchIndexChunks(APESEARCH::string queryLine) {
     free(args);
     for(int i = 0; i < NUM_THREADS; ++i)
         pthread_join(threads[i], NULL);
+
+    for (auto entry: topTen)
+        {
+        std::cout << entry.rank << ' ' << entry.url << std::endl;
+        }
 }
