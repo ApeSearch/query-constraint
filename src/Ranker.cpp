@@ -1,6 +1,6 @@
 #include "../include/Ranker.h"
 
-double Ranker::getScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<size_t> &indices, ISREndDoc* endDoc){
+double Ranker::getScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<size_t> &indices, ISREndDoc* endDoc) {
 
     Location begLoc = endDoc->GetStartLocation();
     Location endLoc = endDoc->GetEndLocation();
@@ -167,7 +167,7 @@ Ranker::Ranker(const IndexBlob* index, const APESEARCH::string& queryLine) : ib(
         }
 }
 
-APESEARCH::vector<RankedEntry> Ranker::getTopTen() {
+vector<Result> Ranker::getTopTen() {
     // Gets the first post Returns seek past 0
     Post *post = compiledTree->NextDocument(docEnd.get()); 
 

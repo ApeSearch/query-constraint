@@ -20,7 +20,7 @@ class Ranker {
         Ranker( const Ranker& ) = default;
         Ranker( Ranker&& o ) : flattened(o.flattened), urls(o.urls), chunkResults(o.chunkResults), compiledTree(std::move(o.compiledTree)), docEnd(std::move(o.docEnd)) {}
 
-        APESEARCH::vector<RankedEntry> getTopTen();
+        void * getTopTen(void *topTen);
 
     private:
 

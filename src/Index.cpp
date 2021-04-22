@@ -1,6 +1,8 @@
 #include "../include/Index.h"
 #include "../include/Ranker.h"
 
+#include "pthread.h"
+
 ISRWord *IndexBlob::getWordISR ( APESEARCH::string word ) const
     {
         const SerializedPostingList* entry = Find(word);
@@ -42,42 +44,71 @@ Pair ** insertSortN( Pair **pairArray, Pair **pairValidEnd, Pair ** pairTrueEnd,
    return pairValidEnd + 1 == pairTrueEnd ? pairValidEnd : pairValidEnd + 1;
    } // end inserSortN()
 */
+
+#include "../libraries"
+
+pthread_mutex_t resultsLock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t queueLock = PTHREAD_MUTEX_INITIALIZER;
+
+// queue<const char *> fileQueue
+
+// thread function (void * query)
+/* {
+    lock queuelock
+    pop chunkFile name
+    unlock queuelock
+
+    create indexfile
+    get indexblob
+
+    Ranker ranker(blob, query)
+    vector<result> chunkResults = ranker.getTopTen()
+
+    lock resultsLock
+    sort chunkResults into index top 10
+    unlock resultslock
+   } */
+
 void Index::searchIndexChunks(APESEARCH::string queryLine) {
+    
+
     // create start timestamp
-    /*std::vector< std::future< APESEARCH::vector<RankedEntry> > > futureObjs;
+    // std::vector< std::future< APESEARCH::vector<RankedEntry> > > futureObjs;
     for (int i = 0; i < chunkFileNames.size(); ++i) {
-        
+        // add filenames to queue
+
         // Build the parse tree (done for every index chunk because the parse tree is deleted on isr->Compile())
-        IndexFile chunkFile (chunkFileNames[i].cstr());
-        const IndexBlob* chunk = chunkFile.Blob();
+        // IndexFile chunkFile (chunkFileNames[i].cstr());
+        // const IndexBlob* chunk = chunkFile.Blob();
 
-        auto func = [ rank{ Ranker( chunk, queryLine ) } ]( ) -> APESEARCH::vector<RankedEntry> mutable { return rank.getTopTen( );  };
-        auto obj = threadsPool.submit(func);
-        futureObjs.emplace_back( std::move( obj ) );
+        // auto func = [ rank{ Ranker( chunk, queryLine )}, topTen ]( ) -> APESEARCH::vector<RankedEntry> mutable { rank.getTopTen( topTen );  };
+        // pthread_create(&(threadPool[i]), nullptr, &func, nullptr);
+        // auto obj = threadsPool.submit(func);
+        // futureObjs.emplace_back( std::move( obj ) );
 
-        if (futureObjs.size() > 200)  
-            {
-            for (auto& entry : futureObjs )
-                {
-                APESEARCH::vector< RankedEntry > results( entry.get( ) ); // will block until returned
-                if ( !results.empty() )
-                    {
-                    for(size_t i = 0; i < results.size(); ++i)
-                        {
+        // if (futureObjs.size() > 200)  
+        //     {
+        //     for (auto& entry : futureObjs )
+        //         {
+        //         APESEARCH::vector< RankedEntry > results( entry.get( ) ); // will block until returned
+        //         if ( !results.empty() )
+        //             {
+        //             for(size_t i = 0; i < results.size(); ++i)
+        //                 {
                         
-                        if(results[i].rank <= topTen.back().rank)
-                            continue;
+        //                 if(results[i].rank <= topTen.back().rank)
+        //                     continue;
 
-                        APESEARCH::swap(results[i], topTen.back());
+        //                 APESEARCH::swap(results[i], topTen.back());
 
-                        for(size_t j = topTen.size() - 1; j > 0 && topTen[j - 1].rank < topTen[j].rank; --j)
-                            APESEARCH::swap(topTen[j], topTen[j - 1]);
-                        }
-                    }
-                }
+        //                 for(size_t j = topTen.size() - 1; j > 0 && topTen[j - 1].rank < topTen[j].rank; --j)
+        //                     APESEARCH::swap(topTen[j], topTen[j - 1]);
+        //                 }
+        //             }
+        //         }
             
-            // if timestamp > 60 seconds, break
-            futureObjs = std::vector< std::future< APESEARCH::vector<RankedEntry> > >( );
-            }
-    }*/
+        //     // if timestamp > 60 seconds, break
+        //     futureObjs = std::vector< std::future< APESEARCH::vector<RankedEntry> > >( );
+        //     }
+    }
 }
