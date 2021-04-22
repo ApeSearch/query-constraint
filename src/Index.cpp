@@ -48,7 +48,6 @@ Pair ** insertSortN( Pair **pairArray, Pair **pairValidEnd, Pair ** pairTrueEnd,
 pthread_mutex_t resultsLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t queueLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t notEmpty;
-pthread_cond_t activeThreads;
 
 // queue<const char *> fileQueue
 
@@ -88,8 +87,6 @@ void * rankChunk(void * arg){
             
 
         APESEARCH::string fileName = index->threadQueue.front();
-        std::cout << std::endl;
-        std::cout << fileName << std::endl << "========" << std::endl;
         index->threadQueue.pop();
 
         pthread_mutex_unlock(&queueLock);
@@ -102,7 +99,6 @@ void * rankChunk(void * arg){
         Ranker ranker(chunk, query);
 
         APESEARCH::vector<RankedEntry> results = ranker.getTopTen();
-        // pthread_cond_signal(&activeThreads);
         pthread_mutex_lock(&resultsLock);
         APESEARCH::vector<RankedEntry> &topTen = index->topTen;
 
@@ -122,11 +118,6 @@ void * rankChunk(void * arg){
 
         pthread_mutex_unlock(&resultsLock);
     }
-
-    pthread_mutex_lock(&queueLock);
-    index->activeThreadsCount--;
-    pthread_cond_signal(&activeThreads);
-    pthread_mutex_unlock(&queueLock);
 }
 
 
@@ -149,18 +140,15 @@ void Index::searchIndexChunks(const char * queryLine) {
         // add filenames to queue
 
         pthread_mutex_lock(&queueLock);
-        // while (threadQueue.size() > 5)
-        //     pthread_cond_wait(&activeThreads, &queueLock);
 
         threadQueue.push(chunkFileNames[i]);
+        
         pthread_cond_broadcast(&notEmpty);
         pthread_mutex_unlock(&queueLock);
     }
 
     pthread_mutex_lock(&queueLock);
     filesToPush = false;
-    while (activeThreadsCount)
-        pthread_cond_wait(&activeThreads, &queueLock);
     pthread_mutex_unlock(&queueLock);
     
     for(int i = 0; i < NUM_THREADS; ++i)
