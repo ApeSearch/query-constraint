@@ -35,6 +35,14 @@ struct SyncEntry
 struct RankedEntry {
     RankedEntry() : url(""), rank(0) {}
     RankedEntry(APESEARCH::string _url, double _rank) : url(_url), rank(_rank) {}
+    RankedEntry( const RankedEntry& other ) : url( other.url ), rank( other.rank ) { }
+    RankedEntry& operator=( RankedEntry&& other )
+       {
+        APESEARCH::swap( url, other.url );
+        rank = other.rank;
+        return *this;
+       }
+    RankedEntry( RankedEntry&& other ) : url( std::move( other.url ) ), rank( other.rank ) { }
     APESEARCH::string url;
     double rank;
 };
@@ -174,28 +182,6 @@ class SerializedAnchorText {
         }
 };
 
-
-size_t decodeDelta(uint8_t * &deltas){
-    size_t addedDeltas = 0;
-
-    int mask = 0x7F;
-
-    int shift = 0;
-
-    while(true) {
-        uint8_t byte = *deltas++;
-
-        assert(deltas <= (uint8_t *) pl + pl->bytesOfPostingList);
-
-        addedDeltas |= (byte & mask) << shift;
-        if(!(~mask & byte))
-            break;
-        shift += 7;
-    }
-
-    return addedDeltas;
-}
-
 class ListIterator {
     public:
         ListIterator(const SerializedPostingList * pl_): pl(pl_), curPost(nullptr), prevLoc(0){
@@ -206,6 +192,27 @@ class ListIterator {
             else{
                 plPtr = nullptr, startOfDeltas = nullptr;
             }
+        }
+
+        static size_t decodeDelta(uint8_t * &deltas, uint8_t * end){
+            size_t addedDeltas = 0;
+
+            int mask = 0x7F;
+
+            int shift = 0;
+
+            while(true) {
+                uint8_t byte = *deltas++;
+
+                assert(deltas <= end);
+
+                addedDeltas |= (byte & mask) << shift;
+                if(!(~mask & byte))
+                    break;
+                shift += 7;
+            }
+
+            return addedDeltas;
         }
 
         virtual Post* Seek(Location l) = 0;
@@ -237,7 +244,7 @@ class WordListIterator : public ListIterator {
             while(highBit > 0 && pl->syncTable[highBit].absoluteLoc == 0) --highBit;
             plPtr = startOfDeltas + pl->syncTable[highBit].seekOffset;
 
-            size_t prevOffset = decodeDelta(plPtr); //difference of curLoc - prevLoc, can calculate prevLoc
+            size_t prevOffset = decodeDelta(plPtr, (uint8_t* ) pl + pl->bytesOfPostingList); //difference of curLoc - prevLoc, can calculate prevLoc
             //size_t tData = decodeDelta(plPtr);
 
             curPost = APESEARCH::unique_ptr<Post>(new Post(pl->syncTable[highBit].absoluteLoc, WordAttributeNormal));
@@ -262,7 +269,7 @@ class WordListIterator : public ListIterator {
                 curPost = nullptr;
             
             else{
-                Location loc = prevLoc + decodeDelta(plPtr); //decode delta bytes from curPointer, returns actual deltas
+                Location loc = prevLoc + decodeDelta(plPtr, (uint8_t* ) pl + pl->bytesOfPostingList); //decode delta bytes from curPointer, returns actual deltas
                 //size_t tData = decodeDelta(plPtr); //get attribute, urlIndex for endDocPOst
             
                 curPost = APESEARCH::unique_ptr<Post>(new Post(loc, WordAttributeNormal));
@@ -289,8 +296,8 @@ class EndDocListIterator : public ListIterator {
             while(highBit > 0 && pl->syncTable[highBit].absoluteLoc == 0) --highBit;
             plPtr = startOfDeltas + pl->syncTable[highBit].seekOffset;
 
-            size_t prevOffset = decodeDelta(plPtr); //difference of curLoc - prevLoc, can calculate prevLoc
-            size_t tData = decodeDelta(plPtr);
+            size_t prevOffset = decodeDelta(plPtr, (uint8_t* ) pl + pl->bytesOfPostingList); //difference of curLoc - prevLoc, can calculate prevLoc
+            size_t tData = decodeDelta(plPtr, (uint8_t* ) pl + pl->bytesOfPostingList);
 
             curPost = APESEARCH::unique_ptr<Post>(new Post(pl->syncTable[highBit].absoluteLoc, tData));
             prevLoc = pl->syncTable[highBit].absoluteLoc - prevOffset;
@@ -314,8 +321,8 @@ class EndDocListIterator : public ListIterator {
                 curPost = nullptr;
             
             else{
-                Location loc = prevLoc + decodeDelta(plPtr); //decode delta bytes from curPointer, returns actual deltas
-                size_t tData = decodeDelta(plPtr); //get attribute, urlIndex for endDocPOst
+                Location loc = prevLoc + decodeDelta(plPtr, (uint8_t* ) pl + pl->bytesOfPostingList); //decode delta bytes from curPointer, returns actual deltas
+                size_t tData = decodeDelta(plPtr, (uint8_t* ) pl + pl->bytesOfPostingList); //get attribute, urlIndex for endDocPOst
             
                 curPost = APESEARCH::unique_ptr<Post>(new Post(loc, tData));
             }
@@ -327,7 +334,7 @@ class EndDocListIterator : public ListIterator {
 
 class AnchorListIterator {
     public:
-        AnchorListIterator(SerializedAnchorText * at): anchorList(at) {
+        AnchorListIterator(const SerializedAnchorText * at): anchorList(at) {
             if(at)
                 lPtr = (uint8_t * ) &at->Key + strlen(at->Key) + 1;
             else
@@ -339,15 +346,15 @@ class AnchorListIterator {
                 return 0;
             
             while(lPtr < (uint8_t *) anchorList + anchorList->bytesRequired){
-                size_t freq = decodeDelta(lPtr);
-                if(decodeDelta(lPtr) == urlIndex)
+                size_t freq = ListIterator::decodeDelta(lPtr, (uint8_t *) anchorList + anchorList->bytesRequired);
+                if(ListIterator::decodeDelta(lPtr, (uint8_t *) anchorList + anchorList->bytesRequired) == urlIndex)
                     return freq;
             }
 
             return 0;
         }
 
-        SerializedAnchorText* anchorList;
+        const SerializedAnchorText* anchorList;
         uint8_t* lPtr;
 };
 
@@ -473,6 +480,8 @@ class IndexBlob
             }
                 
         assert( serialPtr == end );
+
+        return ib;
     }
 
     static IndexBlob * Create(IndexHT *indexHT) {
@@ -565,7 +574,7 @@ class Index {
 
         // Index constructor given a directory relative from the working directory where the executable was invoked
         Index(const char * chunkDirectory) : chunkFileNames(listdir(chunkDirectory)), threadsPool( MAXCLIENTS * SERVERNODES, maxNumOfSubmits),
-            topTen(10 ) {}
+            topTen(10) {}
         ~Index() {}
 
         // Given a search query, search the index chunks for matching documents and rank them

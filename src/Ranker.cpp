@@ -149,7 +149,7 @@ double Ranker::getAnchorScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vec
     }
 
 
-Ranker::Ranker(const IndexBlob* index, const APESEARCH::string queryLine) : ib(index), chunkResults(), flattened() {
+Ranker::Ranker(const IndexBlob* index, const APESEARCH::string& queryLine) : ib(index), chunkResults(), flattened() {
     APESEARCH::unique_ptr<query::Tuple> parseTree = buildParseTree(queryLine);
     if (!parseTree)
         return;

@@ -13,7 +13,7 @@
 class IndexFileParser 
     {
         public:
-            IndexFileParser(): currentChunk(0), index(new IndexHT()), entries(), aText() {}
+            IndexFileParser(): index(new IndexHT()), entries(), aText(), currentChunk(0) {}
 
             ~IndexFileParser() {}
 
@@ -74,8 +74,6 @@ class IndexFileParser
                 }
 
                 char* parseAttributeIndicies(char * cur, WordAttributes attribute){
-                    char* beg = cur;
-
                     while(*cur != '\n') ++cur;
 
                     return cur + 1;
@@ -127,15 +125,15 @@ class IndexFileParser
 
                         beg = cur;
                         while(*cur++ != '\n');
-                        size_t numParagraphs = indexOffBuffer(beg, cur - 1);
+                        indexOffBuffer(beg, cur - 1);
 
                         beg = cur;
                         while(*cur++ != '\n');
-                        size_t numHeadings = indexOffBuffer(beg, cur - 1);
+                        indexOffBuffer(beg, cur - 1);
 
                         beg = cur;
                         while(*cur++ != '\n');
-                        size_t numSentences = indexOffBuffer(beg, cur - 1);
+                        indexOffBuffer(beg, cur - 1);
 
                         /**** Debugging Purposes ****
                         for(int i = 0; i < entries.size(); ++i){

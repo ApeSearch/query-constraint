@@ -9,14 +9,16 @@
 #include "Index.h"
 #include "ISR.h"
 #include "Tuple.h"
+#include <vector>
 
 class Ranker {
     public:
 
         //Dynamic weights : minToBeMost, minToBeNearTop
 
-        Ranker(const IndexBlob* index, const APESEARCH::string queryLine);
-        Ranker(const Ranker& o) : flattened(o.flattened), urls(o.urls), chunkResults(o.chunkResults), compiledTree(std::move(o.compiledTree)), docEnd(std::move(o.docEnd)) {}
+        Ranker(const IndexBlob* index, const APESEARCH::string& queryLine);
+        Ranker( const Ranker& ) = default;
+        Ranker( Ranker&& o ) : flattened(o.flattened), urls(o.urls), chunkResults(o.chunkResults), compiledTree(std::move(o.compiledTree)), docEnd(std::move(o.docEnd)) {}
 
         APESEARCH::vector<RankedEntry> getTopTen();
 

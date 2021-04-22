@@ -44,16 +44,16 @@ Pair ** insertSortN( Pair **pairArray, Pair **pairValidEnd, Pair ** pairTrueEnd,
 */
 void Index::searchIndexChunks(APESEARCH::string queryLine) {
     // create start timestamp
-    APESEARCH::vector< std::future< APESEARCH::vector<RankedEntry> > > futureObjs;
+    /*std::vector< std::future< APESEARCH::vector<RankedEntry> > > futureObjs;
     for (int i = 0; i < chunkFileNames.size(); ++i) {
         
         // Build the parse tree (done for every index chunk because the parse tree is deleted on isr->Compile())
         IndexFile chunkFile (chunkFileNames[i].cstr());
         const IndexBlob* chunk = chunkFile.Blob();
 
-        Ranker ranker(chunk, queryLine);
-        auto func = [ ranker{ std::move( ranker )  } ]( ) -> APESEARCH::vector< RankedEntry > { return ranker.getTopTen( );  };
-        futureObjs.emplace_back( threadsPool.submit(func) );
+        auto func = [ rank{ Ranker( chunk, queryLine ) } ]( ) -> APESEARCH::vector<RankedEntry> mutable { return rank.getTopTen( );  };
+        auto obj = threadsPool.submit(func);
+        futureObjs.emplace_back( std::move( obj ) );
 
         if (futureObjs.size() > 200)  
             {
@@ -77,7 +77,7 @@ void Index::searchIndexChunks(APESEARCH::string queryLine) {
                 }
             
             // if timestamp > 60 seconds, break
-            futureObjs.resize( 0 );
+            futureObjs = std::vector< std::future< APESEARCH::vector<RankedEntry> > >( );
             }
-    }
+    }*/
 }

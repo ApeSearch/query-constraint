@@ -114,7 +114,7 @@ class ISROr : public ISR
             ISROr();
             ISROr(const IndexBlob *_indexPtr);
             ~ISROr() {
-                for (int i = 0; i < numTerms; ++i) {
+                for (unsigned int i = 0; i < numTerms; ++i) {
                     delete terms[i];
                 }
                 delete [] terms;
@@ -153,7 +153,7 @@ class ISROr : public ISR
                 //     {
                 //     terms[i]->Flatten(flattened);
                 //     }
-                for (int i = 0; i < numTerms; ++i)
+                for (unsigned int i = 0; i < numTerms; ++i)
                     {
                     if (terms[i]) 
                         {
@@ -164,7 +164,7 @@ class ISROr : public ISR
 
             void FlattenStructure(APESEARCH::vector<APESEARCH::vector<ISR *>> &flattened)
                 {
-                for (int i = 0; i < numTerms; ++i)
+                for (unsigned int i = 0; i < numTerms; ++i)
                     {   
                     flattened.push_back({});
                     terms[i]->Flatten(flattened.back());
@@ -186,7 +186,7 @@ class ISRAnd : public ISR
             ISRAnd();
             ISRAnd(const IndexBlob *_indexPtr);
             ~ISRAnd() {
-                for (int i = 0; i < numTerms; ++i) {
+                for (unsigned int i = 0; i < numTerms; ++i) {
                     delete terms[i];
                 }
                 delete [] terms;
@@ -225,7 +225,7 @@ class ISRAnd : public ISR
                 //     {
                 //     terms[i]->Flatten(flattened);
                 //     }
-                for (int i = 0; i < numTerms; ++i)
+                for (unsigned int i = 0; i < numTerms; ++i)
                     {
                     if (terms[i]) 
                         {
@@ -236,7 +236,7 @@ class ISRAnd : public ISR
 
             void FlattenStructure(APESEARCH::vector<APESEARCH::vector<ISR *>> &flattened)
                 {
-                for (int i = 0; i < numTerms; ++i)
+                for (unsigned int i = 0; i < numTerms; ++i)
                     {   
                     terms[i]->FlattenStructure(flattened);
                     // terms[i]->Flatten(flattened.back());
@@ -258,7 +258,7 @@ class ISRPhrase : public ISR
         ISRPhrase();
         ISRPhrase(const IndexBlob *_indexPtr);
         ~ISRPhrase() {
-            for (int i = 0; i < numTerms; ++i) {
+            for (unsigned int i = 0; i < numTerms; ++i) {
                 delete terms[i];
             }
             delete [] terms;
@@ -298,7 +298,7 @@ class ISRPhrase : public ISR
             //     {
             //     terms[i]->Flatten(flattened);
             //     }
-            for (int i = 0; i < numTerms; ++i)
+            for (unsigned int i = 0; i < numTerms; ++i)
                 {
                 if (terms[i]) 
                     {
@@ -309,7 +309,7 @@ class ISRPhrase : public ISR
         
         void FlattenStructure(APESEARCH::vector<APESEARCH::vector<ISR *>> &flattened)
             {
-            for (int i = 0; i < numTerms; ++i)
+            for (unsigned int i = 0; i < numTerms; ++i)
                 {   
                 // flattened.push_back({});
                 terms[i]->Flatten(flattened.back());
@@ -332,10 +332,10 @@ class ISRContainer : public ISR
         ISRContainer();
         ISRContainer(const IndexBlob *_indexPtr);
         ~ISRContainer() {
-            for (int i = 0; i < countContained; ++i) {
+            for (unsigned int i = 0; i < countContained; ++i) {
                 delete contained[i];
             }
-            for (int i = 0; i < countExcluded; ++i) {
+            for (unsigned int i = 0; i < countExcluded; ++i) {
                 delete excluded[i];
             }
             delete [] contained;
@@ -401,7 +401,7 @@ class ISRContainer : public ISR
 
         void Flatten(APESEARCH::vector<ISR *> &flattened) override
             {
-            for (int i = 0; i < countContained; ++i)
+            for (unsigned int i = 0; i < countContained; ++i)
                 {
                 if (contained[i]) 
                     {
@@ -409,7 +409,7 @@ class ISRContainer : public ISR
                     }
                 }
 
-            for (int i = 0; i < countExcluded; ++i)
+            for (unsigned int i = 0; i < countExcluded; ++i)
                 {
                 if (excluded[i]) 
                     {
@@ -424,7 +424,7 @@ class ISRContainer : public ISR
                 {
                 flattened.push_back({});
                 }
-            for (int i = 0; i < countContained; ++i)
+            for (unsigned int i = 0; i < countContained; ++i)
                 {   
                 // flattened.push_back({});
                 // contained[i]->FlattenStructure(flattened);

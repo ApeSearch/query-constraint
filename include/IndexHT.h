@@ -98,7 +98,7 @@ class PostingList
 
         PostingList(): posts(), deltas(), bytesList(0), calcBytes(false) {}
         ~PostingList() {
-            for (int i = 0; i < posts.size(); ++i) 
+            for (size_t i = 0; i < posts.size(); ++i) 
                 delete posts[i];
         }
 
@@ -126,7 +126,7 @@ class WordPostingList : public PostingList
 
         WordPostingList(): PostingList() {}
 
-        uint32_t bytesRequired( const APESEARCH::string &key );
+        uint32_t bytesRequired( const APESEARCH::string &key ) override;
 
         void appendToList(Location loc_, size_t attribute, size_t lastDocIndex = 0) override;
 
@@ -140,7 +140,7 @@ class DocEndPostingList : public PostingList
 
         DocEndPostingList(): PostingList() {}
 
-        uint32_t bytesRequired( const APESEARCH::string &key );
+        uint32_t bytesRequired( const APESEARCH::string &key ) override;
 
         void appendToList(Location loc_, size_t urlIndex, size_t lastDocIndex = 0) override; 
     };
@@ -151,7 +151,7 @@ class AnchorPostingList : public PostingList
 
         AnchorPostingList(): PostingList() {}
 
-        uint32_t bytesRequired( const APESEARCH::string &key);
+        uint32_t bytesRequired( const APESEARCH::string &key) override;
 
         //loc_ is unused, only for clean override
         void appendToList(Location freq, size_t urlIndex, size_t lastDocIndex = 0) override;
