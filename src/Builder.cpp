@@ -9,6 +9,7 @@ Builder::Builder(const char * processedDirectory) : processedFileNames(listdir(p
     IndexFileParser parser;
     for (APESEARCH::string filename : processedFileNames)
         {
+        std::cout << "Parsing Chunk Name : " << filename << std::endl;
         parser.writeFile(filename.cstr());
         }
     }

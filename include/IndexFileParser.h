@@ -39,7 +39,7 @@ class IndexFileParser
             APESEARCH::string url;
 
             int currentChunk;
-            const Location MAX_LOCATION = 10000000;
+            const Location MAX_LOCATION = 2000000000;
 
             private:
                 char* parseBodyText(char * cur){
@@ -157,6 +157,7 @@ class IndexFileParser
 
                         if (index->MaximumLocation > MAX_LOCATION)
                             {
+                            std::cout << "Building Index Chunk" << std::endl;
                             char buffer[64]; // The filename buffer.
                             snprintf(buffer, sizeof(char) * 32, "apechunk%i", currentChunk++);
                             // IndexFile()

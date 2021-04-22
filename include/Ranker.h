@@ -11,7 +11,6 @@
 #include "Tuple.h"
 #include <vector>
 
-
 class Ranker {
     public:
 
@@ -37,16 +36,16 @@ class Ranker {
             static constexpr double WordFrequentThreshold = 20;
             static constexpr double MaxToBeShort = 10;
 
-            static constexpr double W_NumShortSpans = 5;
-            static constexpr double W_NumInOrderSpans = 5;
-            static constexpr double W_ExactPhrases = 15;
-            static constexpr double W_NumSpansNearTop = 5;
+            static constexpr double W_NumShortSpans = 2;
+            static constexpr double W_NumInOrderSpans = 2;
+            static constexpr double W_ExactPhrases = 6;
+            static constexpr double W_NumSpansNearTop = 8;
             static constexpr double W_AllWordsFrequent = 5;
-            static constexpr double W_MostWordsFrequent = 5;
+            static constexpr double W_MostWordsFrequent = 7;
             static constexpr double W_SomeWordsFrequent = 5;
 
-            static constexpr double W_Anchor = 20;
-            static constexpr double W_Url = 10;
+            static constexpr double W_Anchor = 100;
+            static constexpr double W_Url = 20;
             static constexpr double W_Title = 10;
             static constexpr double W_Body = 1;
             };
