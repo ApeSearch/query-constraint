@@ -161,10 +161,10 @@ Ranker::Ranker(const IndexBlob* index, const APESEARCH::string& queryLine) : ib(
 
     urls = ib->getUrls();
 
-    for (auto entry : chunkResults)
-        {
-        std::cout << entry.url << " " << entry.rank << std::endl;
-        }
+    // for (auto entry : chunkResults)
+    //     {
+    //     std::cout << entry.url << " " << entry.rank << std::endl;
+    //     }
 }
 
 APESEARCH::vector<RankedEntry> Ranker::getTopTen() {
@@ -216,7 +216,7 @@ APESEARCH::vector<RankedEntry> Ranker::getTopTen() {
 
         double rank = titleScore + bodyScore + URLScore + anchorScore;
         // std::cout << rank << ' ' << titleScore << ' ' << bodyScore << ' ' << URLScore << ' ' << anchorScore << ' ' << urls[documentIndex] << std::endl;
-
+        std::cout << urls[documentIndex] << std::endl;
         if (chunkResults.size() < 10)
             {
             chunkResults.push_back(RankedEntry(urls[documentIndex], rank));
@@ -239,5 +239,10 @@ APESEARCH::vector<RankedEntry> Ranker::getTopTen() {
         post = compiledTree->NextDocument(docEnd.get());
     }
 
+    // std::cout << "========" << std::endl;
+    // for (auto results : chunkResults) {
+    //     std::cout << results.rank << ' ' << results.url << std::endl;
+    // }
+    // std::cout << "========" << std::endl;
     return chunkResults;
 }

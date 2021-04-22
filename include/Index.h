@@ -565,7 +565,7 @@ class Index {
     public:
 
         // Index constructor given a directory relative from the working directory where the executable was invoked
-        Index(const char * chunkDirectory) : chunkFileNames(listdir(chunkDirectory)), threadQueue(), topTen(10) {}
+        Index(const char * chunkDirectory) : chunkFileNames(listdir(chunkDirectory)), threadQueue(), topTen(10), filesToPush(true), activeThreadsCount(NUM_THREADS) {}
         ~Index() {}
 
         // Given a search query, search the index chunks for matching documents and rank them
@@ -575,7 +575,11 @@ class Index {
             return chunkFileNames;
         }
         
+        int activeThreadsCount;
+
+        bool filesToPush;
         APESEARCH::queue<APESEARCH::string> threadQueue;
+
         APESEARCH::vector<RankedEntry> topTen;
 
     private:

@@ -48,6 +48,7 @@ Pair ** insertSortN( Pair **pairArray, Pair **pairValidEnd, Pair ** pairTrueEnd,
 pthread_mutex_t resultsLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t queueLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t notEmpty;
+pthread_cond_t activeThreads;
 
 // queue<const char *> fileQueue
 
@@ -74,42 +75,58 @@ void * rankChunk(void * arg){
 
     Index* index = args->index;
     APESEARCH::string query = args->query;
+    while (true) {
+        pthread_mutex_lock(&queueLock);
+        while(index->threadQueue.empty() && index->filesToPush)
+            pthread_cond_wait(&notEmpty, &queueLock);
 
-    pthread_mutex_lock(&queueLock);
-    while(index->threadQueue.empty())
-        pthread_cond_wait(&notEmpty, &queueLock);
+        if (!index->filesToPush && index->threadQueue.empty())
+            {
+                pthread_mutex_unlock(&queueLock);
+                break;
+            }
+            
 
-    APESEARCH::string fileName = index->threadQueue.front();
-    index->threadQueue.pop();
-    pthread_mutex_unlock(&queueLock);
+        APESEARCH::string fileName = index->threadQueue.front();
+        std::cout << std::endl;
+        std::cout << fileName << std::endl << "========" << std::endl;
+        index->threadQueue.pop();
 
-    IndexFile chunkFile(fileName.cstr());
-    const IndexBlob* chunk = chunkFile.Blob();
+        pthread_mutex_unlock(&queueLock);
 
-    assert(chunk->verifyIndexBlob());
+        IndexFile chunkFile(fileName.cstr());
+        const IndexBlob* chunk = chunkFile.Blob();
 
-    Ranker ranker(chunk, query);
+        assert(chunk->verifyIndexBlob());
 
-    APESEARCH::vector<RankedEntry> results = ranker.getTopTen();
+        Ranker ranker(chunk, query);
 
-    pthread_mutex_lock(&resultsLock);
-    APESEARCH::vector<RankedEntry> &topTen = index->topTen;
+        APESEARCH::vector<RankedEntry> results = ranker.getTopTen();
+        // pthread_cond_signal(&activeThreads);
+        pthread_mutex_lock(&resultsLock);
+        APESEARCH::vector<RankedEntry> &topTen = index->topTen;
 
-    if ( !results.empty() )
-    {
-    for(size_t i = 0; i < results.size(); ++i)
+        if ( !results.empty() )
         {
-        if(results[i].rank <= topTen.back().rank)
-            continue;
+        for(size_t i = 0; i < results.size(); ++i)
+            {
+            if(results[i].rank <= topTen.back().rank)
+                continue;
 
-        APESEARCH::swap(results[i], topTen.back());
+            APESEARCH::swap(results[i], topTen.back());
 
-        for(size_t j = topTen.size() - 1; j > 0 && topTen[j - 1].rank < topTen[j].rank; --j)
-            APESEARCH::swap(topTen[j], topTen[j - 1]);
+            for(size_t j = topTen.size() - 1; j > 0 && topTen[j - 1].rank < topTen[j].rank; --j)
+                APESEARCH::swap(topTen[j], topTen[j - 1]);
+            }
         }
+
+        pthread_mutex_unlock(&resultsLock);
     }
 
-    pthread_mutex_unlock(&resultsLock);
+    pthread_mutex_lock(&queueLock);
+    index->activeThreadsCount--;
+    pthread_cond_signal(&activeThreads);
+    pthread_mutex_unlock(&queueLock);
 }
 
 
@@ -132,51 +149,27 @@ void Index::searchIndexChunks(const char * queryLine) {
         // add filenames to queue
 
         pthread_mutex_lock(&queueLock);
+        // while (threadQueue.size() > 5)
+        //     pthread_cond_wait(&activeThreads, &queueLock);
+
         threadQueue.push(chunkFileNames[i]);
-        pthread_cond_signal(&notEmpty);
+        pthread_cond_broadcast(&notEmpty);
         pthread_mutex_unlock(&queueLock);
-
-        // Build the parse tree (done for every index chunk because the parse tree is deleted on isr->Compile())
-        // IndexFile chunkFile (chunkFileNames[i].cstr());
-        // const IndexBlob* chunk = chunkFile.Blob();
-
-        // auto func = [ rank{ Ranker( chunk, queryLine )}, topTen ]( ) -> APESEARCH::vector<RankedEntry> mutable { rank.getTopTen( topTen );  };
-        // pthread_create(&(threadPool[i]), nullptr, &func, nullptr);
-        // auto obj = threadsPool.submit(func);
-        // futureObjs.emplace_back( std::move( obj ) );
-
-        // if (futureObjs.size() > 200)  
-        //     {
-        //     for (auto& entry : futureObjs )
-        //         {
-        //         APESEARCH::vector< RankedEntry > results( entry.get( ) ); // will block until returned
-        //         if ( !results.empty() )
-        //             {
-        //             for(size_t i = 0; i < results.size(); ++i)
-        //                 {
-                        
-        //                 if(results[i].rank <= topTen.back().rank)
-        //                     continue;
-
-        //                 APESEARCH::swap(results[i], topTen.back());
-
-        //                 for(size_t j = topTen.size() - 1; j > 0 && topTen[j - 1].rank < topTen[j].rank; --j)
-        //                     APESEARCH::swap(topTen[j], topTen[j - 1]);
-        //                 }
-        //             }
-        //         }
-            
-        //     // if timestamp > 60 seconds, break
-        //     futureObjs = std::vector< std::future< APESEARCH::vector<RankedEntry> > >( );
-        //     }
     }
 
-    free(args);
+    pthread_mutex_lock(&queueLock);
+    filesToPush = false;
+    while (activeThreadsCount)
+        pthread_cond_wait(&activeThreads, &queueLock);
+    pthread_mutex_unlock(&queueLock);
+    
     for(int i = 0; i < NUM_THREADS; ++i)
         pthread_join(threads[i], NULL);
 
-    for (auto entry: topTen)
-        {
-        std::cout << entry.rank << ' ' << entry.url << std::endl;
-        }
+    free(args);
+
+    // for (auto entry: topTen)
+    //     {
+    //     std::cout << entry.rank << ' ' << entry.url << std::endl;
+    //     }
 }

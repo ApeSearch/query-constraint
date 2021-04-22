@@ -20,10 +20,10 @@ APESEARCH::string buildQuery(APESEARCH::string queryIn) {
 
 int main() {
     const char *chunkDir = "tests/apechunks2";
-    Index search = Index(chunkDir);
 
     while (true)
         {
+        Index search = Index(chunkDir);
         std::cout << "Enter a search query (type #quit to exit): ";
         std::string queryIn;
         std::getline (std::cin, queryIn);
@@ -38,14 +38,7 @@ int main() {
             }
         std::cout << std::endl;
         APESEARCH::string queryLine = buildQuery(APESEARCH::string(queryIn.cbegin(),queryIn.cend()).convertToLower());
-        search.searchIndexChunks(queryLine);
+        search.searchIndexChunks(queryLine.cstr());
         std::cout << "=========================================================" << std::endl;
         }
-    
-    
-    
-
-    
-
-    
 }
