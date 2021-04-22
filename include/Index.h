@@ -7,9 +7,7 @@
 #include "../libraries/AS/include/AS/unique_ptr.h"
 #include "../libraries/HashTable/include/HashTable/HashBlob.h"
 #include "../libraries/AS/include/AS/algorithms.h"
-
-#include "../libraries/AS/include/AS/pthread_pool.h"
-#include "../libraries/AS/include/AS/circular_buffer.h"
+#include "../libraries/AS/include/AS/queue.h"
 
 #include "IndexHT.h"
 #include "QueryParser.h"
@@ -20,6 +18,7 @@
 using std::cout; using std::endl;
 
 #define SYNCTABLESIZE 24
+#define NUM_THREADS 10
 
 using std::size_t;
 
@@ -431,8 +430,6 @@ class IndexBlob
         return nullptr;
     }
 
-    
-    
 
     static IndexBlob *Write( IndexBlob *ib, uint32_t bytes,
             const IndexHT *indexHT ) {
@@ -564,17 +561,11 @@ class IndexFile{
 
 };
 
-#define SERVERNODES 5
-#define MAXCLIENTS 1
-#define DOCSPERNODE 10
-
 class Index {
     public:
-        // Index() : threadsPool( MAXCLIENTS * SERVERNODES, maxNumOfSubmits) {}
 
         // Index constructor given a directory relative from the working directory where the executable was invoked
-        Index(const char * chunkDirectory) : chunkFileNames(listdir(chunkDirectory)), threadsPool( MAXCLIENTS * SERVERNODES, maxNumOfSubmits),
-            topTen(10) {}
+        Index(const char * chunkDirectory) : chunkFileNames(listdir(chunkDirectory)), threadQueue(), topTen(10) {}
         ~Index() {}
 
         // Given a search query, search the index chunks for matching documents and rank them
@@ -584,6 +575,7 @@ class Index {
             return chunkFileNames;
         }
         
+        APESEARCH::queue<APESEARCH::string> threadQueue;
         APESEARCH::vector<RankedEntry> topTen;
 
     private:
@@ -592,10 +584,12 @@ class Index {
         APESEARCH::vector<APESEARCH::string> chunkFileNames;
         APESEARCH::vector<APESEARCH::string> chunkURLs;
 
-        static constexpr size_t maxNumOfSubmits = MAXCLIENTS * DOCSPERNODE;
-        APESEARCH::PThreadPool<APESEARCH::circular_buffer
-        <APESEARCH::Func, APESEARCH::DEFAULT::defaultBuffer<APESEARCH::Func, maxNumOfSubmits> >> threadsPool;
-        static constexpr size_t maxTopDocs = 10u;
 
         // Builds a parse tree for a given query
+};
+
+
+struct rankArgs {
+    Index* index;
+    APESEARCH::string * query;
 };

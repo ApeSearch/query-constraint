@@ -167,7 +167,7 @@ Ranker::Ranker(const IndexBlob* index, const APESEARCH::string& queryLine) : ib(
         }
 }
 
-vector<Result> Ranker::getTopTen() {
+APESEARCH::vector<RankedEntry> Ranker::getTopTen() {
     // Gets the first post Returns seek past 0
     Post *post = compiledTree->NextDocument(docEnd.get()); 
 

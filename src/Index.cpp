@@ -1,7 +1,7 @@
 #include "../include/Index.h"
 #include "../include/Ranker.h"
 
-#include "pthread.h"
+#include <pthread.h>
 
 ISRWord *IndexBlob::getWordISR ( APESEARCH::string word ) const
     {
@@ -45,10 +45,9 @@ Pair ** insertSortN( Pair **pairArray, Pair **pairValidEnd, Pair ** pairTrueEnd,
    } // end inserSortN()
 */
 
-#include "../libraries"
-
 pthread_mutex_t resultsLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t queueLock = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t notEmpty;
 
 // queue<const char *> fileQueue
 
@@ -69,13 +68,74 @@ pthread_mutex_t queueLock = PTHREAD_MUTEX_INITIALIZER;
     unlock resultslock
    } */
 
+
+void * rankChunk(void * arg){
+    struct rankArgs * args = (struct rankArgs * ) arg;
+
+    Index* index = args->index;
+    APESEARCH::string query = *(args->query);
+
+    pthread_mutex_lock(&queueLock);
+    while(index->threadQueue.empty())
+        pthread_cond_wait(&notEmpty, &queueLock);
+
+    APESEARCH::string fileName = index->threadQueue.front();
+    index->threadQueue.pop();
+    pthread_mutex_unlock(&queueLock);
+
+    IndexFile chunkFile(fileName.cstr());
+    const IndexBlob* chunk = chunkFile.Blob();
+
+    assert(chunk->verifyIndexBlob());
+
+    Ranker ranker(chunk, query);
+
+    APESEARCH::vector<RankedEntry> results = ranker.getTopTen();
+
+    pthread_mutex_lock(&resultsLock);
+
+    APESEARCH::vector<RankedEntry> &topTen = index->topTen;
+
+    if ( !results.empty() )
+    {
+    for(size_t i = 0; i < results.size(); ++i)
+        {
+        if(results[i].rank <= topTen.back().rank)
+            continue;
+
+        APESEARCH::swap(results[i], topTen.back());
+
+        for(size_t j = topTen.size() - 1; j > 0 && topTen[j - 1].rank < topTen[j].rank; --j)
+            APESEARCH::swap(topTen[j], topTen[j - 1]);
+        }
+    }
+
+    pthread_mutex_unlock(&resultsLock);
+}
+
+
 void Index::searchIndexChunks(APESEARCH::string queryLine) {
+
+
+    pthread_t threads[NUM_THREADS];
+
+    struct rankArgs * args = (struct rankArgs * ) malloc(sizeof(this) + sizeof(&queryLine));
     
+    args->index = this;
+    args->query = &queryLine;
+    
+    for(int i = 0; i < NUM_THREADS; ++i)
+        pthread_create(&threads[i], NULL, rankChunk, (void *) args);
 
     // create start timestamp
     // std::vector< std::future< APESEARCH::vector<RankedEntry> > > futureObjs;
     for (int i = 0; i < chunkFileNames.size(); ++i) {
         // add filenames to queue
+
+        pthread_mutex_lock(&queueLock);
+        threadQueue.push(chunkFileNames[i]);
+        pthread_cond_signal(&notEmpty);
+        pthread_mutex_unlock(&queueLock);
 
         // Build the parse tree (done for every index chunk because the parse tree is deleted on isr->Compile())
         // IndexFile chunkFile (chunkFileNames[i].cstr());
@@ -111,4 +171,8 @@ void Index::searchIndexChunks(APESEARCH::string queryLine) {
         //     futureObjs = std::vector< std::future< APESEARCH::vector<RankedEntry> > >( );
         //     }
     }
+
+    free(args);
+    for(int i = 0; i < NUM_THREADS; ++i)
+        pthread_join(threads[i], NULL);
 }
