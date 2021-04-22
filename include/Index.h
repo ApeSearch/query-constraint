@@ -8,6 +8,9 @@
 #include "../libraries/HashTable/include/HashTable/HashBlob.h"
 #include "../libraries/AS/include/AS/algorithms.h"
 
+#include "../libraries/AS/include/AS/pthread_pool.h"
+#include "../libraries/AS/include/AS/circular_buffer.h"
+
 #include "IndexHT.h"
 #include "QueryParser.h"
 #include "ISR.h"
@@ -28,6 +31,13 @@ struct SyncEntry
     uint32_t seekOffset;
    };
 
+
+struct RankedEntry {
+    RankedEntry() : url(""), rank(0) {}
+    RankedEntry(APESEARCH::string _url, double _rank) : url(_url), rank(_rank) {}
+    APESEARCH::string url;
+    double rank;
+};
 
 //< bytesOfPostingList> 8 bytes
 
@@ -96,7 +106,6 @@ class SerializedPostingList
             uint8_t nextHighBit = 1;
 
             for(uint32_t i = 0; i < pl->deltas.size();){ //i keeps track of byte offset from beg of posts
-
                 assert(currentPost < pl->posts.size()); //sanity check, if deltas still exist, then posts still exists
 
                 absoluteLocation = pl->posts[currentPost++]->loc; //keep track of absLoc
@@ -111,7 +120,8 @@ class SerializedPostingList
                 while(highBit >= nextHighBit)
                     serialTuple->syncTable[nextHighBit++] = SyncEntry{ absoluteLocation, prevOffset };
                 
-                i += decodeDeltaIndex((uint8_t *) ptrAfterKey + i); //accounts for attributes
+                if(!strcmp("%", b->tuple.key.cstr()))
+                    i += decodeDeltaIndex((uint8_t *) ptrAfterKey + i); //accounts for attributes
             }
 
             return returnPtr;
@@ -165,6 +175,27 @@ class SerializedAnchorText {
 };
 
 
+size_t decodeDelta(uint8_t * &deltas){
+    size_t addedDeltas = 0;
+
+    int mask = 0x7F;
+
+    int shift = 0;
+
+    while(true) {
+        uint8_t byte = *deltas++;
+
+        assert(deltas <= (uint8_t *) pl + pl->bytesOfPostingList);
+
+        addedDeltas |= (byte & mask) << shift;
+        if(!(~mask & byte))
+            break;
+        shift += 7;
+    }
+
+    return addedDeltas;
+}
+
 class ListIterator {
     public:
         ListIterator(const SerializedPostingList * pl_): pl(pl_), curPost(nullptr), prevLoc(0){
@@ -177,7 +208,76 @@ class ListIterator {
             }
         }
 
-        Post* Seek(Location l) {
+        virtual Post* Seek(Location l) = 0;
+        virtual Post* Next() = 0;
+
+
+        const SerializedPostingList * pl;
+
+        uint8_t* startOfDeltas;
+        uint8_t* plPtr;
+        APESEARCH::unique_ptr<Post> curPost;
+
+        Location prevLoc;
+};
+
+class WordListIterator : public ListIterator {
+    public:
+        WordListIterator(const SerializedPostingList* pl_): ListIterator(pl_) {}
+
+        Post* Seek(Location l) override {
+            if(!pl)
+                return nullptr;
+    
+            uint8_t highBit = 31 - __builtin_clz(l >> 8);
+
+            assert(highBit < 24);
+
+            //if no entries exist for such a high seek location, go until you find the lowest one
+            while(highBit > 0 && pl->syncTable[highBit].absoluteLoc == 0) --highBit;
+            plPtr = startOfDeltas + pl->syncTable[highBit].seekOffset;
+
+            size_t prevOffset = decodeDelta(plPtr); //difference of curLoc - prevLoc, can calculate prevLoc
+            //size_t tData = decodeDelta(plPtr);
+
+            curPost = APESEARCH::unique_ptr<Post>(new Post(pl->syncTable[highBit].absoluteLoc, WordAttributeNormal));
+            prevLoc = pl->syncTable[highBit].absoluteLoc - prevOffset;
+            
+
+            while(curPost.get() != nullptr && curPost.get()->loc < l) Next();
+
+            return curPost.get();
+        }
+
+        Post* Next() override {
+            if(!pl)
+                return nullptr;
+                
+            if(curPost.get())
+                prevLoc = curPost.get()->loc;
+            else
+                prevLoc = 0;
+
+            if(plPtr >= (uint8_t *) pl + pl->bytesOfPostingList) //reached end of PL
+                curPost = nullptr;
+            
+            else{
+                Location loc = prevLoc + decodeDelta(plPtr); //decode delta bytes from curPointer, returns actual deltas
+                //size_t tData = decodeDelta(plPtr); //get attribute, urlIndex for endDocPOst
+            
+                curPost = APESEARCH::unique_ptr<Post>(new Post(loc, WordAttributeNormal));
+            }
+
+            return curPost.get();
+        }
+};
+
+
+class EndDocListIterator : public ListIterator {
+    public:
+        EndDocListIterator(const SerializedPostingList * pl_): ListIterator(pl_){}
+
+        Post* Seek(Location l) override {
             if(!pl)
                 return nullptr;
     
@@ -201,7 +301,7 @@ class ListIterator {
             return curPost.get();
         }
 
-        Post* Next() {
+        Post* Next() override {
             if(!pl)
                 return nullptr;
                 
@@ -222,38 +322,34 @@ class ListIterator {
 
             return curPost.get();
         }
-
-        const SerializedPostingList * pl;
-
-        uint8_t* startOfDeltas;
-        uint8_t* plPtr;
-        APESEARCH::unique_ptr<Post> curPost;
-
-        Location prevLoc;
-
-    private:
-        size_t decodeDelta(uint8_t * &deltas){
-            size_t addedDeltas = 0;
-
-            int mask = 0x7F;
-
-            int shift = 0;
-
-            while(true) {
-                uint8_t byte = *deltas++;
-
-                assert(deltas <= (uint8_t *) pl + pl->bytesOfPostingList);
-
-                addedDeltas |= (byte & mask) << shift;
-                if(!(~mask & byte))
-                    break;
-                shift += 7;
-            }
-
-            return addedDeltas;
-        }
 };
 
+
+class AnchorListIterator {
+    public:
+        AnchorListIterator(SerializedAnchorText * at): anchorList(at) {
+            if(at)
+                lPtr = (uint8_t * ) &at->Key + strlen(at->Key) + 1;
+            else
+                lPtr = nullptr;
+        }
+
+        size_t FindUrlIndex(const size_t urlIndex){
+            if(!lPtr)
+                return 0;
+            
+            while(lPtr < (uint8_t *) anchorList + anchorList->bytesRequired){
+                size_t freq = decodeDelta(lPtr);
+                if(decodeDelta(lPtr) == urlIndex)
+                    return freq;
+            }
+
+            return 0;
+        }
+
+        SerializedAnchorText* anchorList;
+        uint8_t* lPtr;
+};
 
 
 
@@ -459,13 +555,17 @@ class IndexFile{
 
 };
 
+#define SERVERNODES 5
+#define MAXCLIENTS 1
+#define DOCSPERNODE 10
 
 class Index {
     public:
-        Index() {}
+        // Index() : threadsPool( MAXCLIENTS * SERVERNODES, maxNumOfSubmits) {}
 
         // Index constructor given a directory relative from the working directory where the executable was invoked
-        Index(const char * chunkDirectory) : chunkFileNames(listdir(chunkDirectory)) {}
+        Index(const char * chunkDirectory) : chunkFileNames(listdir(chunkDirectory)), threadsPool( MAXCLIENTS * SERVERNODES, maxNumOfSubmits),
+            topTen(10 ) {}
         ~Index() {}
 
         // Given a search query, search the index chunks for matching documents and rank them
@@ -474,12 +574,19 @@ class Index {
         APESEARCH::vector<APESEARCH::string> & getFiles() {
             return chunkFileNames;
         }
+        
+        APESEARCH::vector<RankedEntry> topTen;
 
     private:
 
         // File Names corresponding to index chunk files
         APESEARCH::vector<APESEARCH::string> chunkFileNames;
         APESEARCH::vector<APESEARCH::string> chunkURLs;
+
+        static constexpr size_t maxNumOfSubmits = MAXCLIENTS * DOCSPERNODE;
+        APESEARCH::PThreadPool<APESEARCH::circular_buffer
+        <APESEARCH::Func, APESEARCH::DEFAULT::defaultBuffer<APESEARCH::Func, maxNumOfSubmits> >> threadsPool;
+        static constexpr size_t maxTopDocs = 10u;
 
         // Builds a parse tree for a given query
 };

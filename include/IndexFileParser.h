@@ -76,14 +76,7 @@ class IndexFileParser
                 char* parseAttributeIndicies(char * cur, WordAttributes attribute){
                     char* beg = cur;
 
-                    while(*cur != '\n'){
-                        while(*cur++ != ' ');
-
-                        size_t index = indexOffBuffer(beg, cur - 1);
-
-                        entries[index].attribute = attribute;
-                        beg = cur;
-                    }
+                    while(*cur != '\n') ++cur;
 
                     return cur + 1;
                 }
@@ -184,8 +177,12 @@ class IndexFileParser
                     char buffer[64]; // The filename buffer.
                     snprintf(buffer, sizeof(char) * 32, "apechunk%i", currentChunk++);
                     // IndexFile()
-                    index->dict.Optimize();
-                    IndexFile hashFile( buffer, index.get() );
+                    if (index->numDocs)
+                        {
+                        index->dict.Optimize();
+                        IndexFile hashFile( buffer, index.get() );
+                        }
+                    
                     // index = APESEARCH::unique_ptr<IndexHT>(new IndexHT());
                     munmap( map, file.fileSize() );
                 }

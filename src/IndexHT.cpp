@@ -55,7 +55,8 @@ uint32_t WordPostingList::bytesRequired(const APESEARCH::string &key) {
 
         //std::cout << decodeDelta(bytes) << std::endl;
 
-        deltas.push_back(static_cast<uint8_t>(wp->tData));
+        //encode attributes
+        //deltas.push_back(static_cast<uint8_t>(wp->tData));
     }
 
     numBytes += deltas.size();

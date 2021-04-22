@@ -10,17 +10,15 @@
 #include "ISR.h"
 #include "Tuple.h"
 
-struct RankedEntry {
-    APESEARCH::string url;
-    double rank;
-};
-
 class Ranker {
     public:
 
         //Dynamic weights : minToBeMost, minToBeNearTop
 
         Ranker(const IndexBlob* index, const APESEARCH::string queryLine);
+        Ranker(const Ranker& o) : flattened(o.flattened), urls(o.urls), chunkResults(o.chunkResults), compiledTree(std::move(o.compiledTree)), docEnd(std::move(o.docEnd)) {}
+
+        APESEARCH::vector<RankedEntry> getTopTen();
 
     private:
 
@@ -31,7 +29,7 @@ class Ranker {
 
         double getScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<size_t> &indices, ISREndDoc* endDoc);
         double getURLScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<size_t> &indices, APESEARCH::string &url);
-        double getAnchorScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<size_t> &indices, const IndexBlob* index);
+        double getAnchorScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<size_t> &indices, const IndexBlob* index, const size_t urlIndex);
 
         struct DynamicStats 
             {
@@ -54,24 +52,20 @@ class Ranker {
 
         struct StaticStats
             {
-            static constexpr size_t ShortTitleThreshold = 20;
-            static constexpr size_t MinNumAnchorText = 10;
             static constexpr size_t MaxURLLengthToBeShort = 20;
 
             static constexpr size_t W_Domain = 2;
             static constexpr size_t W_ShortTitle = 2;
-            static constexpr size_t W_LotsAnchorText = 10;
             static constexpr size_t W_ShortURL = 2;
             };
 
         const IndexBlob* ib;
 
 
-        APESEARCH::vector<ISR * > flattened;
+        APESEARCH::vector<APESEARCH::vector<ISR *>> flattened;
         APESEARCH::vector<APESEARCH::string> urls;
 
         APESEARCH::vector<RankedEntry> chunkResults;
-
 
         APESEARCH::unique_ptr<ISR> compiledTree;
         APESEARCH::unique_ptr<ISREndDoc> docEnd;

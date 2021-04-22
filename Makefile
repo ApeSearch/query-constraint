@@ -15,9 +15,9 @@ FrameWorkSRC=libraries/unit_test_framework/src
 FrameWorkSources=$(wildcard ${FrameWorkSRC}/*.cpp)
 FrameWorkOBJS=$(FrameWorkSources:.cpp=.o)
 
-listdirSRC=libraries/AS/src
-listdirSources=$(wildcard ${listdirSRC}/listdir.cpp)
-listdirOBJS=$(listdirSources:.cpp=.o)
+ASSRC=libraries/AS/src
+ASSOURCES=$(wildcard ${ASSRC}/*.cpp)
+ASOBJS=${ASSOURCES:.cpp=.o}
 
 SRC=src
 SOURCES=$(wildcard ${SRC}/*.cpp)
@@ -30,7 +30,7 @@ EXECDIR=tests/bin
 OUTPUT=tests/output
 
 TEST_SRC:=$(basename $(wildcard ${TESTDIR}/*.cpp))
-$(TEST_SRC): %: %.cpp ${OBJS} ${FrameWorkOBJS} ${listdirOBJS}
+$(TEST_SRC): %: %.cpp ${OBJS} ${FrameWorkOBJS} ${ASOBJS}
 	@mkdir -p ${EXECDIR}
 	@mkdir -p ${OUTPUT}
 	${CC} -Dtesting -o  ${EXECDIR}/$(notdir $@) $^ -pthread

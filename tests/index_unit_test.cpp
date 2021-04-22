@@ -123,11 +123,6 @@ TEST(basic_encode_deltas_bytes){
         printf("%d ", byte);
     }
 
-    assert(theList->deltas[1] == 0); //WordAttributeNormal
-    assert(theList->deltas[3] == 1); //WordAttributeBold
-    assert(theList->deltas[5] == 2); //WordAttributeHeading
-
-    assert(theList->deltas[0] + theList->deltas[2] + theList->deltas[4] == 7); //added up deltas = abs location of 3rd the
 
     std::cout << std::endl;
 
@@ -210,7 +205,7 @@ TEST(sync_table){
 
 
 
-    ListIterator* itr = new ListIterator(pl);
+    WordListIterator* itr = new WordListIterator(pl);
 
     Post* p = itr->Seek(3012);
 
@@ -255,7 +250,7 @@ TEST(docEnd_indicies){
 
     const SerializedPostingList* pl = blob->Find(strToFind);
 
-    ListIterator itr(pl);
+    EndDocListIterator itr(pl);
 
     Post* p = itr.Next();
 

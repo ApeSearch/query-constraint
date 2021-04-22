@@ -170,6 +170,10 @@ void checkDocuments(APESEARCH::vector<ISR *> &trees, APESEARCH::vector<APESEARCH
     }
 }
 
+// TEST(builder) {
+//     buildIndex(false);
+// }
+
 TEST(ISRword) {
     char const *filename = "./tests/indexChunk.ape";
     IndexFile hashFile (filename);
@@ -396,43 +400,39 @@ TEST(ISRcontained) {
     checkDocuments(trees, expected, blob, false);
 }
 
-TEST(a) {
-    buildIndex(false);
-}
+// TEST(ISRphrase_2) {
+//     char const *filename = "./tests/testIndexBlobLarge.txt";
+//     // char const *filename = "./tests/indexChunk.ape";
+//     IndexFile hashFile (filename);
+//     const IndexBlob* blob = hashFile.Blob();
 
-TEST(ISRphrase_2) {
-    char const *filename = "./tests/testIndexBlobLarge.txt";
-    // char const *filename = "./tests/indexChunk.ape";
-    IndexFile hashFile (filename);
-    const IndexBlob* blob = hashFile.Blob();
+//     APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("\"development developed\""); 
+//     // APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("\"the and pig\""); 
+//     // APESEARCH::unique_ptr<query::Tuple> constraint3 = buildParseTree("\"and all of the animals\""); 
+//     // APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("\"the pig\""); 
+//     // APESEARCH::unique_ptr<query::Tuple> constraint5 = buildParseTree("\"a and\""); 
+//     // APESEARCH::unique_ptr<query::Tuple> constraint6 = buildParseTree("\"and\""); 
 
-    APESEARCH::unique_ptr<query::Tuple> constraint1 = buildParseTree("\"development developed\""); 
-    // APESEARCH::unique_ptr<query::Tuple> constraint2 = buildParseTree("\"the and pig\""); 
-    // APESEARCH::unique_ptr<query::Tuple> constraint3 = buildParseTree("\"and all of the animals\""); 
-    // APESEARCH::unique_ptr<query::Tuple> constraint4 = buildParseTree("\"the pig\""); 
-    // APESEARCH::unique_ptr<query::Tuple> constraint5 = buildParseTree("\"a and\""); 
-    // APESEARCH::unique_ptr<query::Tuple> constraint6 = buildParseTree("\"and\""); 
+//     APESEARCH::vector<ISR *> trees = {
+//         constraint1->Compile(blob),
+//         // constraint2->Compile(blob),
+//         // constraint3->Compile(blob),
+//         // constraint4->Compile(blob),
+//         // constraint5->Compile(blob),
+//         // constraint6->Compile(blob)
+//     };
 
-    APESEARCH::vector<ISR *> trees = {
-        constraint1->Compile(blob),
-        // constraint2->Compile(blob),
-        // constraint3->Compile(blob),
-        // constraint4->Compile(blob),
-        // constraint5->Compile(blob),
-        // constraint6->Compile(blob)
-    };
+//     APESEARCH::vector<APESEARCH::vector<int>> expected = {
+//         {1},
+//         {},
+//         {5},
+//         {3},
+//         {13},
+//         {5, 14}
+//     };
 
-    APESEARCH::vector<APESEARCH::vector<int>> expected = {
-        {1},
-        {},
-        {5},
-        {3},
-        {13},
-        {5, 14}
-    };
-
-    checkDocuments(trees, expected, blob, false);
-}
+//     checkDocuments(trees, expected, blob, false);
+// }
 
 // TEST(ISRexcluded) {
 //     char const *filename = "./tests/indexChunk.ape";

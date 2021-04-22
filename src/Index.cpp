@@ -4,14 +4,13 @@
 ISRWord *IndexBlob::getWordISR ( APESEARCH::string word ) const
     {
         const SerializedPostingList* entry = Find(word);
-        return new ISRWord(new ListIterator(entry), this, word);
+        return new ISRWord(new WordListIterator(entry), this, word);
     }
 ISREndDoc *IndexBlob::getEndDocISR ( ) const
     {
         const SerializedPostingList* entry = Find(APESEARCH::string("%"));
-        return new ISREndDoc(new ListIterator(entry), this);
+        return new ISREndDoc(new EndDocListIterator(entry), this);
     }
-
 
 APESEARCH::vector<APESEARCH::string> IndexBlob::getUrls( ) const
     {
@@ -28,15 +27,57 @@ APESEARCH::vector<APESEARCH::string> IndexBlob::getUrls( ) const
 
         return vecUrls;
     }
-
+/*
+// Procedural Version
+template<class Comparator>
+Pair ** insertSortN( Pair **pairArray, Pair **pairValidEnd, Pair ** pairTrueEnd, Pair *tuple, Comparator comp )
+   {
+   assert( pairValidEnd != pairTrueEnd );
+   Pair **itr = pairValidEnd;
+   *itr = tuple;
+   // while tuple > currentVal
+   for ( ;itr != pairArray && comp( *itr, *( itr - 1 ) ); --itr )
+      swap( *itr, *(itr - 1) );
+   
+   return pairValidEnd + 1 == pairTrueEnd ? pairValidEnd : pairValidEnd + 1;
+   } // end inserSortN()
+*/
 void Index::searchIndexChunks(APESEARCH::string queryLine) {
+    // create start timestamp
+    APESEARCH::vector< std::future< APESEARCH::vector<RankedEntry> > > futureObjs;
     for (int i = 0; i < chunkFileNames.size(); ++i) {
+        
         // Build the parse tree (done for every index chunk because the parse tree is deleted on isr->Compile())
         IndexFile chunkFile (chunkFileNames[i].cstr());
         const IndexBlob* chunk = chunkFile.Blob();
 
-        // Flatten, 
-        // create Ranker(flattened)
         Ranker ranker(chunk, queryLine);
+        auto func = [ ranker{ std::move( ranker )  } ]( ) -> APESEARCH::vector< RankedEntry > { return ranker.getTopTen( );  };
+        futureObjs.emplace_back( threadsPool.submit(func) );
+
+        if (futureObjs.size() > 200)  
+            {
+            for (auto& entry : futureObjs )
+                {
+                APESEARCH::vector< RankedEntry > results( entry.get( ) ); // will block until returned
+                if ( !results.empty() )
+                    {
+                    for(size_t i = 0; i < results.size(); ++i)
+                        {
+                        
+                        if(results[i].rank <= topTen.back().rank)
+                            continue;
+
+                        APESEARCH::swap(results[i], topTen.back());
+
+                        for(size_t j = topTen.size() - 1; j > 0 && topTen[j - 1].rank < topTen[j].rank; --j)
+                            APESEARCH::swap(topTen[j], topTen[j - 1]);
+                        }
+                    }
+                }
+            
+            // if timestamp > 60 seconds, break
+            futureObjs.resize( 0 );
+            }
     }
 }

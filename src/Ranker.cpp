@@ -130,7 +130,7 @@ double Ranker::getURLScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector
     return DynamicStats::W_Url * matches;
     }
 
-double Ranker::getAnchorScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<size_t> &indices, const IndexBlob* index)
+double Ranker::getAnchorScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<size_t> &indices, const IndexBlob* index, const size_t urlIndex)
     {
     // build the anchor string and put a space between each term
     APESEARCH::string anchorString = "#";
@@ -143,38 +143,39 @@ double Ranker::getAnchorScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vec
     anchorString += flattened[indices.back()]->GetNearestWord();
 
     const SerializedAnchorText *foundAnchor = index->FindAnchorText(anchorString);
-    if (foundAnchor)
-        {
-        uint8_t * ptr = (uint8_t * ) &foundAnchor->Key;
-        ptr += strlen(foundAnchor->Key) + 1;
-        return DynamicStats::W_Anchor * (*ptr);
-        }
-        // std::cout << anchorString << std::endl;
-    return 0;
+
+    AnchorListIterator itr(foundAnchor);
+    return DynamicStats::W_Anchor * itr.FindUrlIndex(urlIndex);
     }
 
 
-Ranker::Ranker(const IndexBlob* index, const APESEARCH::string queryLine) : ib(index), chunkResults(), flattened(){
+Ranker::Ranker(const IndexBlob* index, const APESEARCH::string queryLine) : ib(index), chunkResults(), flattened() {
     APESEARCH::unique_ptr<query::Tuple> parseTree = buildParseTree(queryLine);
     if (!parseTree)
         return;
 
     compiledTree = APESEARCH::unique_ptr<ISR>(parseTree->Compile(ib));
     docEnd = APESEARCH::unique_ptr<ISREndDoc>(ib->getEndDocISR());
-    compiledTree->Flatten(flattened);
 
-    APESEARCH::vector<APESEARCH::vector<ISR *>> flattenedStructure;
-    compiledTree->FlattenStructure(flattenedStructure);
+    compiledTree->FlattenStructure(flattened);
 
     urls = ib->getUrls();
+
+    for (auto entry : chunkResults)
+        {
+        std::cout << entry.url << " " << entry.rank << std::endl;
+        }
+}
+
+APESEARCH::vector<RankedEntry> Ranker::getTopTen() {
     // Gets the first post Returns seek past 0
     Post *post = compiledTree->NextDocument(docEnd.get()); 
 
     size_t documentIndex = 0;
-    while(post){
+    while(post) {
         bool filesToSearch = docEnd->Seek(post->loc, docEnd.get());
             if (!filesToSearch)
-                return;
+                return {};
         
         documentIndex = docEnd->posts->curPost->tData;
         Location startLoc = docEnd->GetStartLocation();
@@ -184,7 +185,7 @@ Ranker::Ranker(const IndexBlob* index, const APESEARCH::string queryLine) : ib(i
         double URLScore = 0;
         double anchorScore = 0;
 
-        for (APESEARCH::vector<ISR*> orTerms : flattenedStructure) {
+        for (APESEARCH::vector<ISR*> orTerms : flattened) {
             APESEARCH::vector<size_t> titleIndices;
             APESEARCH::vector<size_t> bodyIndices;
             // for (auto term : orTerms) {
@@ -209,19 +210,34 @@ Ranker::Ranker(const IndexBlob* index, const APESEARCH::string queryLine) : ib(i
             if (bodyIndices.size()) {
                 bodyScore += DynamicStats::W_Body * getScore(orTerms, bodyIndices, docEnd.get());
                 URLScore += getURLScore(orTerms, bodyIndices, urls[documentIndex].convertToLower());
-                anchorScore += getAnchorScore(orTerms, bodyIndices, ib);
+                anchorScore += getAnchorScore(orTerms, bodyIndices, ib, documentIndex);
             }
         }
 
         double rank = titleScore + bodyScore + URLScore + anchorScore;
-        std::cout << rank << ' ' << titleScore << ' ' << bodyScore << ' ' << URLScore << ' ' << anchorScore << ' ' << urls[documentIndex] << std::endl;
+        // std::cout << rank << ' ' << titleScore << ' ' << bodyScore << ' ' << URLScore << ' ' << anchorScore << ' ' << urls[documentIndex] << std::endl;
 
-        // std::cout << urls[documentIndex] << std::endl;
-        //URL score
-        //AnchorText score
-        //insertion sort
+        if (chunkResults.size() < 10)
+            {
+            chunkResults.push_back(RankedEntry(urls[documentIndex], rank));
+            }
+        else
+            {
+            double minRank = chunkResults[0].rank;
+            size_t minIndex = 0;
+            RankedEntry newEntry = RankedEntry(urls[documentIndex], rank);
+            for(int i = 1; i < chunkResults.size(); ++i)
+                {
+                if(chunkResults[i].rank < minRank)
+                    minRank = chunkResults[i].rank, minIndex = i;
+                }
+
+            APESEARCH::swap( newEntry, chunkResults[minIndex]);
+            }
+
 
         post = compiledTree->NextDocument(docEnd.get());
-
     }
+
+    return chunkResults;
 }
