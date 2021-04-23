@@ -37,7 +37,6 @@ uint32_t WordPostingList::bytesRequired(const APESEARCH::string &key) {
 
     if(calcBytes)
         return bytesList;
-    std::cout << "BR: " << key << std::endl;
     uint32_t numBytes = key.size() + 1;
     Location absoluteLocation = 0;
     numBytes += sizeof( SerializedPostingList );
@@ -102,6 +101,8 @@ uint32_t DocEndPostingList::bytesRequired(const APESEARCH::string &key) { //impl
 uint32_t AnchorPostingList::bytesRequired( const APESEARCH::string &key) {
     if(calcBytes)
         return bytesList;
+
+    //std::cout << "BR: " << key << std::endl;
 
     uint32_t numBytes = key.size() + 1;
     numBytes += sizeof( SerializedAnchorText );
@@ -205,9 +206,10 @@ uint32_t IndexHT::BytesRequired() {
     bytesRequired += sizeof( uint32_t ) * dict.table_size( );
 
     APESEARCH::vector< APESEARCH::vector< hash::Bucket< APESEARCH::string, PostingList*> *> > vec = dict.vectorOfBuckets();
-
+    std::cout << "BytesRequired" << std::endl;
     for(size_t index = 0; index < vec.size(); ++index){
         for(size_t sameChain = 0; sameChain < vec[index].size(); ++sameChain){
+            
             hash::Bucket<APESEARCH::string, PostingList*> * bucket = vec[index][sameChain];
             bytesRequired += bucket->tuple.value->bytesRequired(bucket->tuple.key);
         }

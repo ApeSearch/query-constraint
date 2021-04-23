@@ -36,8 +36,7 @@ struct RankedEntry {
     RankedEntry(APESEARCH::string _url, double _rank) : url(_url), rank(_rank) {}
     RankedEntry( const RankedEntry& other ) : url( other.url ), rank( other.rank ) { }
     RankedEntry& operator=( RankedEntry&& other )
-       {
-        APESEARCH::swap( url, other.url );
+       {        APESEARCH::swap( url, other.url );
         rank = other.rank;
         return *this;
        }
@@ -138,7 +137,7 @@ class SerializedPostingList
         static char * Write(char *buffer, const hash::Bucket<APESEARCH::string, PostingList *> *b){
                 SerializedPostingList * serialList = initSerializedPostingList(buffer, b, b->tuple.value->bytesList);
                 char *end = buffer + b->tuple.value->bytesList;
-                std::cout << b->tuple.key << std::endl;
+                //std::cout << b->tuple.key << std::endl;
                 assert( end == ( char * ) serialList );
 
                 return buffer + b->tuple.value->bytesList; //buffer + numOfBytes of Posting List
@@ -175,7 +174,7 @@ class SerializedAnchorText {
         {
             SerializedAnchorText* serialAnchor = initSerializedAnchorText(buffer, b, b->tuple.value->bytesList);
             char *end = buffer + b->tuple.value->bytesList;
-            std::cout << b->tuple.key << std::endl;
+            //std::cout << b->tuple.key << std::endl;
             assert( end == (char * ) serialAnchor);
 
             return buffer + b->tuple.value->bytesList;
@@ -362,7 +361,7 @@ class AnchorListIterator {
 
 class IndexBlob
     {
-    public: 
+    public:
         static constexpr uint32_t decidedMagicNum = 69;
         static constexpr uint32_t version = 1;
 
@@ -460,7 +459,7 @@ class IndexBlob
 
                 for(size_t sameChain = 0; sameChain < buckets[i].size(); ++sameChain) {
                     hash::Bucket<APESEARCH::string, PostingList*> * bucket = buckets[i][sameChain];
-
+                
                     if(bucket->tuple.key[0] == '#')
                         serialPtr = SerializedAnchorText::Write( serialPtr, bucket );
                     else
