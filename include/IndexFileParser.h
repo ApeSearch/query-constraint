@@ -149,10 +149,6 @@ class IndexFileParser
                         */
                         cur = parseAnchorText(cur);
 
-                        for(int i = 0; i < aText.size(); ++i){
-                            std::cout << aText[i].text << ' ' << aText[i].freq << std::endl;
-                        }
-
                         index->addDoc(url, entries, aText, entries.size());
 
                         if (index->MaximumLocation > MAX_LOCATION)

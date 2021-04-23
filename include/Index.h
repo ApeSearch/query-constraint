@@ -156,6 +156,7 @@ class SerializedAnchorText {
         static SerializedAnchorText * initSerializedAnchorText(char* buffer, 
             const hash::Bucket<APESEARCH::string, PostingList *> * b, uint32_t length)
         {
+            std::cout << b->tuple.value << std::endl;
             char* temp = buffer;
             SerializedAnchorText *serialTuple = reinterpret_cast< SerializedAnchorText * >( buffer );
 
