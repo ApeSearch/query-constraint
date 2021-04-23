@@ -136,9 +136,9 @@ class SerializedPostingList
         }
 
         static char * Write(char *buffer, const hash::Bucket<APESEARCH::string, PostingList *> *b){
-                
                 SerializedPostingList * serialList = initSerializedPostingList(buffer, b, b->tuple.value->bytesList);
                 char *end = buffer + b->tuple.value->bytesList;
+                std::cout << b->tuple.key << std::endl;
                 assert( end == ( char * ) serialList );
 
                 return buffer + b->tuple.value->bytesList; //buffer + numOfBytes of Posting List
@@ -156,7 +156,6 @@ class SerializedAnchorText {
         static SerializedAnchorText * initSerializedAnchorText(char* buffer, 
             const hash::Bucket<APESEARCH::string, PostingList *> * b, uint32_t length)
         {
-            std::cout << b->tuple.key << std::endl;
             char* temp = buffer;
             SerializedAnchorText *serialTuple = reinterpret_cast< SerializedAnchorText * >( buffer );
 
@@ -176,6 +175,7 @@ class SerializedAnchorText {
         {
             SerializedAnchorText* serialAnchor = initSerializedAnchorText(buffer, b, b->tuple.value->bytesList);
             char *end = buffer + b->tuple.value->bytesList;
+            std::cout << b->tuple.key << std::endl;
             assert( end == (char * ) serialAnchor);
 
             return buffer + b->tuple.value->bytesList;

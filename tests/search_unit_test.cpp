@@ -91,10 +91,10 @@ APESEARCH::string buildQuery(APESEARCH::string queryIn) {
 // }
 
 TEST(search_index) {
-    const char *chunkDir = "tests/toSearch";
+    const char *chunkDir = "tests/apechunks";
     Index search = Index(chunkDir);
 
-    APESEARCH::string queryLine = buildQuery("the");
+    APESEARCH::string queryLine = buildQuery("spanish");
     // APESEARCH::string queryLine1 = buildQuery("\"the pig\"");
     search.searchIndexChunks(queryLine.cstr());
     // search.searchIndexChunks(queryLine1);

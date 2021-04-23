@@ -37,7 +37,7 @@ uint32_t WordPostingList::bytesRequired(const APESEARCH::string &key) {
 
     if(calcBytes)
         return bytesList;
-
+    std::cout << "BR: " << key << std::endl;
     uint32_t numBytes = key.size() + 1;
     Location absoluteLocation = 0;
     numBytes += sizeof( SerializedPostingList );

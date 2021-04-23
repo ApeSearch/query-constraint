@@ -238,7 +238,7 @@ APESEARCH::vector<RankedEntry> Ranker::getTopTen() {
             }
 
         const auto end = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() > 30000) {
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() > 5000) {
             return chunkResults;
         }
             

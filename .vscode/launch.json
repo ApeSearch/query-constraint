@@ -58,10 +58,10 @@
             "miDebuggerPath": "/usr/bin/gdb"
         },
         {
-            "name": "tokenize test",
+            "name": "compile test",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/tests/bin/tokenize_test",
+            "program": "${workspaceFolder}/tests/bin/compileIndex",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
