@@ -39,7 +39,7 @@ class IndexFileParser
             APESEARCH::string url;
 
             int currentChunk;
-            const Location MAX_LOCATION = 2000000000;
+            const Location MAX_LOCATION = 4000000000;
 
             private:
                 char* parseBodyText(char * cur){
