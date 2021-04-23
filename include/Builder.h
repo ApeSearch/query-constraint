@@ -3,6 +3,7 @@
 
 class Builder {
     public:
+        // Given a directory of processed directories, build an in-memory index from it
         Builder(const char * processedDirectory);
 
     private:
