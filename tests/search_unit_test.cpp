@@ -95,9 +95,11 @@ TEST(search_index) {
     Index search = Index(chunkDir);
 
     APESEARCH::string queryLine = buildQuery("the");
+
     // APESEARCH::string queryLine1 = buildQuery("\"the pig\"");
     search.searchIndexChunks(queryLine.cstr());
-    // search.searchIndexChunks(queryLine1);
+
+    APESEARCH::vector<RankedEntry> results = search.topTen;
 }
 
 // TEST(anchor_text_blob) {

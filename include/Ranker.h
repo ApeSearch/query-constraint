@@ -46,8 +46,8 @@ class Ranker {
             static constexpr double W_SomeWordsFrequent = 5;
 
             static constexpr double W_Anchor = 20;
-            static constexpr double W_Url = 10;
-            static constexpr double W_Title = 10;
+            static constexpr double W_Url = 5;
+            static constexpr double W_Title = 1;
             static constexpr double W_Body = 1;
             };
 
