@@ -33,15 +33,15 @@ public:
     //1 dedicated thread-blocking
     void connectionHandler();
 
-    void handle_query(APESEARCH::unique_ptr<Socket> &sock_ptr);
+    void handle_query( int fd );
 
     //On functioncall stack
     //Try to send n times 
     //If cannot send write to local file
-    void sender( APESEARCH::unique_ptr<Socket> &sock, APESEARCH::vector<APESEARCH::string> &top_ten );
+    void sender( int fd, APESEARCH::vector<APESEARCH::string> &top_ten );
 
     // 7 dedicated threads non-blocking
-    APESEARCH::string receiver( APESEARCH::unique_ptr<Socket> &sock_ptr );
+    APESEARCH::string receiver( int fd );
 };
 
 #endif

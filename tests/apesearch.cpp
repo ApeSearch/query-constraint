@@ -19,7 +19,7 @@ APESEARCH::string buildQuery(APESEARCH::string queryIn) {
 }
 
 int main() {
-    const char *chunkDir = "tests/apechunks2";
+    const char *chunkDir = "tests/apechunks";
 
     while (true)
         {

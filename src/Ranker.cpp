@@ -1,7 +1,8 @@
 #include "../include/Ranker.h"
 
-double Ranker::getScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<size_t> &indices, ISREndDoc* endDoc) {
+#include <chrono>
 
+double Ranker::getScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<size_t> &indices, ISREndDoc* endDoc) {
     Location begLoc = endDoc->GetStartLocation();
     Location endLoc = endDoc->GetEndLocation();
     
@@ -169,6 +170,7 @@ Ranker::Ranker(const IndexBlob* index, const APESEARCH::string& queryLine) : ib(
 
 APESEARCH::vector<RankedEntry> Ranker::getTopTen() {
     // Gets the first post Returns seek past 0
+    const std::chrono::time_point<std::chrono::steady_clock> start = std::chrono::steady_clock::now();
     Post *post = compiledTree->NextDocument(docEnd.get()); 
 
     size_t documentIndex = 0;
@@ -216,7 +218,7 @@ APESEARCH::vector<RankedEntry> Ranker::getTopTen() {
 
         double rank = titleScore + bodyScore + URLScore + anchorScore;
         // std::cout << rank << ' ' << titleScore << ' ' << bodyScore << ' ' << URLScore << ' ' << anchorScore << ' ' << urls[documentIndex] << std::endl;
-        std::cout << urls[documentIndex] << std::endl;
+        // std::cout << urls[documentIndex] << std::endl;
         if (chunkResults.size() < 10)
             {
             chunkResults.push_back(RankedEntry(urls[documentIndex], rank));
@@ -235,6 +237,11 @@ APESEARCH::vector<RankedEntry> Ranker::getTopTen() {
             APESEARCH::swap( newEntry, chunkResults[minIndex]);
             }
 
+        const auto end = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() > 5000) {
+            return chunkResults;
+        }
+            
 
         post = compiledTree->NextDocument(docEnd.get());
     }

@@ -8,11 +8,13 @@
 #include "../libraries/AS/include/AS/vector.h"
 #include "../libraries/AS/include/AS/unique_mmap.h"
 
+#include <iostream>
+
 
 
 class IndexFileParser 
     {
-        public:
+    public:
             IndexFileParser(): index(new IndexHT()), entries(), aText(), currentChunk(0) {}
 
             ~IndexFileParser() {}
@@ -33,13 +35,27 @@ class IndexFileParser
                 return static_cast<size_t>(atoi(buffer));
             }
 
+            void buildCurIndex() {
+                if(index->numDocs != 0){
+                    std::cout << "Building Index Chunk" << std::endl;
+                    char buffer[64]; // The filename buffer.
+
+                    snprintf(buffer, sizeof(char) * 32, "apechunk%i", currentChunk++);
+                    // IndexFile()
+                    index->dict.Optimize();
+                    IndexFile hashFile( buffer, index.get() );
+                }
+
+                //index = APESEARCH::unique_ptr<IndexHT>(new IndexHT());
+            }
+
             APESEARCH::unique_ptr<IndexHT> index;
             APESEARCH::vector<IndexEntry> entries;
             APESEARCH::vector<AnchorText> aText;
             APESEARCH::string url;
 
             int currentChunk;
-            const Location MAX_LOCATION = 10000000;
+            const Location MAX_LOCATION = 4000000000;
 
             private:
                 char* parseBodyText(char * cur){
@@ -47,7 +63,8 @@ class IndexFileParser
                     while(*cur != '\n'){
                         while(*cur++ != ' ');
 
-                        entries.push_back(IndexEntry{ APESEARCH::string(beg, 0, cur - beg - 1), WordAttributeNormal, BodyText});
+                        if(cur - beg - 1 != 0) 
+                            entries.push_back(IndexEntry{ APESEARCH::string(beg, 0, cur - beg - 1), WordAttributeNormal, BodyText});
 
                         while(*cur == ' ') //TODO: Supposed to get rid of just space characters
                             ++cur;
@@ -149,20 +166,11 @@ class IndexFileParser
                         */
                         cur = parseAnchorText(cur);
 
-                        for(int i = 0; i < aText.size(); ++i){
-                            std::cout << aText[i].text << ' ' << aText[i].freq << std::endl;
-                        }
-
+                        //if(entries.size() == 0 ) ??????
                         index->addDoc(url, entries, aText, entries.size());
-
                         if (index->MaximumLocation > MAX_LOCATION)
                             {
-                            char buffer[64]; // The filename buffer.
-                            snprintf(buffer, sizeof(char) * 32, "apechunk%i", currentChunk++);
-                            // IndexFile()
-                            index->dict.Optimize();
-                            IndexFile hashFile( buffer, index.get() );
-                            index = APESEARCH::unique_ptr<IndexHT>(new IndexHT());
+                            buildCurIndex();
                             }
 
                         entries = {};
@@ -171,15 +179,6 @@ class IndexFileParser
                         assert(*cur++ == '\0');
                         beg = cur;
                     }
-
-                    char buffer[64]; // The filename buffer.
-                    snprintf(buffer, sizeof(char) * 32, "apechunk%i", currentChunk++);
-                    // IndexFile()
-                    if (index->numDocs)
-                        {
-                        index->dict.Optimize();
-                        IndexFile hashFile( buffer, index.get() );
-                        }
                     
                     // index = APESEARCH::unique_ptr<IndexHT>(new IndexHT());
                     munmap( map, file.fileSize() );

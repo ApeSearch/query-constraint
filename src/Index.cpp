@@ -100,6 +100,7 @@ void * rankChunk(void * arg){
 
         APESEARCH::vector<RankedEntry> results = ranker.getTopTen();
         pthread_mutex_lock(&resultsLock);
+
         APESEARCH::vector<RankedEntry> &topTen = index->topTen;
 
         if ( !results.empty() )
@@ -142,7 +143,7 @@ void Index::searchIndexChunks(const char * queryLine) {
         pthread_mutex_lock(&queueLock);
 
         threadQueue.push(chunkFileNames[i]);
-        
+
         pthread_cond_broadcast(&notEmpty);
         pthread_mutex_unlock(&queueLock);
     }
@@ -156,8 +157,8 @@ void Index::searchIndexChunks(const char * queryLine) {
 
     free(args);
 
-    // for (auto entry: topTen)
-    //     {
-    //     std::cout << entry.rank << ' ' << entry.url << std::endl;
-    //     }
+    for (auto entry: topTen)
+        {
+        std::cout << entry.rank << ' ' << entry.url << std::endl;
+        }
 }

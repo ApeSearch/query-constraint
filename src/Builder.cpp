@@ -7,8 +7,14 @@
 Builder::Builder(const char * processedDirectory) : processedFileNames(listdir(processedDirectory)) 
     {
     IndexFileParser parser;
-    for (APESEARCH::string filename : processedFileNames)
+    int i = 0;
+        for (APESEARCH::string filename : processedFileNames)
         {
+        std::cout << "Parsing Chunk Name : " << filename << std::endl;
         parser.writeFile(filename.cstr());
+        std::cout << i << std::endl;
+        i++;
         }
+
+        parser.buildCurIndex();
     }
