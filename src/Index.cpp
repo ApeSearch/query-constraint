@@ -90,14 +90,13 @@ void * rankChunk(void * arg){
         index->threadQueue.pop();
 
         pthread_mutex_unlock(&queueLock);
-
+        std::cout << "here" << std::endl;
         IndexFile chunkFile(fileName.cstr());
         const IndexBlob* chunk = chunkFile.Blob();
 
         assert(chunk->verifyIndexBlob());
 
         Ranker ranker(chunk, query);
-
         APESEARCH::vector<RankedEntry> results = ranker.getTopTen();
         pthread_mutex_lock(&resultsLock);
 

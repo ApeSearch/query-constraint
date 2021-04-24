@@ -286,9 +286,9 @@ class EndDocListIterator : public ListIterator {
         Post* Seek(Location l) override {
             if(!pl)
                 return nullptr;
-    
-            uint8_t highBit = 31 - __builtin_clz(l >> 8);
 
+            uint8_t highBit = 31 - __builtin_clz(l >> 8);
+            printf("%d %d\n", l, highBit);
             assert(highBit < 24);
 
             //if no entries exist for such a high seek location, go until you find the lowest one
@@ -552,8 +552,8 @@ class IndexFile{
 
         IndexFile( const char *filename ) : file( filename, O_RDONLY )
             {
-            int fd = open( filename, O_RDONLY );
-
+            int fd = file.getFD( );
+ 
             blob = unique_mmap( 0, FileSize( fd ), PROT_READ, MAP_SHARED, fd, 0 );
 
             good = Blob()->verifyIndexBlob();

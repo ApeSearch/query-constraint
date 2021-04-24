@@ -46,7 +46,7 @@ class IndexFileParser
                     IndexFile hashFile( buffer, index.get() );
                 }
 
-                //index = APESEARCH::unique_ptr<IndexHT>(new IndexHT());
+                index = APESEARCH::unique_ptr<IndexHT>(new IndexHT());
             }
 
             APESEARCH::unique_ptr<IndexHT> index;
@@ -55,7 +55,7 @@ class IndexFileParser
             APESEARCH::string url;
 
             int currentChunk;
-            const Location MAX_LOCATION = 4000000000;
+            static const Location MAX_LOCATION = 2000000;
 
             private:
                 char* parseBodyText(char * cur){
@@ -65,7 +65,7 @@ class IndexFileParser
 
                         if(cur - beg - 1 != 0) 
                             entries.push_back(IndexEntry{ APESEARCH::string(beg, 0, cur - beg - 1), WordAttributeNormal, BodyText});
-
+                        
                         while(*cur == ' ') //TODO: Supposed to get rid of just space characters
                             ++cur;
                         
@@ -167,9 +167,11 @@ class IndexFileParser
                         cur = parseAnchorText(cur);
 
                         //if(entries.size() == 0 ) ??????
-                        index->addDoc(url, entries, aText, entries.size());
-                        if (index->MaximumLocation > MAX_LOCATION)
+                        index->addDoc(url, entries, aText, entries.size() + 1);
+
+                        if (index->MaximumLocation > IndexFileParser::MAX_LOCATION)
                             {
+                            std::cout << index->MaximumLocation << std::endl;
                             buildCurIndex();
                             }
 

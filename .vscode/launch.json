@@ -5,18 +5,29 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(lldb) Launch",
+            "name": "Compile Search",
             "type": "cppdbg",
             "request": "launch",
-            "program": "{workspaceFolder}/a.out",
+            "program": "${workspaceFolder}/tests/bin/apesearch",
             "args": [],
-            "stopAtEntry": false,
+            "stopAtEntry": true,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
             "MIMode": "lldb"
         },
-        
+        {
+            "name": "Compile Index",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/tests/bin/compileIndex",
+            "args": [],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb"
+        },
         {
             "name": "index test",
             "type": "cppdbg",

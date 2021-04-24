@@ -3,7 +3,7 @@
 
 
 int main () {
-    Builder built = Builder("./condensed");
+    Builder built = Builder("./tests/condensed");
 
     std::cout << "Index Chunks Built!" << std::endl;
 
