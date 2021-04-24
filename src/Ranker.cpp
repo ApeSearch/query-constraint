@@ -1,5 +1,5 @@
 #include "../include/Ranker.h"
-
+#include <math.h>
 #include <chrono>
 
 double Ranker::getScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<size_t> &indices, ISREndDoc* endDoc) {
@@ -128,6 +128,7 @@ double Ranker::getURLScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector
         if (foundLocation != APESEARCH::string::npos)
             ++matches;
         }
+
     return DynamicStats::W_Url * matches;
     }
 
@@ -187,7 +188,7 @@ APESEARCH::vector<RankedEntry> Ranker::getTopTen() {
         double URLScore = 0;
         double anchorScore = 0;
 
-        for (APESEARCH::vector<ISR*> orTerms : flattened) {
+        for (APESEARCH::vector<ISR*>& orTerms : flattened) {
             APESEARCH::vector<size_t> titleIndices;
             APESEARCH::vector<size_t> bodyIndices;
             // for (auto term : orTerms) {
@@ -215,8 +216,8 @@ APESEARCH::vector<RankedEntry> Ranker::getTopTen() {
                 anchorScore += getAnchorScore(orTerms, bodyIndices, ib, documentIndex);
             }
         }
-
-        double rank = titleScore + bodyScore + URLScore + anchorScore;
+        double rank = titleScore + (bodyScore) + URLScore + anchorScore;
+        //std::cout << urls[documentIndex] << ' ' << rank << std::endl;
         // std::cout << rank << ' ' << titleScore << ' ' << bodyScore << ' ' << URLScore << ' ' << anchorScore << ' ' << urls[documentIndex] << std::endl;
         // std::cout << urls[documentIndex] << std::endl;
         if (chunkResults.size() < 10)
@@ -238,7 +239,7 @@ APESEARCH::vector<RankedEntry> Ranker::getTopTen() {
             }
 
         const auto end = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() > 5000) {
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() > 60000) {
             return chunkResults;
         }
             

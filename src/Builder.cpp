@@ -12,8 +12,7 @@ Builder::Builder(const char * processedDirectory) : processedFileNames(listdir(p
         {
         std::cout << "Parsing Chunk Name : " << filename << std::endl;
         parser.writeFile(filename.cstr());
-        std::cout << i << std::endl;
-        i++;
+        std::cout << parser.index->MaximumLocation << std::endl;
         }
 
         parser.buildCurIndex();
