@@ -69,7 +69,12 @@ void Node::handle_query( int fd )
 
     //Parse query
     //their API
-    APESEARCH::vector<APESEARCH::string> top_ten = { "url1", "url2", "url3", "url4", "url5", "url6", "url7", "url8", "url9", "url10" };
+    APESEARCH::vector<RankedEntry> top_ten;
+
+    for(int i = 0; i < 8; ++i)
+    {
+        top_ten.push_back( RankedEntry( "rando_url.com", 10.5 ) );
+    }
 
     //Send vector
     sender( fd, top_ten);
@@ -77,27 +82,46 @@ void Node::handle_query( int fd )
     close(fd);
 }
 
-void Node::sender( int fd, APESEARCH::vector<APESEARCH::string> &top_ten )
+void Node::sender( int fd, APESEARCH::vector<RankedEntry> &top_ten )
 {   
-    for(int i = 0; i < top_ten.size( ); ++i)
+
+    ssize_t size = 0;
+    for( int i = 0; i < top_ten.size( ); ++i ) 
+    {
+        size += top_ten[i].url.size();
+    }
+    size = size + ( sizeof( double ) * top_ten.size() ) + ( top_ten.size() * 2 );
+    char buffer[size];
+    char *ptr = buffer;
+
+    for( int i = 0; i < top_ten.size( ); ++i )
     {
 
-        ssize_t ret;
+        for( int j = 0; j < top_ten[i].url.size( ); ++j )
+            {
+                *ptr = top_ten[i].url[j];
+                ++ptr;
+            }
+            *ptr = ',';
+            ++ptr;
+            snprintf(ptr, sizeof(double), "%g", top_ten[i].rank);
+            ptr += sizeof(double);
+
         if( i == top_ten.size() - 1 )
         {
-            ret = send( fd ,top_ten[i].cstr( ), top_ten[i].size( ) + 1 , 0);
+            // last one
+            *ptr = '\0';
+            ++ptr;
         }
         else
         {
-            top_ten[i].push_back( '\n' );
-            ret = send( fd, top_ten[i].cstr( ), top_ten[i].size( ) , 0);
-        }
-
-        if(ret < 0)
-        {
-            std::cerr << "Did not send url successfully\n";
+            *ptr = '\n';
+            ++ptr;
         }
     }
+    assert( ptr == ( buffer + size ) );
+    if( send( fd ,buffer , size , 0 ) < 0 )
+        std::cerr << "Did not send url successfully\n";
 }
 
 APESEARCH::string Node::receiver( int fd )

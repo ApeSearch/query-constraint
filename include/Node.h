@@ -10,6 +10,7 @@
 #include "../Parser/HtmlParser.h"
 #include "../libraries/AS/include/AS/pthread_pool.h"
 #include "DynamicBuffer.h"
+#include "Index.h"
 //#include "SetOfUrls.h"
 
 
@@ -38,7 +39,7 @@ public:
     //On functioncall stack
     //Try to send n times 
     //If cannot send write to local file
-    void sender( int fd, APESEARCH::vector<APESEARCH::string> &top_ten );
+    void sender( int fd, APESEARCH::vector<RankedEntry> &top_ten );
 
     // 7 dedicated threads non-blocking
     APESEARCH::string receiver( int fd );
