@@ -18,15 +18,26 @@ APESEARCH::vector<APESEARCH::string> IndexBlob::getUrls( ) const
     {
         APESEARCH::vector<APESEARCH::string> vecUrls;
 
-        char * ptr = (char *) this + VectorStart;
+        char * beg = (char *) this + VectorStart;
+        char * end = beg;
         
-        while(ptr < (char *) this + BlobSize){
-            auto url = APESEARCH::string(ptr);
-            ptr += url.size() + 1;
+        while(end < (char *) this + BlobSize){
+            while(*end != '\0') end++;
 
-            vecUrls.emplace_back(url);
+            if(end >= (char *) this + BlobSize)
+                return vecUrls;
+
+            else
+            {
+                auto url = APESEARCH::string(beg);
+
+                vecUrls.emplace_back(url);
+
+                end++;
+                beg = end;
+            }
+
         }
-
         return vecUrls;
     }
 /*

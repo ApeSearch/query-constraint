@@ -23,19 +23,19 @@ APESEARCH::string buildQuery(APESEARCH::string queryIn) {
 int main() {
     //Builder built = Builder("./tests/condensed1/");
 
-    const char *chunkDir = "tests/indexChunks/apechunk0";
+    const char *chunkDir = "tests/condensed/apechunk0";
     IndexFile search = IndexFile(chunkDir);
 
     const IndexBlob* chunk = search.Blob();
 
     assert(chunk->verifyIndexBlob());
 
-    Ranker ranker(chunk, buildQuery("google maps"));
+    Ranker ranker(chunk, buildQuery("\"debian project\""));
     
     auto results = ranker.getTopTen();
 
     for(int i = 0; i < results.size(); ++i){
-        std::cout << results[i].url << std::endl;
+        std::cout << results[i].url << ' ' << results[i].rank << std::endl;
     }
 
     /*while (true)

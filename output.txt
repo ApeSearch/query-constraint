@@ -1,0 +1,35 @@
+Parsing Chunk Name : /home/apesearch/query-constraint/../crawler/condensedFiles/condensedFile148
+1463464
+Parsing Chunk Name : /home/apesearch/query-constraint/../crawler/condensedFiles/condensedFile24
+2706363
+Parsing Chunk Name : /home/apesearch/query-constraint/../crawler/condensedFiles/condensedFile94
+2706363
+Parsing Chunk Name : /home/apesearch/query-constraint/../crawler/condensedFiles/condensedFile193
+2706363
+Parsing Chunk Name : /home/apesearch/query-constraint/../crawler/condensedFiles/condensedFile75
+2706363
+Parsing Chunk Name : /home/apesearch/query-constraint/../crawler/condensedFiles/condensedFile42
+2706363
+Parsing Chunk Name : /home/apesearch/query-constraint/../crawler/condensedFiles/condensedFile231
+2706363
+Parsing Chunk Name : /home/apesearch/query-constraint/../crawler/condensedFiles/condensedFile91
+2706363
+Parsing Chunk Name : /home/apesearch/query-constraint/../crawler/condensedFiles/condensedFile55
+2706363
+Parsing Chunk Name : /home/apesearch/query-constraint/../crawler/condensedFiles/condensedFile31
+2706363
+Parsing Chunk Name : /home/apesearch/query-constraint/../crawler/condensedFiles/condensedFile235
+2706363
+Parsing Chunk Name : /home/apesearch/query-constraint/../crawler/condensedFiles/condensedFile236
+4553636
+Parsing Chunk Name : /home/apesearch/query-constraint/../crawler/condensedFiles/condensedFile128
+6157329
+Parsing Chunk Name : /home/apesearch/query-constraint/../crawler/condensedFiles/condensedFile170
+6157329
+Parsing Chunk Name : /home/apesearch/query-constraint/../crawler/condensedFiles/condensedFile224
+7821929
+Parsing Chunk Name : /home/apesearch/query-constraint/../crawler/condensedFiles/condensedFile156
+9516114
+Parsing Chunk Name : /home/apesearch/query-constraint/../crawler/condensedFiles/condensedFile36
+11040668
+Parsing Chunk Name : /home/apesearch/query-constraint/../crawler/condensedFiles/condensedFile244

@@ -183,7 +183,7 @@ class SerializedAnchorText {
 
 class ListIterator {
     public:
-        ListIterator(const SerializedPostingList * pl_): pl(pl_), curPost(nullptr), prevLoc(0){
+        ListIterator(const SerializedPostingList * pl_): pl(pl_), curPost(new Post(0, NullPost)), prevLoc(0){
             if(pl){
                 plPtr = (uint8_t * ) &pl->Key + strlen(pl->Key) + 1;
                 startOfDeltas = (uint8_t * ) &pl->Key + strlen(pl->Key) + 1;
@@ -232,6 +232,7 @@ class WordListIterator : public ListIterator {
         WordListIterator(const SerializedPostingList* pl_): ListIterator(pl_) {}
 
         Post* Seek(Location l) override {
+
             if(!pl)
                 return nullptr;
     
@@ -246,12 +247,17 @@ class WordListIterator : public ListIterator {
             size_t prevOffset = decodeDelta(plPtr, (uint8_t* ) pl + pl->bytesOfPostingList); //difference of curLoc - prevLoc, can calculate prevLoc
             //size_t tData = decodeDelta(plPtr);
 
-            curPost = APESEARCH::unique_ptr<Post>(new Post(pl->syncTable[highBit].absoluteLoc, WordAttributeNormal));
+            curPost->loc = pl->syncTable[highBit].absoluteLoc;
+            curPost->tData = WordAttributeNormal;
+            //APESEARCH::unique_ptr<Post>(new Post(pl->syncTable[highBit].absoluteLoc, WordAttributeNormal));
             prevLoc = pl->syncTable[highBit].absoluteLoc - prevOffset;
             
+                
+            while(Next() && curPost.get()->loc < l);
 
-            while(curPost.get() != nullptr && curPost.get()->loc < l) Next();
-
+            if(curPost.get()->loc < l)
+                return nullptr;
+            
             return curPost.get();
         }
 
@@ -259,19 +265,18 @@ class WordListIterator : public ListIterator {
             if(!pl)
                 return nullptr;
                 
-            if(curPost.get())
-                prevLoc = curPost.get()->loc;
-            else
-                prevLoc = 0;
+            prevLoc = curPost.get()->loc;
 
             if(plPtr >= (uint8_t *) pl + pl->bytesOfPostingList) //reached end of PL
-                curPost = nullptr;
+                return nullptr;
             
             else{
                 Location loc = prevLoc + decodeDelta(plPtr, (uint8_t* ) pl + pl->bytesOfPostingList); //decode delta bytes from curPointer, returns actual deltas
                 //size_t tData = decodeDelta(plPtr); //get attribute, urlIndex for endDocPOst
             
-                curPost = APESEARCH::unique_ptr<Post>(new Post(loc, WordAttributeNormal));
+                curPost->loc = loc;
+                curPost->tData = WordAttributeNormal;
+                //APESEARCH::unique_ptr<Post>(new Post(loc, WordAttributeNormal));
             }
 
             return curPost.get();
@@ -288,7 +293,6 @@ class EndDocListIterator : public ListIterator {
                 return nullptr;
 
             uint8_t highBit = 31 - __builtin_clz(l >> 8);
-            printf("%d %d\n", l, highBit);
             assert(highBit < 24);
 
             //if no entries exist for such a high seek location, go until you find the lowest one
@@ -298,7 +302,8 @@ class EndDocListIterator : public ListIterator {
             size_t prevOffset = decodeDelta(plPtr, (uint8_t* ) pl + pl->bytesOfPostingList); //difference of curLoc - prevLoc, can calculate prevLoc
             size_t tData = decodeDelta(plPtr, (uint8_t* ) pl + pl->bytesOfPostingList);
 
-            curPost = APESEARCH::unique_ptr<Post>(new Post(pl->syncTable[highBit].absoluteLoc, tData));
+            curPost->loc = pl->syncTable[highBit].absoluteLoc;
+            curPost->tData = tData;
             prevLoc = pl->syncTable[highBit].absoluteLoc - prevOffset;
             
 
@@ -323,7 +328,8 @@ class EndDocListIterator : public ListIterator {
                 Location loc = prevLoc + decodeDelta(plPtr, (uint8_t* ) pl + pl->bytesOfPostingList); //decode delta bytes from curPointer, returns actual deltas
                 size_t tData = decodeDelta(plPtr, (uint8_t* ) pl + pl->bytesOfPostingList); //get attribute, urlIndex for endDocPOst
             
-                curPost = APESEARCH::unique_ptr<Post>(new Post(loc, tData));
+                curPost->loc = loc;
+                curPost->tData = tData;
             }
 
             return curPost.get();
@@ -472,8 +478,15 @@ class IndexBlob
             ib->VectorStart = serialPtr - (char * ) ib;
 
             for ( size_t i = 0; i < indexHT->urls.size(); ++i ){
-                //std::cout << indexHT->urls[i] << std::endl;
-                serialPtr = strcpy( serialPtr, indexHT->urls[ i ].cstr( ) ) + indexHT->urls[ i ].size( ) + 1;
+                for( int j = 0; j < indexHT->urls[i].size(); ++j ){
+                    if(indexHT->urls[i][j] == '\0')
+                        *serialPtr++ = '/';
+                    else
+                        *serialPtr++ = indexHT->urls[i][j];
+                }
+
+                *serialPtr++ = '\0';
+                //serialPtr = strcpy( serialPtr, indexHT->urls[ i ].cstr( ) ) + indexHT->urls[ i ].size( ) + 1;
             }
                 
         assert( serialPtr == end );

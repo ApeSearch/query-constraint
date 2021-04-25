@@ -37,7 +37,7 @@ using std::size_t;
 
 enum WordAttributes
     {
-        WordAttributeNormal, WordAttributeBold, WordAttributeHeading
+        WordAttributeNormal, WordAttributeBold, WordAttributeHeading, NullPost
     };
 
 
@@ -99,7 +99,7 @@ class PostingList
         PostingList(): posts(), deltas(), bytesList(0), calcBytes(false) {}
         ~PostingList() {
             for (size_t i = 0; i < posts.size(); ++i) 
-                delete posts[i];
+               delete posts[i];
         }
 
         APESEARCH::vector<Post *> posts; //pointers to individual posts

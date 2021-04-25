@@ -132,7 +132,6 @@ void IndexHT::addDoc(APESEARCH::string url, const APESEARCH::vector<IndexEntry> 
     size_t endDocLoc){ //change
     
     urls.push_back(url);
-
     hash::Tuple<APESEARCH::string, PostingList *> * entry = dict.Find(APESEARCH::string("%"));
 
     //stores absolute location of last doc

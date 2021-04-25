@@ -55,7 +55,7 @@ class IndexFileParser
             APESEARCH::string url;
 
             int currentChunk;
-            static const Location MAX_LOCATION = 2000000;
+            static const Location MAX_LOCATION = 2000000000;
 
             private:
                 char* parseBodyText(char * cur){
@@ -167,7 +167,7 @@ class IndexFileParser
                         cur = parseAnchorText(cur);
 
                         //if(entries.size() == 0 ) ??????
-                        index->addDoc(url, entries, aText, entries.size() + 1);
+                        index->addDoc(url, entries, aText, entries.size());
 
                         if (index->MaximumLocation > IndexFileParser::MAX_LOCATION)
                             {

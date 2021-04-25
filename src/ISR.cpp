@@ -168,7 +168,6 @@ Post * ISRAnd::Seek( Location target, ISREndDoc* docEnd )
     post = nullptr;
     for (int i = 0; i < numTerms; ++i) {\
         if (!terms[i]) return nullptr;
-
         Post* foundPost = terms[i]->Seek(target, docEnd);
         if (foundPost) {
             if (foundPost->loc >= nearestEndLocation)
