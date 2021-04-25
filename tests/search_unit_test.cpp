@@ -97,7 +97,8 @@ TEST(search_index) {
     APESEARCH::string queryLine = buildQuery("spanish");
     // APESEARCH::string queryLine1 = buildQuery("\"the pig\"");
     search.searchIndexChunks(queryLine.cstr());
-    // search.searchIndexChunks(queryLine1);
+
+    APESEARCH::vector<RankedEntry> results = search.topTen;
 }
 
 // TEST(anchor_text_blob) {

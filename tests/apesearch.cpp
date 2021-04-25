@@ -20,19 +20,19 @@ APESEARCH::string buildQuery(APESEARCH::string queryIn) {
     return queryBegin;
 }
 
-int main() {
+int main( ) {
     //Builder built = Builder("./tests/condensed1/");
 
     const char *chunkDir = "tests/condensed/apechunk0";
     IndexFile search = IndexFile(chunkDir);
 
-    const IndexBlob* chunk = search.Blob();
+    const IndexBlob* chunk = search.Blob( );
 
-    assert(chunk->verifyIndexBlob());
+    assert( chunk->verifyIndexBlob( ) );
 
     Ranker ranker(chunk, buildQuery("\"debian project\""));
     
-    auto results = ranker.getTopTen();
+    auto results = ranker.getTopTen( );
 
     for(int i = 0; i < results.size(); ++i){
         std::cout << results[i].url << ' ' << results[i].rank << std::endl;
