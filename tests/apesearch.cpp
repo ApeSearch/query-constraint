@@ -38,6 +38,8 @@ int main( ) {
         std::cout << results[i].url << ' ' << results[i].rank << std::endl;
     }*/
 
+// This is a query
+
     Index search = Index(chunkDir);
     while (true)
         {

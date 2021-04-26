@@ -69,12 +69,14 @@ void Node::handle_query( int fd )
 
     //Parse query
     //their API
-    APESEARCH::vector<RankedEntry> top_ten;
 
-    for(int i = 0; i < 8; ++i)
-    {
-        top_ten.push_back( RankedEntry( "rando_url.com", 10.5 ) );
-    }
+    const char *chunkDir = "tests/condensed/";
+    Index search = Index(chunkDir);
+    APESEARCH::string queryLine = Index::buildQuery(APESEARCH::string(query.cbegin(),query.cend()).convertToLower());
+    search.searchIndexChunks(queryLine.cstr());
+
+
+    APESEARCH::vector<RankedEntry> top_ten = search.topTen; 
 
     //Send vector
     sender( fd, top_ten);

@@ -581,6 +581,59 @@ class Index {
         Index(const char * chunkDirectory) : chunkFileNames(listdir(chunkDirectory)), threadQueue(), topTen(10), filesToPush(true), activeThreadsCount(NUM_THREADS) {}
         ~Index() {}
 
+        static void hexchar(unsigned char c, unsigned char &hex1, unsigned char &hex2)
+            {
+                hex1 = c / 16;
+                hex2 = c % 16;
+                hex1 += hex1 <= 9 ? '0' : 'a' - 10;
+                hex2 += hex2 <= 9 ? '0' : 'a' - 10;
+            }
+
+        static APESEARCH::string urlencode(APESEARCH::string s)
+            {
+            const char *str = s.cstr();
+            std::vector<char> v(s.size());
+            v.clear();
+            for (size_t i = 0, l = s.size(); i < l; i++)
+                {
+                char c = str[i];
+                if ((c >= '0' && c <= '9') ||
+                        (c >= 'a' && c <= 'z') ||
+                        (c >= 'A' && c <= 'Z') ||
+                        c == '-' || c == '_' || c == '.' || c == '!' || c == '~' ||
+                        c == '*' || c == '\'' || c == '(' || c == ')')
+                    {
+                    v.push_back(c);
+                    }
+                else
+                    {
+                    v.push_back('%');
+                    unsigned char d1, d2;
+                    Index::hexchar(c, d1, d2);
+                    v.push_back(d1);
+                    v.push_back(d2);
+                    }
+                }
+
+            return APESEARCH::string(v.cbegin(), v.cend());
+            }
+
+        static APESEARCH::string buildQuery(APESEARCH::string queryIn) {
+            APESEARCH::string encodedQuery = Index::urlencode(queryIn);
+            APESEARCH::string queryBegin("GET /q=");
+            APESEARCH::string queryEnd(" HTTP/1.1");
+
+            queryBegin += encodedQuery;
+            queryBegin += queryEnd;
+
+            // QueryParser query = QueryParser(queryBegin);
+
+            // APESEARCH::unique_ptr<query::Tuple> orConstraint( query.FindOrConstraint());
+
+            return queryBegin;
+        }
+        
+
         // Given a search query, search the index chunks for matching documents and rank them
         void searchIndexChunks(const char * queryLine);
 
