@@ -9,7 +9,7 @@ pig animals  10
 0
 pig animals  10
 0
-pig animals  10
+pig animal10
 0
 pig animals  10
 0

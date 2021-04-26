@@ -3,7 +3,7 @@
 
 
 int main () {
-    Builder built = Builder("./condensed");
+    Builder built = Builder("../crawler/condensedFiles");
 
     std::cout << "Index Chunks Built!" << std::endl;
 

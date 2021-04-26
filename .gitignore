@@ -32,4 +32,6 @@
 *.app
 
 # Executables
-tests/bin/*
+./apechunk0
+./apechunk1
+.vscode

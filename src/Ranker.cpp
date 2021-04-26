@@ -1,5 +1,5 @@
 #include "../include/Ranker.h"
-
+#include <math.h>
 #include <chrono>
 
 double Ranker::getScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<size_t> &indices, ISREndDoc* endDoc) {
@@ -16,6 +16,8 @@ double Ranker::getScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<si
     size_t numSpansNearTop = 0;
 
     size_t furthestLoc = begLoc;
+
+    bool calcAndReturn = false;
     while(furthestLoc < endLoc){
         //calculate furthest isr location
         for(size_t i = 0; i < indices.size(); ++i) {
@@ -29,7 +31,6 @@ double Ranker::getScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<si
         //determine span
         
         // if (flattened[indices[i]]->GetStartLocation() < endLoc) continue;
-        bool pastEnd = false;
         APESEARCH::vector<Location> locations(indices.size());
 
         for(size_t i = 0; i < indices.size(); ++i) {
@@ -42,8 +43,9 @@ double Ranker::getScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<si
                 nextPost = isr->Next(endDoc);
             }
 
+            //figure out doubles and triples
             if(!nextPost || isr->GetStartLocation() > endLoc){
-                pastEnd = true;
+                calcAndReturn = true;
                 break;
                 //maybe we still need to count doubles and triples?
             }
@@ -57,13 +59,13 @@ double Ranker::getScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector<si
                 locations[i] = isr->GetStartLocation();
         }
 
-        if(pastEnd)
+        if(calcAndReturn)
             break;
 
         size_t startSpan = locations[0], endSpan = locations[0];
         size_t lastLoc = startSpan;
         bool inOrder = true;
-
+        
         for(size_t i = 1; i < locations.size(); ++i){
 
             if(locations[i] > lastLoc)
@@ -128,6 +130,7 @@ double Ranker::getURLScore(APESEARCH::vector<ISR*> &flattened, APESEARCH::vector
         if (foundLocation != APESEARCH::string::npos)
             ++matches;
         }
+
     return DynamicStats::W_Url * matches;
     }
 
@@ -162,6 +165,7 @@ Ranker::Ranker(const IndexBlob* index, const APESEARCH::string& queryLine) : ib(
 
     urls = ib->getUrls();
 
+
     // for (auto entry : chunkResults)
     //     {
     //     std::cout << entry.url << " " << entry.rank << std::endl;
@@ -171,13 +175,18 @@ Ranker::Ranker(const IndexBlob* index, const APESEARCH::string& queryLine) : ib(
 APESEARCH::vector<RankedEntry> Ranker::getTopTen() {
     // Gets the first post Returns seek past 0
     const std::chrono::time_point<std::chrono::steady_clock> start = std::chrono::steady_clock::now();
-    Post *post = compiledTree->NextDocument(docEnd.get()); 
 
     size_t documentIndex = 0;
+    
+    Post* post = compiledTree->NextDocument(docEnd.get());
+    if(!post)
+        return {};
+    
+
     while(post) {
         bool filesToSearch = docEnd->Seek(post->loc, docEnd.get());
-            if (!filesToSearch)
-                return {};
+        if (!filesToSearch)
+            return chunkResults;
         
         documentIndex = docEnd->posts->curPost->tData;
         Location startLoc = docEnd->GetStartLocation();
@@ -187,7 +196,7 @@ APESEARCH::vector<RankedEntry> Ranker::getTopTen() {
         double URLScore = 0;
         double anchorScore = 0;
 
-        for (APESEARCH::vector<ISR*> orTerms : flattened) {
+        for (APESEARCH::vector<ISR*>& orTerms : flattened) {
             APESEARCH::vector<size_t> titleIndices;
             APESEARCH::vector<size_t> bodyIndices;
             // for (auto term : orTerms) {
@@ -215,8 +224,8 @@ APESEARCH::vector<RankedEntry> Ranker::getTopTen() {
                 anchorScore += getAnchorScore(orTerms, bodyIndices, ib, documentIndex);
             }
         }
-
-        double rank = titleScore + bodyScore + URLScore + anchorScore;
+        double rank = titleScore + (bodyScore) + URLScore + anchorScore;
+        //std::cout << documentIndex << ' ' << rank << std::endl;
         // std::cout << rank << ' ' << titleScore << ' ' << bodyScore << ' ' << URLScore << ' ' << anchorScore << ' ' << urls[documentIndex] << std::endl;
         // std::cout << urls[documentIndex] << std::endl;
         if (chunkResults.size() < 10)
@@ -237,11 +246,11 @@ APESEARCH::vector<RankedEntry> Ranker::getTopTen() {
             APESEARCH::swap( newEntry, chunkResults[minIndex]);
             }
 
-        const auto end = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() > 5000) {
-            return chunkResults;
-        }
-            
+        // const auto end = std::chrono::steady_clock::now();
+        // if (std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() > 60000) {
+        //     return chunkResults;
+        // }
+
 
         post = compiledTree->NextDocument(docEnd.get());
     }

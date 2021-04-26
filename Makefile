@@ -23,7 +23,7 @@ SRC=src
 SOURCES=$(wildcard ${SRC}/*.cpp)
 OBJS=${SOURCES:.cpp=.o}
 
-all: test
+all: test ApeNode
 
 TESTDIR=tests
 EXECDIR=tests/bin
@@ -34,6 +34,10 @@ $(TEST_SRC): %: %.cpp ${OBJS} ${FrameWorkOBJS} ${ASOBJS}
 	@mkdir -p ${EXECDIR}
 	@mkdir -p ${OUTPUT}
 	${CC} -Dtesting -o  ${EXECDIR}/$(notdir $@) $^ -pthread
+
+ApeNode: %: %.cpp ${OBJS} ${ASOBJS}
+	@mkdir -p bin
+	${CC} -o bin/$(notdir $@) $^ -pthread
 
 test: ${TEST_SRC}
 

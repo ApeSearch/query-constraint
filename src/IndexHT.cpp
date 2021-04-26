@@ -98,7 +98,7 @@ uint32_t DocEndPostingList::bytesRequired(const APESEARCH::string &key) { //impl
     return numBytes;
 }
 
-uint32_t AnchorPostingList::bytesRequired( const APESEARCH::string &key) {
+uint32_t AnchorPostingList::bytesRequired( const APESEARCH::string &key ) {
     if(calcBytes)
         return bytesList;
 
@@ -132,7 +132,6 @@ void IndexHT::addDoc(APESEARCH::string url, const APESEARCH::vector<IndexEntry> 
     size_t endDocLoc){ //change
     
     urls.push_back(url);
-
     hash::Tuple<APESEARCH::string, PostingList *> * entry = dict.Find(APESEARCH::string("%"));
 
     //stores absolute location of last doc
@@ -146,7 +145,7 @@ void IndexHT::addDoc(APESEARCH::string url, const APESEARCH::vector<IndexEntry> 
     else
         entry = dict.Find(APESEARCH::string("%"), new DocEndPostingList());
     
-    MaximumLocation = endDocLoc; //Keep Track of Maximum Location, location of end of last doc
+    MaximumLocation = lastDocIndex + endDocLoc; //Keep Track of Maximum Location, location of end of last doc
     LocationsInIndex = text.size() + 1; //Add 1 for end doc location + number of tokens in doc
     numDocs++; //Keeps track of the number of documents
 
@@ -156,7 +155,6 @@ void IndexHT::addDoc(APESEARCH::string url, const APESEARCH::vector<IndexEntry> 
 
     for(Location indexLoc = 0; indexLoc < text.size(); ++indexLoc) {
         APESEARCH::string word = text[indexLoc].word;
-
         if(text[indexLoc].plType == TitleText)
             word.push_front('$');
 

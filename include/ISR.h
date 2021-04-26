@@ -195,7 +195,7 @@ class ISRAnd : public ISR
             ISR **terms;
             unsigned numTerms;
 
-            Post *Seek( Location target, ISREndDoc* docEnd ) override;
+            Post * Seek( Location target, ISREndDoc* docEnd ) override;
 
             Post * Next( ISREndDoc* docEnd ) override;
 
