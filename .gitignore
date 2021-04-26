@@ -30,7 +30,6 @@
 *.exe
 *.out
 *.app
-bin
 
 # Executables
 tests/bin/*
