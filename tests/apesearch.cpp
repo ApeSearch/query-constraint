@@ -23,7 +23,7 @@ APESEARCH::string buildQuery(APESEARCH::string queryIn) {
 int main( ) {
     //Builder built = Builder("./tests/condensed1/");
 
-    const char *chunkDir = "tests/condensed/apechunk0";
+    const char *chunkDir = "tests/condensed/";
     /*IndexFile search = IndexFile(chunkDir);
 
     const IndexBlob* chunk = search.Blob( );

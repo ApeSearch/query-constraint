@@ -101,7 +101,6 @@ void * rankChunk(void * arg){
         index->threadQueue.pop();
 
         pthread_mutex_unlock(&queueLock);
-        std::cout << "here" << std::endl;
         IndexFile chunkFile(fileName.cstr());
         const IndexBlob* chunk = chunkFile.Blob();
 
@@ -134,6 +133,7 @@ void * rankChunk(void * arg){
 
 void Index::searchIndexChunks(const char * queryLine) {
 
+    topTen = APESEARCH::vector<RankedEntry>(10);
 
     pthread_t threads[NUM_THREADS];
 
