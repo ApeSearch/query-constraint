@@ -55,7 +55,8 @@ class IndexFileParser
             APESEARCH::string url;
 
             int currentChunk;
-            static const Location MAX_LOCATION = 2000000000;
+            static const Location MAX_LOCATION = 500000000;
+            static const Location MAX_UNIQUE_WORDS = 100000;
 
             private:
                 char* parseBodyText(char * cur){
@@ -169,9 +170,8 @@ class IndexFileParser
                         //if(entries.size() == 0 ) ??????
                         index->addDoc(url, entries, aText, entries.size());
 
-                        if (index->MaximumLocation > IndexFileParser::MAX_LOCATION)
+                        if (index->MaximumLocation > IndexFileParser::MAX_LOCATION || index->uniqueWords > IndexFileParser::MAX_UNIQUE_WORDS)
                             {
-                            std::cout << index->MaximumLocation << std::endl;
                             buildCurIndex();
                             }
 

@@ -5,7 +5,7 @@
 #include <iostream>
 
 
-IndexHT::IndexHT() : dict(), urls(), LocationsInIndex(0), MaximumLocation(0), numDocs(0), calcBytes(0), bytes(0){}
+IndexHT::IndexHT() : dict(), urls(), LocationsInIndex(0), MaximumLocation(0), numDocs(0), calcBytes(0), bytes(0), uniqueWords(0){}
 
 IndexHT::~IndexHT(){
     auto vecOfBuckets = dict.vectorOfBuckets();
@@ -163,8 +163,10 @@ void IndexHT::addDoc(APESEARCH::string url, const APESEARCH::vector<IndexEntry> 
 
         //Different actions for anchorText vs regularText
 
-        if(!entry) //add AnchorPostingList if is anchor text
+        if(!entry){
             entry = dict.Find(word, new WordPostingList());
+            uniqueWords++;
+        }
 
         WordPostingList * wordList = (WordPostingList *) entry->value;
         wordList->appendToList(indexLoc, static_cast<size_t>(text[indexLoc].attribute), lastDocIndex);

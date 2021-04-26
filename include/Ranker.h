@@ -46,16 +46,15 @@ class Ranker {
 
             static constexpr double W_Anchor = 100;
             static constexpr double W_Url = 20;
-            static constexpr double W_Title = 10;
+            static constexpr double W_Title = 5;
             static constexpr double W_Body = 1;
             };
 
         struct StaticStats
             {
-            static constexpr size_t MaxURLLengthToBeShort = 20;
+            static constexpr size_t MaxURLLengthToBeShort = 35;
 
             static constexpr size_t W_Domain = 2;
-            static constexpr size_t W_ShortTitle = 2;
             static constexpr size_t W_ShortURL = 2;
             };
 

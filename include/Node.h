@@ -7,7 +7,7 @@
 #include "../libraries/AS/include/AS/string.h"
 #include "../libraries/AS/include/AS/Socket.h"
 #include "../libraries/AS/include/AS/unique_ptr.h"
-#include "../Parser/HtmlParser.h"
+#include "../parser/HtmlParser.h"
 #include "../libraries/AS/include/AS/pthread_pool.h"
 #include "DynamicBuffer.h"
 #include "Index.h"

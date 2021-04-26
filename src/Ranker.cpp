@@ -224,7 +224,7 @@ APESEARCH::vector<RankedEntry> Ranker::getTopTen() {
                 anchorScore += getAnchorScore(orTerms, bodyIndices, ib, documentIndex);
             }
         }
-        double rank = titleScore + (bodyScore) + URLScore + anchorScore;
+        double rank = titleScore + log(bodyScore) + URLScore + anchorScore;
         //std::cout << documentIndex << ' ' << rank << std::endl;
         // std::cout << rank << ' ' << titleScore << ' ' << bodyScore << ' ' << URLScore << ' ' << anchorScore << ' ' << urls[documentIndex] << std::endl;
         // std::cout << urls[documentIndex] << std::endl;

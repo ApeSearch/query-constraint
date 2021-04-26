@@ -24,7 +24,7 @@ int main( ) {
     //Builder built = Builder("./tests/condensed1/");
 
     const char *chunkDir = "tests/condensed/apechunk0";
-    IndexFile search = IndexFile(chunkDir);
+    /*IndexFile search = IndexFile(chunkDir);
 
     const IndexBlob* chunk = search.Blob( );
 
@@ -36,11 +36,11 @@ int main( ) {
 
     for(int i = 0; i < results.size(); ++i){
         std::cout << results[i].url << ' ' << results[i].rank << std::endl;
-    }
+    }*/
 
-    /*while (true)
+    Index search = Index(chunkDir);
+    while (true)
         {
-        Index search = Index(chunkDir);
         std::cout << "Enter a search query (type #quit to exit): ";
         std::string queryIn;
         std::getline (std::cin, queryIn);
@@ -57,5 +57,5 @@ int main( ) {
         APESEARCH::string queryLine = buildQuery(APESEARCH::string(queryIn.cbegin(),queryIn.cend()).convertToLower());
         search.searchIndexChunks(queryLine.cstr());
         std::cout << "=========================================================" << std::endl;
-        }*/
+        }
 }

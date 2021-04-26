@@ -176,6 +176,9 @@ class IndexHT
         hash::HashTable<APESEARCH::string, PostingList *> dict;
         APESEARCH::vector<APESEARCH::string> urls;
         size_t LocationsInIndex, MaximumLocation, numDocs;
+
+        size_t uniqueWords;
+
         size_t bytes;
         bool calcBytes;
 
