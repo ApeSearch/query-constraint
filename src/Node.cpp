@@ -128,7 +128,7 @@ APESEARCH::string Node::receiver( int fd )
 {
     APESEARCH::string buff(BUFFERSIZE, 'a');
     
-    ssize_t bytes_read;
+    ssize_t bytes_read = 0;
 
     while(bytes_read < BUFFERSIZE)
     {

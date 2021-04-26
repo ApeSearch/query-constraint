@@ -56,7 +56,7 @@ class IndexFileParser
 
             int currentChunk;
             static const Location MAX_LOCATION = 500000000;
-            static const Location MAX_UNIQUE_WORDS = 500000;
+            static const Location MAX_UNIQUE_WORDS = 800000;
 
             private:
                 char* parseBodyText(char * cur){
