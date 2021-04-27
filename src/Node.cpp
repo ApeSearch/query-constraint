@@ -78,8 +78,6 @@ void Node::handle_query( int fd )
     //Send vector
     sender( fd, top_ten);
 
-    std::cout << "sent the results";
-
     close(fd);
 }
 
@@ -133,7 +131,6 @@ APESEARCH::string Node::receiver( int fd )
 
     while(bytes_read < BUFFERSIZE)
     {
-        std::cout << "Got into recv\n";
         ssize_t read = recv( fd, &buff.front( ) + bytes_read, BUFFERSIZE - bytes_read, 0 );    
 
         bytes_read += read;
@@ -143,8 +140,6 @@ APESEARCH::string Node::receiver( int fd )
     }
 
     APESEARCH::string res(&buff.front(), &buff.front() + bytes_read);
-
-    std::cout << "This is the query we got: " << res << '\n';
 
     return res;
 };
