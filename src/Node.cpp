@@ -67,6 +67,8 @@ void Node::handle_query( int fd )
         return;
     }
 
+    std::cout << "This is the query: " << queryLine << '\n';
+
     //Parse query
     //their API
 
