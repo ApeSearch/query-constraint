@@ -58,9 +58,9 @@ void Node::handle_query( int fd )
 {
     //Call receive
 
-    APESEARCH::string query = receiver( fd );
+    APESEARCH::string queryLine = receiver( fd );
 
-    if(query.empty())
+    if(queryLine.empty())
     {
         std::cerr << "Could not read query from server\n";
         close(fd);
@@ -70,7 +70,6 @@ void Node::handle_query( int fd )
     //Parse query
     //their API
 
-    APESEARCH::string queryLine = Index::buildQuery(APESEARCH::string(query.cbegin(),query.cend()).convertToLower());
     Index search("tests/condensed/");
     search.searchIndexChunks(queryLine.cstr());
     APESEARCH::vector<RankedEntry> top_ten = search.topTen; 
