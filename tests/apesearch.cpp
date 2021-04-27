@@ -58,6 +58,11 @@ int main( ) {
         std::cout << std::endl;
         APESEARCH::string queryLine = buildQuery(APESEARCH::string(queryIn.cbegin(),queryIn.cend()).convertToLower());
         search.searchIndexChunks(queryLine.cstr());
+        for (size_t i = 0; i < search.topTen.size(); i++)
+        {
+            std::cout << search.topTen[i].url << ' ' <<  search.topTen[i].rank << '\n';
+        }
+        
         std::cout << "=========================================================" << std::endl;
         }
 }

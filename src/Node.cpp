@@ -89,7 +89,7 @@ void Node::sender( int fd, APESEARCH::vector<RankedEntry> &top_ten )
     {
         size += top_ten[i].url.size();
     }
-    size = size + ( (sizeof( double ) -1) * top_ten.size() ) + ( top_ten.size() * 2 );
+    size = size + ( (sizeof( unsigned int )) * top_ten.size() ) + ( top_ten.size() * 2 );
     char buffer[size];
     char *ptr = buffer;
 
@@ -101,10 +101,10 @@ void Node::sender( int fd, APESEARCH::vector<RankedEntry> &top_ten )
                 *ptr = top_ten[i].url[j];
                 ++ptr;
             }
-            *ptr = ',';
+            *ptr = ' ';
             ++ptr;
-            snprintf(ptr, sizeof(double), "%g", top_ten[i].rank);
-            ptr += sizeof(double) - 1;
+            snprintf(ptr, sizeof(unsigned int), "%u", (unsigned int) top_ten[i].rank);
+            ptr += sizeof(unsigned);
 
         if( i == top_ten.size() - 1 )
         {

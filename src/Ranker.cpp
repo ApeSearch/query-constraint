@@ -238,7 +238,7 @@ APESEARCH::vector<RankedEntry> Ranker::getTopTen() {
         size_t foundLocation = urls[documentIndex].find(APESEARCH::string("tumblr"));
 
         if(foundLocation != APESEARCH::string::npos)
-            rank /= 10;
+            rank = log(rank);
         
         if (chunkResults.size() < 10)
             {
