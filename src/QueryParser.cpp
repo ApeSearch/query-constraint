@@ -9,7 +9,6 @@ QueryParser::QueryParser( APESEARCH::string queryLine )
         size_t pos = queryLine.find(' ');
     
         APESEARCH::string requestType(queryLine, 0, pos);
-        assert(requestType == "GET");
 
         size_t startPos = queryLine.find('=');
         size_t endPos = queryLine.find(' ', startPos);
