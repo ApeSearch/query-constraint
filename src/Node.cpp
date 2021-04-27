@@ -74,6 +74,10 @@ void Node::handle_query( int fd )
     Index search("tests/condensed/");
     search.searchIndexChunks(queryLine.cstr());
     APESEARCH::vector<RankedEntry> top_ten = search.topTen; 
+    for (size_t i = 0; i < search.topTen.size(); i++)
+    {
+        std::cout << search.topTen[i].url << ' ' <<  search.topTen[i].rank << '\n';
+    }
 
     //Send vector
     sender( fd, top_ten);
@@ -109,7 +113,7 @@ void Node::sender( int fd, APESEARCH::vector<RankedEntry> &top_ten )
         if( i == top_ten.size() - 1 )
         {
             // last one
-            *ptr = '\0';
+            *ptr = '\t';
             ++ptr;
         }
         else
@@ -119,6 +123,10 @@ void Node::sender( int fd, APESEARCH::vector<RankedEntry> &top_ten )
         }
     }
     assert( ptr == ( buffer + size ) );
+
+    std::cout << "\n\n\n\n\n";
+    write(1, buffer, size);
+
     if( send( fd ,buffer , size , 0 ) < 0 )
         std::cerr << "Did not send url successfully\n";
 }
