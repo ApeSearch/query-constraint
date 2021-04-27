@@ -80,8 +80,6 @@ void Node::handle_query( int fd )
 
     std::cout << "sent the results";
 
-    sleep(300);
-
     close(fd);
 }
 
