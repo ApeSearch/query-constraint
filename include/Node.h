@@ -20,8 +20,6 @@ class Node
    APESEARCH::PThreadPool< APESEARCH::circular_buffer<APESEARCH::Func, APESEARCH::DEFAULT::defaultBuffer<APESEARCH::Func, 100u>> > pool;
     Socket listener;
 
-    Index search;
-
 public:
     //Try to connect to other nodes from ips
     //Start listening server

@@ -15,7 +15,7 @@
 using APESEARCH::unique_ptr;
 
 
-Node::Node() : pool( MAXTHREADS, MAXTHREADS ), listener(PORT), search("tests/condensed/"){}
+Node::Node() : pool( MAXTHREADS, MAXTHREADS ), listener(PORT){}
 
 Node::~Node(){}
 
@@ -71,13 +71,16 @@ void Node::handle_query( int fd )
     //their API
 
     APESEARCH::string queryLine = Index::buildQuery(APESEARCH::string(query.cbegin(),query.cend()).convertToLower());
+    Index search("tests/condensed/");
     search.searchIndexChunks(queryLine.cstr());
-
-
     APESEARCH::vector<RankedEntry> top_ten = search.topTen; 
 
     //Send vector
     sender( fd, top_ten);
+
+    std::cout << "sent the results";
+
+    sleep(300);
 
     close(fd);
 }
@@ -90,7 +93,7 @@ void Node::sender( int fd, APESEARCH::vector<RankedEntry> &top_ten )
     {
         size += top_ten[i].url.size();
     }
-    size = size + ( sizeof( double ) * top_ten.size() ) + ( top_ten.size() * 2 );
+    size = size + ( (sizeof( double ) -1) * top_ten.size() ) + ( top_ten.size() * 2 );
     char buffer[size];
     char *ptr = buffer;
 
@@ -105,7 +108,7 @@ void Node::sender( int fd, APESEARCH::vector<RankedEntry> &top_ten )
             *ptr = ',';
             ++ptr;
             snprintf(ptr, sizeof(double), "%g", top_ten[i].rank);
-            ptr += sizeof(double);
+            ptr += sizeof(double) - 1;
 
         if( i == top_ten.size() - 1 )
         {
@@ -132,11 +135,18 @@ APESEARCH::string Node::receiver( int fd )
 
     while(bytes_read < BUFFERSIZE)
     {
+        std::cout << "Got into recv\n";
         ssize_t read = recv( fd, &buff.front( ) + bytes_read, BUFFERSIZE - bytes_read, 0 );    
 
-        if(buff[bytes_read + read] == '\0')
+        bytes_read += read;
+        
+        if( !read || buff[bytes_read - 1] == '\0')
             break;
     }
 
-    return buff;
-}
+    APESEARCH::string res(&buff.front(), &buff.front() + bytes_read);
+
+    std::cout << "This is the query we got: " << res << '\n';
+
+    return res;
+};

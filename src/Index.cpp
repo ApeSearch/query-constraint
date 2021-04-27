@@ -167,8 +167,4 @@ void Index::searchIndexChunks(const char * queryLine) {
 
     free(args);
 
-    for (auto entry: topTen)
-        {
-        std::cout << entry.rank << ' ' << entry.url << std::endl;
-        }
 }
