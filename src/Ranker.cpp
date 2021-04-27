@@ -220,16 +220,26 @@ APESEARCH::vector<RankedEntry> Ranker::getTopTen() {
             }
             if (bodyIndices.size()) {
                 bodyScore += DynamicStats::W_Body * getScore(orTerms, bodyIndices, docEnd.get());
+                
+                if(bodyIndices.size() == 1)
+                    bodyScore = log(bodyScore);
+
                 URLScore += getURLScore(orTerms, bodyIndices, urls[documentIndex].convertToLower());
                 anchorScore += getAnchorScore(orTerms, bodyIndices, ib, documentIndex);
             }
         }
 
-        double rank = titleScore + log(bodyScore) + URLScore + anchorScore;
+        double rank = titleScore + bodyScore + URLScore + anchorScore;
 
-        //std::cout << documentIndex << ' ' << rank << std::endl;
-        // std::cout << rank << ' ' << titleScore << ' ' << bodyScore << ' ' << URLScore << ' ' << anchorScore << ' ' << urls[documentIndex] << std::endl;
-        // std::cout << urls[documentIndex] << std::endl;
+        if( urls[documentIndex].size() <= StaticStats::MaxURLLengthToBeShort )
+            rank += StaticStats::W_ShortURL;
+
+
+        size_t foundLocation = urls[documentIndex].find(APESEARCH::string("tumblr"));
+
+        if(foundLocation != APESEARCH::string::npos)
+            rank /= 10;
+        
         if (chunkResults.size() < 10)
             {
             chunkResults.push_back(RankedEntry(urls[documentIndex], rank));
@@ -248,10 +258,9 @@ APESEARCH::vector<RankedEntry> Ranker::getTopTen() {
             APESEARCH::swap( newEntry, chunkResults[minIndex]);
             }
 
-        // const auto end = std::chrono::steady_clock::now();
-        // if (std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() > 60000) {
-        //     return chunkResults;
-        // }
+        const auto end = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() > 20000)
+            return chunkResults;
 
 
         post = compiledTree->NextDocument(docEnd.get());

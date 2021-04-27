@@ -15,7 +15,7 @@
 using APESEARCH::unique_ptr;
 
 
-Node::Node() : pool( MAXTHREADS, MAXTHREADS ), listener(PORT){}
+Node::Node() : pool( MAXTHREADS, MAXTHREADS ), listener(PORT), search("tests/condensed/"){}
 
 Node::~Node(){}
 
@@ -70,8 +70,6 @@ void Node::handle_query( int fd )
     //Parse query
     //their API
 
-    const char *chunkDir = "tests/condensed/";
-    Index search = Index(chunkDir);
     APESEARCH::string queryLine = Index::buildQuery(APESEARCH::string(query.cbegin(),query.cend()).convertToLower());
     search.searchIndexChunks(queryLine.cstr());
 

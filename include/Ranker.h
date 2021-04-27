@@ -53,9 +53,7 @@ class Ranker {
         struct StaticStats
             {
             static constexpr size_t MaxURLLengthToBeShort = 35;
-
-            static constexpr size_t W_Domain = 2;
-            static constexpr size_t W_ShortURL = 2;
+            static constexpr size_t W_ShortURL = 5;
             };
 
         const IndexBlob* ib;
